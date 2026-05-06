@@ -20,16 +20,21 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  IconButton,
   Tooltip,
+  alpha,
 } from '@mui/material';
 import {
   PictureAsPdf as PdfIcon,
   Description as CsvIcon,
+  Assessment as ReportIcon,
+  AccessTime as ClockIcon,
+  Assignment as EntryIcon,
+  Functions as AvgIcon,
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/client';
 import { type ClientReport } from '../types/api';
+import { bankingColors } from '../theme';
 
 const ReportsPage: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState<number>(0);
@@ -94,16 +99,43 @@ const ReportsPage: React.FC = () => {
   if (clientsLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+        <CircularProgress sx={{ color: bankingColors.teal }} />
       </Box>
     );
   }
 
+  const reportStats = report ? [
+    {
+      title: 'Total Hours',
+      value: report.totalHours.toFixed(2),
+      icon: <ClockIcon sx={{ fontSize: 24 }} />,
+      gradient: `linear-gradient(135deg, ${bankingColors.deepBlue} 0%, ${bankingColors.accentBlue} 100%)`,
+      shadowColor: bankingColors.accentBlue,
+    },
+    {
+      title: 'Total Entries',
+      value: report.entryCount,
+      icon: <EntryIcon sx={{ fontSize: 24 }} />,
+      gradient: `linear-gradient(135deg, ${bankingColors.tealDark} 0%, ${bankingColors.teal} 100%)`,
+      shadowColor: bankingColors.teal,
+    },
+    {
+      title: 'Avg Hours/Entry',
+      value: report.entryCount > 0 ? (report.totalHours / report.entryCount).toFixed(2) : '0.00',
+      icon: <AvgIcon sx={{ fontSize: 24 }} />,
+      gradient: `linear-gradient(135deg, #E65100 0%, ${bankingColors.gold} 100%)`,
+      shadowColor: bankingColors.gold,
+    },
+  ] : [];
+
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Reports
-      </Typography>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 800, color: bankingColors.navy }}>Reports</Typography>
+        <Typography variant="body2" sx={{ color: bankingColors.textSecondary }}>
+          Generate detailed time reports and export data
+        </Typography>
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
@@ -112,7 +144,14 @@ const ReportsPage: React.FC = () => {
       )}
 
       {clients.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
+        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 2 }}>
+          <svg width="120" height="90" viewBox="0 0 120 90" style={{ marginBottom: 12 }}>
+            <rect x="20" y="50" width="12" height="25" rx="2" fill={alpha(bankingColors.accentBlue, 0.12)} />
+            <rect x="38" y="35" width="12" height="40" rx="2" fill={alpha(bankingColors.teal, 0.15)} />
+            <rect x="56" y="20" width="12" height="55" rx="2" fill={alpha(bankingColors.accentBlue, 0.18)} />
+            <rect x="74" y="40" width="12" height="35" rx="2" fill={alpha(bankingColors.teal, 0.12)} />
+            <line x1="15" y1="76" x2="91" y2="76" stroke={alpha(bankingColors.navy, 0.08)} strokeWidth="1" />
+          </svg>
           <Typography color="text.secondary" sx={{ mb: 2 }}>
             You need to create at least one client before generating reports.
           </Typography>
@@ -122,7 +161,7 @@ const ReportsPage: React.FC = () => {
         </Paper>
       ) : (
         <>
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
             <Grid container spacing={3} alignItems="center">
               <Grid size={{ xs: 12, md: 6 }}>
                 <FormControl fullWidth>
@@ -142,26 +181,40 @@ const ReportsPage: React.FC = () => {
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <Box display="flex" gap={2}>
+                <Box display="flex" gap={1.5}>
                   <Tooltip title="Export as CSV">
-                    <IconButton
-                      onClick={handleExportCsv}
-                      disabled={!selectedClientId || reportLoading}
-                      color="primary"
-                      size="large"
-                    >
-                      <CsvIcon />
-                    </IconButton>
+                    <span>
+                      <Button
+                        variant="outlined"
+                        startIcon={<CsvIcon />}
+                        onClick={handleExportCsv}
+                        disabled={!selectedClientId || reportLoading}
+                        size="small"
+                      >
+                        CSV
+                      </Button>
+                    </span>
                   </Tooltip>
                   <Tooltip title="Export as PDF">
-                    <IconButton
-                      onClick={handleExportPdf}
-                      disabled={!selectedClientId || reportLoading}
-                      color="error"
-                      size="large"
-                    >
-                      <PdfIcon />
-                    </IconButton>
+                    <span>
+                      <Button
+                        variant="outlined"
+                        startIcon={<PdfIcon />}
+                        onClick={handleExportPdf}
+                        disabled={!selectedClientId || reportLoading}
+                        size="small"
+                        sx={{
+                          borderColor: alpha(bankingColors.error, 0.3),
+                          color: bankingColors.error,
+                          '&:hover': {
+                            borderColor: bankingColors.error,
+                            background: alpha(bankingColors.error, 0.05),
+                          },
+                        }}
+                      >
+                        PDF
+                      </Button>
+                    </span>
                   </Tooltip>
                 </Box>
               </Grid>
@@ -170,52 +223,67 @@ const ReportsPage: React.FC = () => {
 
           {selectedClient && reportLoading && (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-              <CircularProgress />
+              <CircularProgress sx={{ color: bankingColors.teal }} />
             </Box>
           )}
 
           {selectedClient && report && (
             <>
-                <Grid container spacing={3} sx={{ mb: 3 }}>
-                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                    <Card>
-                    <CardContent>
-                      <Typography color="textSecondary" gutterBottom>
-                        Total Hours
-                      </Typography>
-                      <Typography variant="h4" component="div">
-                        {report.totalHours.toFixed(2)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Card>
-                    <CardContent>
-                      <Typography color="textSecondary" gutterBottom>
-                        Total Entries
-                      </Typography>
-                      <Typography variant="h4" component="div">
-                        {report.entryCount}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Card>
-                    <CardContent>
-                      <Typography color="textSecondary" gutterBottom>
-                        Average Hours per Entry
-                      </Typography>
-                      <Typography variant="h4" component="div">
-                        {report.entryCount > 0 ? (report.totalHours / report.entryCount).toFixed(2) : '0.00'}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
+              <Grid container spacing={3} sx={{ mb: 3 }}>
+                {reportStats.map((stat, index) => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
+                    <Card
+                      sx={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        background: alpha('#FFFFFF', 0.8),
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: '4px',
+                          background: stat.gradient,
+                        },
+                      }}
+                    >
+                      <CardContent sx={{ p: 3 }}>
+                        <Box display="flex" alignItems="center" justifyContent="space-between">
+                          <Box>
+                            <Typography
+                              variant="overline"
+                              sx={{ color: bankingColors.textSecondary, fontWeight: 700, fontSize: '0.7rem', letterSpacing: '0.08em' }}
+                            >
+                              {stat.title}
+                            </Typography>
+                            <Typography variant="h4" sx={{ fontWeight: 800, color: bankingColors.navy, mt: 0.5 }}>
+                              {stat.value}
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              width: 44,
+                              height: 44,
+                              borderRadius: '6px',
+                              background: stat.gradient,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#FFFFFF',
+                              boxShadow: `0 4px 16px ${alpha(stat.shadowColor, 0.3)}`,
+                            }}
+                          >
+                            {stat.icon}
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
               </Grid>
 
-              <Paper>
+              <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
                 <TableContainer>
                   <Table>
                     <TableHead>
@@ -236,10 +304,15 @@ const ReportsPage: React.FC = () => {
                               </Typography>
                             </TableCell>
                             <TableCell>
-                              <Chip 
-                                label={`${entry.hours} hours`} 
-                                color="primary" 
-                                variant="outlined" 
+                              <Chip
+                                label={`${entry.hours}h`}
+                                size="small"
+                                sx={{
+                                  background: alpha(bankingColors.teal, 0.1),
+                                  color: bankingColors.tealDark,
+                                  fontWeight: 700,
+                                  border: `1px solid ${alpha(bankingColors.teal, 0.2)}`,
+                                }}
                               />
                             </TableCell>
                             <TableCell>
@@ -248,7 +321,7 @@ const ReportsPage: React.FC = () => {
                                   {entry.description}
                                 </Typography>
                               ) : (
-                                <Chip label="No description" size="small" variant="outlined" />
+                                <Typography variant="body2" sx={{ color: alpha(bankingColors.textSecondary, 0.5) }}>--</Typography>
                               )}
                             </TableCell>
                             <TableCell>
@@ -261,9 +334,12 @@ const ReportsPage: React.FC = () => {
                       ) : (
                         <TableRow>
                           <TableCell colSpan={4} align="center">
-                            <Typography color="text.secondary" sx={{ py: 3 }}>
-                              No work entries found for this client.
-                            </Typography>
+                            <Box sx={{ py: 5 }}>
+                              <ReportIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.12), mb: 1.5 }} />
+                              <Typography color="text.secondary">
+                                No work entries found for this client.
+                              </Typography>
+                            </Box>
                           </TableCell>
                         </TableRow>
                       )}
@@ -275,7 +351,25 @@ const ReportsPage: React.FC = () => {
           )}
 
           {!selectedClient && (
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
+            <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 2 }}>
+              <svg width="120" height="90" viewBox="0 0 120 90" style={{ marginBottom: 12 }}>
+                {/* Chart bars */}
+                <rect x="20" y="50" width="12" height="25" rx="2" fill={alpha(bankingColors.accentBlue, 0.12)} />
+                <rect x="38" y="35" width="12" height="40" rx="2" fill={alpha(bankingColors.teal, 0.15)} />
+                <rect x="56" y="20" width="12" height="55" rx="2" fill={alpha(bankingColors.accentBlue, 0.18)} />
+                <rect x="74" y="40" width="12" height="35" rx="2" fill={alpha(bankingColors.teal, 0.12)} />
+                <rect x="92" y="28" width="12" height="47" rx="2" fill={alpha(bankingColors.accentBlue, 0.15)} />
+                {/* Baseline */}
+                <line x1="15" y1="76" x2="109" y2="76" stroke={alpha(bankingColors.navy, 0.08)} strokeWidth="1" />
+                {/* Trend line */}
+                <polyline points="26,48 44,33 62,18 80,38 98,26" fill="none" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                {/* Trend dots */}
+                <circle cx="26" cy="48" r="2.5" fill={alpha(bankingColors.teal, 0.3)} />
+                <circle cx="44" cy="33" r="2.5" fill={alpha(bankingColors.teal, 0.3)} />
+                <circle cx="62" cy="18" r="2.5" fill={alpha(bankingColors.teal, 0.3)} />
+                <circle cx="80" cy="38" r="2.5" fill={alpha(bankingColors.teal, 0.3)} />
+                <circle cx="98" cy="26" r="2.5" fill={alpha(bankingColors.teal, 0.3)} />
+              </svg>
               <Typography color="text.secondary">
                 Select a client to view their time report.
               </Typography>

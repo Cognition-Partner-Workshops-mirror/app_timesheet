@@ -19,16 +19,19 @@ import {
   Alert,
   CircularProgress,
   Chip,
+  alpha,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   DeleteSweep as DeleteSweepIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../api/client';
 import { type Client } from '../types/api';
+import { bankingColors } from '../theme';
 
 const ClientsPage: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -161,7 +164,7 @@ const ClientsPage: React.FC = () => {
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+        <CircularProgress sx={{ color: bankingColors.teal }} />
       </Box>
     );
   }
@@ -169,8 +172,13 @@ const ClientsPage: React.FC = () => {
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Clients</Typography>
-        <Box display="flex" gap={2}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: bankingColors.navy }}>Clients</Typography>
+          <Typography variant="body2" sx={{ color: bankingColors.textSecondary }}>
+            Manage your client portfolio
+          </Typography>
+        </Box>
+        <Box display="flex" gap={1.5}>
           {clients.length > 0 && (
             <Button
               variant="outlined"
@@ -178,6 +186,7 @@ const ClientsPage: React.FC = () => {
               startIcon={<DeleteSweepIcon />}
               onClick={handleDeleteAll}
               disabled={deleteAllMutation.isPending}
+              size="small"
             >
               {deleteAllMutation.isPending ? 'Clearing...' : 'Clear All'}
             </Button>
@@ -194,7 +203,7 @@ const ClientsPage: React.FC = () => {
         </Alert>
       )}
 
-      <Paper>
+      <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
         <TableContainer>
           <Table>
             <TableHead>
@@ -212,17 +221,31 @@ const ClientsPage: React.FC = () => {
                 clients.map((client: Client) => (
                   <TableRow key={client.id}>
                     <TableCell>
-                      <Typography variant="subtitle1" fontWeight="medium">
-                        {client.name}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '6px',
+                            background: `linear-gradient(135deg, ${bankingColors.deepBlue} 0%, ${bankingColors.accentBlue} 100%)`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <BusinessIcon sx={{ color: '#fff', fontSize: 18 }} />
+                        </Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: bankingColors.navy }}>
+                          {client.name}
+                        </Typography>
+                      </Box>
                     </TableCell>
                     <TableCell>
                       {client.department ? (
-                        <Typography variant="body2" color="text.secondary">
-                          {client.department}
-                        </Typography>
+                        <Chip label={client.department} size="small" sx={{ background: alpha(bankingColors.accentBlue, 0.1), color: bankingColors.deepBlue, fontWeight: 600 }} />
                       ) : (
-                        <Chip label="-" size="small" variant="outlined" />
+                        <Typography variant="body2" sx={{ color: alpha(bankingColors.textSecondary, 0.5) }}>--</Typography>
                       )}
                     </TableCell>
                     <TableCell>
@@ -231,16 +254,16 @@ const ClientsPage: React.FC = () => {
                           {client.email}
                         </Typography>
                       ) : (
-                        <Chip label="-" size="small" variant="outlined" />
+                        <Typography variant="body2" sx={{ color: alpha(bankingColors.textSecondary, 0.5) }}>--</Typography>
                       )}
                     </TableCell>
                     <TableCell>
                       {client.description ? (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {client.description}
                         </Typography>
                       ) : (
-                        <Chip label="No description" size="small" variant="outlined" />
+                        <Typography variant="body2" sx={{ color: alpha(bankingColors.textSecondary, 0.5) }}>--</Typography>
                       )}
                     </TableCell>
                     <TableCell>
@@ -251,17 +274,17 @@ const ClientsPage: React.FC = () => {
                     <TableCell align="right">
                       <IconButton
                         onClick={() => handleOpen(client)}
-                        color="primary"
                         size="small"
+                        sx={{ color: bankingColors.accentBlue }}
                       >
-                        <EditIcon />
+                        <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         onClick={() => handleDelete(client)}
-                        color="error"
                         size="small"
+                        sx={{ color: bankingColors.error }}
                       >
-                        <DeleteIcon />
+                        <DeleteIcon fontSize="small" />
                       </IconButton>
                     </TableCell>
                   </TableRow>
@@ -269,9 +292,25 @@ const ClientsPage: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
-                    <Typography color="text.secondary" sx={{ py: 3 }}>
-                      No clients found. Create your first client to get started.
-                    </Typography>
+                    <Box sx={{ py: 5 }}>
+                      <svg width="100" height="80" viewBox="0 0 100 80" style={{ marginBottom: 12 }}>
+                        {/* Building icon */}
+                        <rect x="25" y="20" width="50" height="50" rx="3" fill="none" stroke={alpha(bankingColors.navy, 0.1)} strokeWidth="1.5" />
+                        <rect x="35" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+                        <rect x="47" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+                        <rect x="59" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+                        <rect x="35" y="44" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.12)} />
+                        <rect x="47" y="44" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.12)} />
+                        <rect x="59" y="44" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.12)} />
+                        <rect x="43" y="58" width="14" height="12" rx="1" fill={alpha(bankingColors.teal, 0.15)} />
+                        {/* Decorative plus */}
+                        <line x1="82" y1="15" x2="82" y2="25" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+                        <line x1="77" y1="20" x2="87" y2="20" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                      <Typography color="text.secondary">
+                        No clients found. Create your first client to get started.
+                      </Typography>
+                    </Box>
                   </TableCell>
                 </TableRow>
               )}
@@ -281,7 +320,7 @@ const ClientsPage: React.FC = () => {
       </Paper>
 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, color: bankingColors.navy }}>
           {editingClient ? 'Edit Client' : 'Add New Client'}
         </DialogTitle>
         <form onSubmit={handleSubmit}>
@@ -323,9 +362,14 @@ const ClientsPage: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               disabled={createMutation.isPending || updateMutation.isPending}
             />
+            {error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClose} disabled={createMutation.isPending || updateMutation.isPending}>
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button onClick={handleClose} variant="outlined" sx={{ mr: 1 }}>
               Cancel
             </Button>
             <Button
@@ -334,10 +378,8 @@ const ClientsPage: React.FC = () => {
               disabled={createMutation.isPending || updateMutation.isPending}
             >
               {createMutation.isPending || updateMutation.isPending ? (
-                <CircularProgress size={24} />
-              ) : (
-                editingClient ? 'Update' : 'Create'
-              )}
+                <CircularProgress size={24} sx={{ color: '#fff' }} />
+              ) : editingClient ? 'Update' : 'Create'}
             </Button>
           </DialogActions>
         </form>

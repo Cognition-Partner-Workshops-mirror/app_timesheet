@@ -23,6 +23,7 @@ import {
   Select,
   MenuItem,
   Chip,
+  alpha,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -35,6 +36,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import apiClient from '../api/client';
 import { type WorkEntry } from '../types/api';
+import { bankingColors } from '../theme';
 
 const WorkEntriesPage: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -179,7 +181,7 @@ const WorkEntriesPage: React.FC = () => {
   if (entriesLoading || clientsLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+        <CircularProgress sx={{ color: bankingColors.teal }} />
       </Box>
     );
   }
@@ -188,7 +190,12 @@ const WorkEntriesPage: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4">Work Entries</Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: bankingColors.navy }}>Work Entries</Typography>
+            <Typography variant="body2" sx={{ color: bankingColors.textSecondary }}>
+              Track billable hours across your clients
+            </Typography>
+          </Box>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()}>
             Add Work Entry
           </Button>
@@ -201,7 +208,16 @@ const WorkEntriesPage: React.FC = () => {
         )}
 
         {clients.length === 0 ? (
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 2 }}>
+            <svg width="100" height="80" viewBox="0 0 100 80" style={{ marginBottom: 12 }}>
+              <rect x="25" y="20" width="50" height="50" rx="3" fill="none" stroke={alpha(bankingColors.navy, 0.1)} strokeWidth="1.5" />
+              <rect x="35" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+              <rect x="47" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+              <rect x="59" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+              <rect x="43" y="44" width="14" height="12" rx="1" fill={alpha(bankingColors.teal, 0.15)} />
+              <line x1="82" y1="15" x2="82" y2="25" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="77" y1="20" x2="87" y2="20" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               You need to create at least one client before adding work entries.
             </Typography>
@@ -210,7 +226,7 @@ const WorkEntriesPage: React.FC = () => {
             </Button>
           </Paper>
         ) : (
-          <Paper>
+          <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
             <TableContainer>
               <Table>
                 <TableHead>
@@ -227,7 +243,7 @@ const WorkEntriesPage: React.FC = () => {
                     workEntries.map((entry: WorkEntry) => (
                       <TableRow key={entry.id}>
                         <TableCell>
-                          <Typography variant="subtitle1" fontWeight="medium">
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: bankingColors.navy }}>
                             {entry.client_name}
                           </Typography>
                         </TableCell>
@@ -237,35 +253,40 @@ const WorkEntriesPage: React.FC = () => {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Chip 
-                            label={`${entry.hours} hours`} 
-                            color="primary" 
-                            variant="outlined" 
+                          <Chip
+                            label={`${entry.hours}h`}
+                            size="small"
+                            sx={{
+                              background: alpha(bankingColors.teal, 0.1),
+                              color: bankingColors.tealDark,
+                              fontWeight: 700,
+                              border: `1px solid ${alpha(bankingColors.teal, 0.2)}`,
+                            }}
                           />
                         </TableCell>
                         <TableCell>
                           {entry.description ? (
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {entry.description}
                             </Typography>
                           ) : (
-                            <Chip label="No description" size="small" variant="outlined" />
+                            <Typography variant="body2" sx={{ color: alpha(bankingColors.textSecondary, 0.5) }}>--</Typography>
                           )}
                         </TableCell>
                         <TableCell align="right">
                           <IconButton
                             onClick={() => handleOpen(entry)}
-                            color="primary"
                             size="small"
+                            sx={{ color: bankingColors.accentBlue }}
                           >
-                            <EditIcon />
+                            <EditIcon fontSize="small" />
                           </IconButton>
                           <IconButton
                             onClick={() => handleDelete(entry)}
-                            color="error"
                             size="small"
+                            sx={{ color: bankingColors.error }}
                           >
-                            <DeleteIcon />
+                            <DeleteIcon fontSize="small" />
                           </IconButton>
                         </TableCell>
                       </TableRow>
@@ -273,9 +294,24 @@ const WorkEntriesPage: React.FC = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={5} align="center">
-                        <Typography color="text.secondary" sx={{ py: 3 }}>
-                          No work entries found. Add your first work entry to get started.
-                        </Typography>
+                        <Box sx={{ py: 5 }}>
+                          <svg width="100" height="80" viewBox="0 0 100 80" style={{ marginBottom: 12 }}>
+                            {/* Clipboard */}
+                            <rect x="30" y="10" width="40" height="55" rx="3" fill="none" stroke={alpha(bankingColors.navy, 0.1)} strokeWidth="1.5" />
+                            <rect x="40" y="5" width="20" height="10" rx="3" fill={alpha(bankingColors.teal, 0.15)} />
+                            {/* Lines */}
+                            <line x1="38" y1="28" x2="62" y2="28" stroke={alpha(bankingColors.navy, 0.08)} strokeWidth="1.5" strokeLinecap="round" />
+                            <line x1="38" y1="36" x2="56" y2="36" stroke={alpha(bankingColors.navy, 0.06)} strokeWidth="1.5" strokeLinecap="round" />
+                            <line x1="38" y1="44" x2="58" y2="44" stroke={alpha(bankingColors.navy, 0.06)} strokeWidth="1.5" strokeLinecap="round" />
+                            <line x1="38" y1="52" x2="52" y2="52" stroke={alpha(bankingColors.navy, 0.04)} strokeWidth="1.5" strokeLinecap="round" />
+                            {/* Plus sign */}
+                            <line x1="78" y1="55" x2="78" y2="65" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+                            <line x1="73" y1="60" x2="83" y2="60" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+                          </svg>
+                          <Typography color="text.secondary">
+                            No work entries found. Add your first work entry to get started.
+                          </Typography>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   )}
@@ -286,7 +322,7 @@ const WorkEntriesPage: React.FC = () => {
         )}
 
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-          <DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700, color: bankingColors.navy }}>
             {editingEntry ? 'Edit Work Entry' : 'Add New Work Entry'}
           </DialogTitle>
           <form onSubmit={handleSubmit}>
@@ -343,8 +379,8 @@ const WorkEntriesPage: React.FC = () => {
                 disabled={createMutation.isPending || updateMutation.isPending}
               />
             </DialogContent>
-            <DialogActions>
-              <Button onClick={handleClose} disabled={createMutation.isPending || updateMutation.isPending}>
+            <DialogActions sx={{ px: 3, pb: 2.5 }}>
+              <Button onClick={handleClose} variant="outlined" disabled={createMutation.isPending || updateMutation.isPending} sx={{ mr: 1 }}>
                 Cancel
               </Button>
               <Button
@@ -353,7 +389,7 @@ const WorkEntriesPage: React.FC = () => {
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 {createMutation.isPending || updateMutation.isPending ? (
-                  <CircularProgress size={24} />
+                  <CircularProgress size={24} sx={{ color: '#fff' }} />
                 ) : (
                   editingEntry ? 'Update' : 'Create'
                 )}
