@@ -8,9 +8,15 @@ import {
   Box,
   Alert,
   CircularProgress,
+  alpha,
 } from '@mui/material';
+import {
+  AccessTime as ClockIcon,
+  LockOutlined as LockIcon,
+} from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { bankingColors } from '../theme';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -36,60 +42,163 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="sm">
     <Box
       sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
         minHeight: '100vh',
-        px: 2,
+        background: `linear-gradient(135deg, ${bankingColors.navy} 0%, ${bankingColors.deepBlue} 50%, ${bankingColors.navyLight} 100%)`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <Paper elevation={3} sx={{ padding: 3, width: '100%', maxWidth: 500 }}>
-        <Typography component="h1" variant="h4" align="center" gutterBottom>
-          Time Tracker
-        </Typography>
-        <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 2 }}>
-          Enter your email to log in
-        </Typography>
-        <Alert severity="info" sx={{ mb: 2 }}>
-          This app intentionally does not have a password field.
-        </Alert>
-        
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+      {/* Background decorative elements */}
+      <Box
+        sx={{
+          position: 'absolute',
+          width: '500px',
+          height: '500px',
+          borderRadius: '50%',
+          background: alpha(bankingColors.teal, 0.08),
+          top: '-150px',
+          right: '-100px',
+          filter: 'blur(60px)',
+        }}
+      />
+      <Box
+        sx={{
+          position: 'absolute',
+          width: '400px',
+          height: '400px',
+          borderRadius: '50%',
+          background: alpha(bankingColors.accentBlue, 0.06),
+          bottom: '-100px',
+          left: '-100px',
+          filter: 'blur(60px)',
+        }}
+      />
 
-        <Box component="form" onSubmit={handleSubmit}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={isLoading}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 2, mb: 1 }}
-            disabled={isLoading || !email}
+      <Container component="main" maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 5,
+            width: '100%',
+            maxWidth: 440,
+            mx: 'auto',
+            background: alpha('#FFFFFF', 0.08),
+            backdropFilter: 'blur(24px)',
+            border: `1px solid ${alpha('#FFFFFF', 0.12)}`,
+            borderRadius: 4,
+            boxShadow: `0 32px 80px ${alpha('#000000', 0.3)}`,
+          }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
+            <Box
+              sx={{
+                width: 56,
+                height: 56,
+                borderRadius: '16px',
+                background: `linear-gradient(135deg, ${bankingColors.teal} 0%, ${bankingColors.tealDark} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2.5,
+                boxShadow: `0 8px 24px ${alpha(bankingColors.teal, 0.3)}`,
+              }}
+            >
+              <ClockIcon sx={{ color: '#fff', fontSize: 28 }} />
+            </Box>
+            <Typography
+              component="h1"
+              variant="h4"
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(135deg, #FFFFFF 0%, rgba(255,255,255,0.8) 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                mb: 0.5,
+              }}
+            >
+              TimeTracker
+            </Typography>
+            <Typography variant="body2" sx={{ color: alpha('#FFFFFF', 0.5) }}>
+              Secure time management portal
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              p: 1.5,
+              borderRadius: 2,
+              background: alpha(bankingColors.teal, 0.1),
+              border: `1px solid ${alpha(bankingColors.teal, 0.2)}`,
+              mb: 3,
+            }}
           >
-            {isLoading ? <CircularProgress size={24} /> : 'Log In'}
-          </Button>
-        </Box>
-      </Paper>
+            <LockIcon sx={{ color: bankingColors.tealLight, fontSize: 18 }} />
+            <Typography variant="caption" sx={{ color: alpha('#FFFFFF', 0.7), fontSize: '0.75rem' }}>
+              No password required — email-based authentication
+            </Typography>
+          </Box>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={handleSubmit}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Email Address"
+              name="email"
+              autoComplete="email"
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  color: '#FFFFFF',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha('#FFFFFF', 0.2),
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(bankingColors.teal, 0.5),
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: bankingColors.teal,
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: alpha('#FFFFFF', 0.5),
+                  '&.Mui-focused': {
+                    color: bankingColors.tealLight,
+                  },
+                },
+              }}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 1, py: 1.5, fontSize: '1rem' }}
+              disabled={isLoading || !email}
+            >
+              {isLoading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Sign In'}
+            </Button>
+          </Box>
+        </Paper>
+      </Container>
     </Box>
-    </Container>
   );
 };
 

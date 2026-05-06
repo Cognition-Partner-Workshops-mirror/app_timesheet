@@ -23,11 +23,13 @@ import {
   Select,
   MenuItem,
   Chip,
+  alpha,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -35,6 +37,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import apiClient from '../api/client';
 import { type WorkEntry } from '../types/api';
+import { bankingColors } from '../theme';
 
 const WorkEntriesPage: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -179,7 +182,7 @@ const WorkEntriesPage: React.FC = () => {
   if (entriesLoading || clientsLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+        <CircularProgress sx={{ color: bankingColors.teal }} />
       </Box>
     );
   }
@@ -188,7 +191,12 @@ const WorkEntriesPage: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4">Work Entries</Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: bankingColors.navy }}>Work Entries</Typography>
+            <Typography variant="body2" sx={{ color: bankingColors.textSecondary }}>
+              Track billable hours across your clients
+            </Typography>
+          </Box>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()}>
             Add Work Entry
           </Button>
@@ -201,7 +209,8 @@ const WorkEntriesPage: React.FC = () => {
         )}
 
         {clients.length === 0 ? (
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4 }}>
+            <AssignmentIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.12), mb: 1.5 }} />
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               You need to create at least one client before adding work entries.
             </Typography>
@@ -210,7 +219,7 @@ const WorkEntriesPage: React.FC = () => {
             </Button>
           </Paper>
         ) : (
-          <Paper>
+          <Paper sx={{ borderRadius: 4, overflow: 'hidden' }}>
             <TableContainer>
               <Table>
                 <TableHead>
@@ -227,7 +236,7 @@ const WorkEntriesPage: React.FC = () => {
                     workEntries.map((entry: WorkEntry) => (
                       <TableRow key={entry.id}>
                         <TableCell>
-                          <Typography variant="subtitle1" fontWeight="medium">
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: bankingColors.navy }}>
                             {entry.client_name}
                           </Typography>
                         </TableCell>
@@ -237,35 +246,40 @@ const WorkEntriesPage: React.FC = () => {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Chip 
-                            label={`${entry.hours} hours`} 
-                            color="primary" 
-                            variant="outlined" 
+                          <Chip
+                            label={`${entry.hours}h`}
+                            size="small"
+                            sx={{
+                              background: alpha(bankingColors.teal, 0.1),
+                              color: bankingColors.tealDark,
+                              fontWeight: 700,
+                              border: `1px solid ${alpha(bankingColors.teal, 0.2)}`,
+                            }}
                           />
                         </TableCell>
                         <TableCell>
                           {entry.description ? (
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {entry.description}
                             </Typography>
                           ) : (
-                            <Chip label="No description" size="small" variant="outlined" />
+                            <Typography variant="body2" sx={{ color: alpha(bankingColors.textSecondary, 0.5) }}>--</Typography>
                           )}
                         </TableCell>
                         <TableCell align="right">
                           <IconButton
                             onClick={() => handleOpen(entry)}
-                            color="primary"
                             size="small"
+                            sx={{ color: bankingColors.accentBlue }}
                           >
-                            <EditIcon />
+                            <EditIcon fontSize="small" />
                           </IconButton>
                           <IconButton
                             onClick={() => handleDelete(entry)}
-                            color="error"
                             size="small"
+                            sx={{ color: bankingColors.error }}
                           >
-                            <DeleteIcon />
+                            <DeleteIcon fontSize="small" />
                           </IconButton>
                         </TableCell>
                       </TableRow>
@@ -273,9 +287,12 @@ const WorkEntriesPage: React.FC = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={5} align="center">
-                        <Typography color="text.secondary" sx={{ py: 3 }}>
-                          No work entries found. Add your first work entry to get started.
-                        </Typography>
+                        <Box sx={{ py: 5 }}>
+                          <AssignmentIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.12), mb: 1.5 }} />
+                          <Typography color="text.secondary">
+                            No work entries found. Add your first work entry to get started.
+                          </Typography>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   )}
@@ -286,7 +303,7 @@ const WorkEntriesPage: React.FC = () => {
         )}
 
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-          <DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700, color: bankingColors.navy }}>
             {editingEntry ? 'Edit Work Entry' : 'Add New Work Entry'}
           </DialogTitle>
           <form onSubmit={handleSubmit}>
@@ -343,8 +360,8 @@ const WorkEntriesPage: React.FC = () => {
                 disabled={createMutation.isPending || updateMutation.isPending}
               />
             </DialogContent>
-            <DialogActions>
-              <Button onClick={handleClose} disabled={createMutation.isPending || updateMutation.isPending}>
+            <DialogActions sx={{ px: 3, pb: 2.5 }}>
+              <Button onClick={handleClose} variant="outlined" disabled={createMutation.isPending || updateMutation.isPending} sx={{ mr: 1 }}>
                 Cancel
               </Button>
               <Button
@@ -353,7 +370,7 @@ const WorkEntriesPage: React.FC = () => {
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 {createMutation.isPending || updateMutation.isPending ? (
-                  <CircularProgress size={24} />
+                  <CircularProgress size={24} sx={{ color: '#fff' }} />
                 ) : (
                   editingEntry ? 'Update' : 'Create'
                 )}
