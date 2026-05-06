@@ -293,7 +293,20 @@ const ClientsPage: React.FC = () => {
                 <TableRow>
                   <TableCell colSpan={6} align="center">
                     <Box sx={{ py: 5 }}>
-                      <BusinessIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.12), mb: 1.5 }} />
+                      <svg width="100" height="80" viewBox="0 0 100 80" style={{ marginBottom: 12 }}>
+                        {/* Building icon */}
+                        <rect x="25" y="20" width="50" height="50" rx="3" fill="none" stroke={alpha(bankingColors.navy, 0.1)} strokeWidth="1.5" />
+                        <rect x="35" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+                        <rect x="47" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+                        <rect x="59" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+                        <rect x="35" y="44" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.12)} />
+                        <rect x="47" y="44" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.12)} />
+                        <rect x="59" y="44" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.12)} />
+                        <rect x="43" y="58" width="14" height="12" rx="1" fill={alpha(bankingColors.teal, 0.15)} />
+                        {/* Decorative plus */}
+                        <line x1="82" y1="15" x2="82" y2="25" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+                        <line x1="77" y1="20" x2="87" y2="20" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
                       <Typography color="text.secondary">
                         No clients found. Create your first client to get started.
                       </Typography>

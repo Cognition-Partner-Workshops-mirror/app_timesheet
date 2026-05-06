@@ -145,7 +145,13 @@ const ReportsPage: React.FC = () => {
 
       {clients.length === 0 ? (
         <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 2 }}>
-          <ReportIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.12), mb: 1.5 }} />
+          <svg width="120" height="90" viewBox="0 0 120 90" style={{ marginBottom: 12 }}>
+            <rect x="20" y="50" width="12" height="25" rx="2" fill={alpha(bankingColors.accentBlue, 0.12)} />
+            <rect x="38" y="35" width="12" height="40" rx="2" fill={alpha(bankingColors.teal, 0.15)} />
+            <rect x="56" y="20" width="12" height="55" rx="2" fill={alpha(bankingColors.accentBlue, 0.18)} />
+            <rect x="74" y="40" width="12" height="35" rx="2" fill={alpha(bankingColors.teal, 0.12)} />
+            <line x1="15" y1="76" x2="91" y2="76" stroke={alpha(bankingColors.navy, 0.08)} strokeWidth="1" />
+          </svg>
           <Typography color="text.secondary" sx={{ mb: 2 }}>
             You need to create at least one client before generating reports.
           </Typography>
@@ -346,7 +352,24 @@ const ReportsPage: React.FC = () => {
 
           {!selectedClient && (
             <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 2 }}>
-              <ReportIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.12), mb: 1.5 }} />
+              <svg width="120" height="90" viewBox="0 0 120 90" style={{ marginBottom: 12 }}>
+                {/* Chart bars */}
+                <rect x="20" y="50" width="12" height="25" rx="2" fill={alpha(bankingColors.accentBlue, 0.12)} />
+                <rect x="38" y="35" width="12" height="40" rx="2" fill={alpha(bankingColors.teal, 0.15)} />
+                <rect x="56" y="20" width="12" height="55" rx="2" fill={alpha(bankingColors.accentBlue, 0.18)} />
+                <rect x="74" y="40" width="12" height="35" rx="2" fill={alpha(bankingColors.teal, 0.12)} />
+                <rect x="92" y="28" width="12" height="47" rx="2" fill={alpha(bankingColors.accentBlue, 0.15)} />
+                {/* Baseline */}
+                <line x1="15" y1="76" x2="109" y2="76" stroke={alpha(bankingColors.navy, 0.08)} strokeWidth="1" />
+                {/* Trend line */}
+                <polyline points="26,48 44,33 62,18 80,38 98,26" fill="none" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                {/* Trend dots */}
+                <circle cx="26" cy="48" r="2.5" fill={alpha(bankingColors.teal, 0.3)} />
+                <circle cx="44" cy="33" r="2.5" fill={alpha(bankingColors.teal, 0.3)} />
+                <circle cx="62" cy="18" r="2.5" fill={alpha(bankingColors.teal, 0.3)} />
+                <circle cx="80" cy="38" r="2.5" fill={alpha(bankingColors.teal, 0.3)} />
+                <circle cx="98" cy="26" r="2.5" fill={alpha(bankingColors.teal, 0.3)} />
+              </svg>
               <Typography color="text.secondary">
                 Select a client to view their time report.
               </Typography>

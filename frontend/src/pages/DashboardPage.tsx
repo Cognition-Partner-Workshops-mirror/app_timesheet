@@ -98,6 +98,16 @@ const DashboardPage: React.FC = () => {
                   height: '4px',
                   background: stat.gradient,
                 },
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: -20,
+                  right: -20,
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: alpha(stat.shadowColor, 0.04),
+                },
               }}
             >
               <CardContent sx={{ p: 3 }}>
@@ -201,8 +211,31 @@ const DashboardPage: React.FC = () => {
                 </Box>
               ))
             ) : (
-              <Box sx={{ py: 4, textAlign: 'center' }}>
-                <ClockIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.15), mb: 1 }} />
+              <Box sx={{ py: 5, textAlign: 'center' }}>
+                <svg width="120" height="100" viewBox="0 0 120 100" style={{ marginBottom: 16 }}>
+                  {/* Clock face */}
+                  <circle cx="60" cy="45" r="30" fill="none" stroke={alpha(bankingColors.navy, 0.1)} strokeWidth="2" />
+                  <circle cx="60" cy="45" r="2" fill={alpha(bankingColors.navy, 0.15)} />
+                  {/* Clock hands */}
+                  <line x1="60" y1="45" x2="60" y2="25" stroke={alpha(bankingColors.teal, 0.3)} strokeWidth="2" strokeLinecap="round" />
+                  <line x1="60" y1="45" x2="72" y2="40" stroke={alpha(bankingColors.teal, 0.2)} strokeWidth="1.5" strokeLinecap="round" />
+                  {/* Hour markers */}
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(i => {
+                    const angle = (i * 30 - 90) * Math.PI / 180;
+                    return (
+                      <circle
+                        key={i}
+                        cx={60 + 25 * Math.cos(angle)}
+                        cy={45 + 25 * Math.sin(angle)}
+                        r={i % 3 === 0 ? 2 : 1}
+                        fill={alpha(bankingColors.navy, i % 3 === 0 ? 0.15 : 0.08)}
+                      />
+                    );
+                  })}
+                  {/* Decorative lines below */}
+                  <line x1="30" y1="88" x2="90" y2="88" stroke={alpha(bankingColors.navy, 0.06)} strokeWidth="1" />
+                  <line x1="40" y1="94" x2="80" y2="94" stroke={alpha(bankingColors.navy, 0.04)} strokeWidth="1" />
+                </svg>
                 <Typography color="text.secondary">No work entries yet</Typography>
               </Box>
             )}

@@ -29,7 +29,6 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -210,7 +209,15 @@ const WorkEntriesPage: React.FC = () => {
 
         {clients.length === 0 ? (
           <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 2 }}>
-            <AssignmentIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.12), mb: 1.5 }} />
+            <svg width="100" height="80" viewBox="0 0 100 80" style={{ marginBottom: 12 }}>
+              <rect x="25" y="20" width="50" height="50" rx="3" fill="none" stroke={alpha(bankingColors.navy, 0.1)} strokeWidth="1.5" />
+              <rect x="35" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+              <rect x="47" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+              <rect x="59" y="30" width="8" height="8" rx="1" fill={alpha(bankingColors.accentBlue, 0.15)} />
+              <rect x="43" y="44" width="14" height="12" rx="1" fill={alpha(bankingColors.teal, 0.15)} />
+              <line x1="82" y1="15" x2="82" y2="25" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="77" y1="20" x2="87" y2="20" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               You need to create at least one client before adding work entries.
             </Typography>
@@ -288,7 +295,19 @@ const WorkEntriesPage: React.FC = () => {
                     <TableRow>
                       <TableCell colSpan={5} align="center">
                         <Box sx={{ py: 5 }}>
-                          <AssignmentIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.12), mb: 1.5 }} />
+                          <svg width="100" height="80" viewBox="0 0 100 80" style={{ marginBottom: 12 }}>
+                            {/* Clipboard */}
+                            <rect x="30" y="10" width="40" height="55" rx="3" fill="none" stroke={alpha(bankingColors.navy, 0.1)} strokeWidth="1.5" />
+                            <rect x="40" y="5" width="20" height="10" rx="3" fill={alpha(bankingColors.teal, 0.15)} />
+                            {/* Lines */}
+                            <line x1="38" y1="28" x2="62" y2="28" stroke={alpha(bankingColors.navy, 0.08)} strokeWidth="1.5" strokeLinecap="round" />
+                            <line x1="38" y1="36" x2="56" y2="36" stroke={alpha(bankingColors.navy, 0.06)} strokeWidth="1.5" strokeLinecap="round" />
+                            <line x1="38" y1="44" x2="58" y2="44" stroke={alpha(bankingColors.navy, 0.06)} strokeWidth="1.5" strokeLinecap="round" />
+                            <line x1="38" y1="52" x2="52" y2="52" stroke={alpha(bankingColors.navy, 0.04)} strokeWidth="1.5" strokeLinecap="round" />
+                            {/* Plus sign */}
+                            <line x1="78" y1="55" x2="78" y2="65" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+                            <line x1="73" y1="60" x2="83" y2="60" stroke={alpha(bankingColors.teal, 0.25)} strokeWidth="1.5" strokeLinecap="round" />
+                          </svg>
                           <Typography color="text.secondary">
                             No work entries found. Add your first work entry to get started.
                           </Typography>

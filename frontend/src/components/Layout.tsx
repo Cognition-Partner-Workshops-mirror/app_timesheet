@@ -52,7 +52,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      {/* Subtle SVG decoration in sidebar background */}
+      <Box sx={{ position: 'absolute', bottom: 60, right: -10, opacity: 0.04, pointerEvents: 'none' }}>
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="65" fill="none" stroke="#00BFA6" strokeWidth="0.5" />
+          <circle cx="70" cy="70" r="45" fill="none" stroke="#00BFA6" strokeWidth="0.5" />
+          <circle cx="70" cy="70" r="25" fill="none" stroke="#00BFA6" strokeWidth="0.5" />
+        </svg>
+      </Box>
+      <Box sx={{ position: 'absolute', top: 100, right: 10, opacity: 0.03, pointerEvents: 'none' }}>
+        <svg width="80" height="160" viewBox="0 0 80 160">
+          {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+            <line key={i} x1="0" y1={i * 20} x2="80" y2={i * 20} stroke="#4DD0C8" strokeWidth="0.5" />
+          ))}
+        </svg>
+      </Box>
       <Toolbar sx={{ px: 3, py: 3, gap: 1.5, justifyContent: 'flex-start' }}>
         <Box
           sx={{
@@ -124,6 +139,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </List>
 
       <Box sx={{ p: 2, mt: 'auto' }}>
+        {/* Decorative divider above user card */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, px: 1 }}>
+          <Box sx={{ flex: 1, height: '1px', background: `linear-gradient(90deg, transparent, ${alpha('#FFFFFF', 0.1)}, transparent)` }} />
+          <svg width="16" height="6" viewBox="0 0 16 6" style={{ opacity: 0.3 }}>
+            <circle cx="3" cy="3" r="1.5" fill="#00BFA6" />
+            <circle cx="8" cy="3" r="1.5" fill="#00BFA6" />
+            <circle cx="13" cy="3" r="1.5" fill="#00BFA6" />
+          </svg>
+          <Box sx={{ flex: 1, height: '1px', background: `linear-gradient(90deg, transparent, ${alpha('#FFFFFF', 0.1)}, transparent)` }} />
+        </Box>
         <Box
           sx={{
             p: 2,
