@@ -144,7 +144,7 @@ const ReportsPage: React.FC = () => {
       )}
 
       {clients.length === 0 ? (
-        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4 }}>
+        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 2 }}>
           <ReportIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.12), mb: 1.5 }} />
           <Typography color="text.secondary" sx={{ mb: 2 }}>
             You need to create at least one client before generating reports.
@@ -155,7 +155,7 @@ const ReportsPage: React.FC = () => {
         </Paper>
       ) : (
         <>
-          <Paper sx={{ p: 3, mb: 3, borderRadius: 4 }}>
+          <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
             <Grid container spacing={3} alignItems="center">
               <Grid size={{ xs: 12, md: 6 }}>
                 <FormControl fullWidth>
@@ -259,7 +259,7 @@ const ReportsPage: React.FC = () => {
                             sx={{
                               width: 44,
                               height: 44,
-                              borderRadius: '12px',
+                              borderRadius: '6px',
                               background: stat.gradient,
                               display: 'flex',
                               alignItems: 'center',
@@ -277,7 +277,7 @@ const ReportsPage: React.FC = () => {
                 ))}
               </Grid>
 
-              <Paper sx={{ borderRadius: 4, overflow: 'hidden' }}>
+              <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
                 <TableContainer>
                   <Table>
                     <TableHead>
@@ -345,7 +345,7 @@ const ReportsPage: React.FC = () => {
           )}
 
           {!selectedClient && (
-            <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4 }}>
+            <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 2 }}>
               <ReportIcon sx={{ fontSize: 48, color: alpha(bankingColors.navy, 0.12), mb: 1.5 }} />
               <Typography color="text.secondary">
                 Select a client to view their time report.

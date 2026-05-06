@@ -203,7 +203,7 @@ const ClientsPage: React.FC = () => {
         </Alert>
       )}
 
-      <Paper sx={{ borderRadius: 4, overflow: 'hidden' }}>
+      <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
         <TableContainer>
           <Table>
             <TableHead>
@@ -226,7 +226,7 @@ const ClientsPage: React.FC = () => {
                           sx={{
                             width: 36,
                             height: 36,
-                            borderRadius: '10px',
+                            borderRadius: '6px',
                             background: `linear-gradient(135deg, ${bankingColors.deepBlue} 0%, ${bankingColors.accentBlue} 100%)`,
                             display: 'flex',
                             alignItems: 'center',

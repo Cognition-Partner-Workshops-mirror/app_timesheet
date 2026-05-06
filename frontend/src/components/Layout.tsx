@@ -58,7 +58,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           sx={{
             width: 36,
             height: 36,
-            borderRadius: '10px',
+            borderRadius: '6px',
             background: 'linear-gradient(135deg, #00BFA6 0%, #009688 100%)',
             display: 'flex',
             alignItems: 'center',
@@ -127,7 +127,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <Box
           sx={{
             p: 2,
-            borderRadius: 3,
+            borderRadius: 2,
             background: alpha('#FFFFFF', 0.05),
             border: `1px solid ${alpha('#FFFFFF', 0.08)}`,
           }}

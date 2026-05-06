@@ -123,7 +123,7 @@ const DashboardPage: React.FC = () => {
                     sx={{
                       width: 52,
                       height: 52,
-                      borderRadius: '14px',
+                      borderRadius: '8px',
                       background: stat.gradient,
                       display: 'flex',
                       alignItems: 'center',
@@ -145,7 +145,7 @@ const DashboardPage: React.FC = () => {
       <Grid container spacing={3}>
         {/* @ts-expect-error - MUI Grid item prop type issue */}
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3, borderRadius: 4 }}>
+          <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} gap={3}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <TrendingUpIcon sx={{ color: bankingColors.teal }} />
@@ -170,7 +170,7 @@ const DashboardPage: React.FC = () => {
                   sx={{
                     mb: 1.5,
                     p: 2,
-                    borderRadius: 3,
+                    borderRadius: 2,
                     background: alpha(bankingColors.surface, 0.6),
                     border: `1px solid ${alpha(bankingColors.navy, 0.04)}`,
                     transition: 'all 0.2s ease',
@@ -213,7 +213,7 @@ const DashboardPage: React.FC = () => {
 
         {/* @ts-expect-error - MUI Grid item prop type issue */}
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, borderRadius: 4 }}>
+          <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="h6" mb={2.5} sx={{ fontWeight: 700, color: bankingColors.navy }}>
               Quick Actions
             </Typography>

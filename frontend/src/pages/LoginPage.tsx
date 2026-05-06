@@ -90,7 +90,7 @@ const LoginPage: React.FC = () => {
             background: alpha('#FFFFFF', 0.08),
             backdropFilter: 'blur(24px)',
             border: `1px solid ${alpha('#FFFFFF', 0.12)}`,
-            borderRadius: 4,
+            borderRadius: 3,
             boxShadow: `0 32px 80px ${alpha('#000000', 0.3)}`,
           }}
         >
@@ -99,7 +99,7 @@ const LoginPage: React.FC = () => {
               sx={{
                 width: 56,
                 height: 56,
-                borderRadius: '16px',
+                borderRadius: '10px',
                 background: `linear-gradient(135deg, ${bankingColors.teal} 0%, ${bankingColors.tealDark} 100%)`,
                 display: 'flex',
                 alignItems: 'center',
@@ -134,7 +134,7 @@ const LoginPage: React.FC = () => {
               alignItems: 'center',
               gap: 1,
               p: 1.5,
-              borderRadius: 2,
+              borderRadius: 1.5,
               background: alpha(bankingColors.teal, 0.1),
               border: `1px solid ${alpha(bankingColors.teal, 0.2)}`,
               mb: 3,

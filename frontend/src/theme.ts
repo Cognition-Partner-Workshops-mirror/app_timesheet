@@ -74,7 +74,7 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 16,
+    borderRadius: 8,
   },
   components: {
     MuiCssBaseline: {
@@ -132,7 +132,7 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 6,
           textTransform: 'none',
           fontWeight: 600,
           padding: '10px 24px',
@@ -195,7 +195,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           fontWeight: 600,
-          borderRadius: 8,
+          borderRadius: 6,
         },
         outlined: {
           borderColor: alpha(bankingColors.deepBlue, 0.2),
@@ -205,7 +205,7 @@ const theme = createTheme({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          borderRadius: 20,
+          borderRadius: 12,
           background: alpha(bankingColors.surfaceLight, 0.95),
           backdropFilter: 'blur(20px)',
           boxShadow: `0 24px 80px ${alpha(bankingColors.navy, 0.15)}`,
@@ -216,7 +216,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 12,
+            borderRadius: 8,
             transition: 'all 0.2s ease',
             '&:hover .MuiOutlinedInput-notchedOutline': {
               borderColor: bankingColors.teal,
@@ -232,7 +232,7 @@ const theme = createTheme({
     MuiListItemButton: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 8,
           margin: '4px 12px',
           transition: 'all 0.2s ease',
           '&.Mui-selected': {
@@ -278,7 +278,7 @@ const theme = createTheme({
     MuiAlert: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 8,
           backdropFilter: 'blur(10px)',
         },
       },
