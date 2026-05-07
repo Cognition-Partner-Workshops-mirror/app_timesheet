@@ -88,11 +88,13 @@ router.post('/', (req, res, next) => {
     const db = getDatabase();
 
     // Auto-detect weekend if isHolidayOrWeekend not explicitly provided
-    let holidayOrWeekend = isHolidayOrWeekend || false;
-    if (!isHolidayOrWeekend) {
+    let holidayOrWeekend;
+    if (isHolidayOrWeekend === undefined) {
       const entryDate = new Date(date);
-      const dayOfWeek = entryDate.getDay();
+      const dayOfWeek = entryDate.getUTCDay();
       holidayOrWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+    } else {
+      holidayOrWeekend = isHolidayOrWeekend;
     }
 
     // Verify client exists and belongs to user

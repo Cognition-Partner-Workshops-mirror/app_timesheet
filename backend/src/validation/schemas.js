@@ -12,7 +12,7 @@ const workEntrySchema = Joi.object({
   hours: Joi.number().positive().max(24).precision(2).required(),
   description: Joi.string().trim().max(1000).optional().allow(''),
   date: Joi.date().iso().required(),
-  isHolidayOrWeekend: Joi.boolean().default(false)
+  isHolidayOrWeekend: Joi.boolean().optional()
 });
 
 const updateWorkEntrySchema = Joi.object({
