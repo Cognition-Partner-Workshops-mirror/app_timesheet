@@ -222,6 +222,7 @@ const ReportsPage: React.FC = () => {
                       <TableRow>
                         <TableCell>Date</TableCell>
                         <TableCell>Hours</TableCell>
+                        <TableCell>Holiday/Weekend</TableCell>
                         <TableCell>Description</TableCell>
                         <TableCell>Created</TableCell>
                       </TableRow>
@@ -243,6 +244,14 @@ const ReportsPage: React.FC = () => {
                               />
                             </TableCell>
                             <TableCell>
+                              <Chip
+                                label={entry.is_holiday_or_weekend ? 'Yes' : 'No'}
+                                color={entry.is_holiday_or_weekend ? 'warning' : 'default'}
+                                size="small"
+                                variant="outlined"
+                              />
+                            </TableCell>
+                            <TableCell>
                               {entry.description ? (
                                 <Typography variant="body2" color="text.secondary">
                                   {entry.description}
@@ -260,7 +269,7 @@ const ReportsPage: React.FC = () => {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={4} align="center">
+                          <TableCell colSpan={5} align="center">
                             <Typography color="text.secondary" sx={{ py: 3 }}>
                               No work entries found for this client.
                             </Typography>

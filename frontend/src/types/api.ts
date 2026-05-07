@@ -19,6 +19,7 @@ export interface WorkEntry {
   hours: number;
   description: string | null;
   date: string;
+  is_holiday_or_weekend: boolean;
   created_at: string;
   updated_at: string;
   client_name?: string;
@@ -54,6 +55,7 @@ export interface CreateWorkEntryRequest {
   hours: number;
   description?: string;
   date: string;
+  isHolidayOrWeekend?: boolean;
 }
 
 export interface UpdateWorkEntryRequest {
@@ -61,6 +63,7 @@ export interface UpdateWorkEntryRequest {
   hours?: number;
   description?: string;
   date?: string;
+  isHolidayOrWeekend?: boolean;
 }
 
 export interface LoginRequest {

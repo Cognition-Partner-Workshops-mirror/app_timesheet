@@ -7,6 +7,7 @@ import {
   Box,
   Button,
   Paper,
+  Chip,
 } from '@mui/material';
 import {
   Business as BusinessIcon,
@@ -125,9 +126,14 @@ const DashboardPage: React.FC = () => {
               </Button>
             </Box>
             {recentEntries.length > 0 ? (
-              recentEntries.map((entry: { id: number; client_name: string; hours: number; date: string; description?: string }) => (
+              recentEntries.map((entry: { id: number; client_name: string; hours: number; date: string; description?: string; is_holiday_or_weekend?: boolean }) => (
                 <Box key={entry.id} sx={{ mb: 2, pb: 2, borderBottom: '1px solid #eee' }}>
-                  <Typography variant="subtitle1">{entry.client_name}</Typography>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="subtitle1">{entry.client_name}</Typography>
+                    {entry.is_holiday_or_weekend && (
+                      <Chip label="Holiday/Weekend" color="warning" size="small" variant="outlined" />
+                    )}
+                  </Box>
                   <Typography variant="body2" color="text.secondary">
                     {entry.hours} hours - {new Date(entry.date).toLocaleDateString()}
                   </Typography>
