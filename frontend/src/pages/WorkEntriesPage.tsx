@@ -23,6 +23,8 @@ import {
   Select,
   MenuItem,
   Chip,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -44,6 +46,7 @@ const WorkEntriesPage: React.FC = () => {
     hours: '',
     description: '',
     date: new Date(),
+    isHolidayOrWeekend: false,
   });
   const [error, setError] = useState('');
 
@@ -60,7 +63,7 @@ const WorkEntriesPage: React.FC = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: (entryData: { clientId: number; hours: number; description?: string; date: string }) =>
+    mutationFn: (entryData: { clientId: number; hours: number; description?: string; date: string; isHolidayOrWeekend?: boolean }) =>
       apiClient.createWorkEntry(entryData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workEntries'] });
@@ -73,7 +76,7 @@ const WorkEntriesPage: React.FC = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { clientId?: number; hours?: number; description?: string; date?: string } }) =>
+    mutationFn: ({ id, data }: { id: number; data: { clientId?: number; hours?: number; description?: string; date?: string; isHolidayOrWeekend?: boolean } }) =>
       apiClient.updateWorkEntry(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workEntries'] });
@@ -107,6 +110,7 @@ const WorkEntriesPage: React.FC = () => {
         hours: entry.hours.toString(),
         description: entry.description || '',
         date: new Date(entry.date),
+        isHolidayOrWeekend: !!entry.is_holiday_or_weekend,
       });
     } else {
       setEditingEntry(null);
@@ -115,6 +119,7 @@ const WorkEntriesPage: React.FC = () => {
         hours: '',
         description: '',
         date: new Date(),
+        isHolidayOrWeekend: false,
       });
     }
     setError('');
@@ -129,6 +134,7 @@ const WorkEntriesPage: React.FC = () => {
       hours: '',
       description: '',
       date: new Date(),
+      isHolidayOrWeekend: false,
     });
     setError('');
   };
@@ -158,6 +164,7 @@ const WorkEntriesPage: React.FC = () => {
       hours,
       description: formData.description || undefined,
       date: formData.date.toISOString().split('T')[0],
+      isHolidayOrWeekend: formData.isHolidayOrWeekend,
     };
 
     if (editingEntry) {
@@ -218,6 +225,7 @@ const WorkEntriesPage: React.FC = () => {
                     <TableCell>Client</TableCell>
                     <TableCell>Date</TableCell>
                     <TableCell>Hours</TableCell>
+                    <TableCell>Holiday/Weekend</TableCell>
                     <TableCell>Description</TableCell>
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
@@ -241,6 +249,14 @@ const WorkEntriesPage: React.FC = () => {
                             label={`${entry.hours} hours`} 
                             color="primary" 
                             variant="outlined" 
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={entry.is_holiday_or_weekend ? 'Yes' : 'No'}
+                            color={entry.is_holiday_or_weekend ? 'warning' : 'default'}
+                            size="small"
+                            variant="outlined"
                           />
                         </TableCell>
                         <TableCell>
@@ -272,7 +288,7 @@ const WorkEntriesPage: React.FC = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={6} align="center">
                         <Typography color="text.secondary" sx={{ py: 3 }}>
                           No work entries found. Add your first work entry to get started.
                         </Typography>
@@ -321,7 +337,13 @@ const WorkEntriesPage: React.FC = () => {
               <DatePicker
                 label="Date"
                 value={formData.date}
-                onChange={(date) => date && setFormData({ ...formData, date })}
+                onChange={(date) => {
+                  if (date) {
+                    const dayOfWeek = date.getDay();
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                    setFormData({ ...formData, date, isHolidayOrWeekend: isWeekend });
+                  }
+                }}
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -341,6 +363,18 @@ const WorkEntriesPage: React.FC = () => {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 disabled={createMutation.isPending || updateMutation.isPending}
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.isHolidayOrWeekend}
+                    onChange={(e) => setFormData({ ...formData, isHolidayOrWeekend: e.target.checked })}
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                  />
+                }
+                label="Holiday/Weekend"
+                sx={{ mt: 1 }}
               />
             </DialogContent>
             <DialogActions>

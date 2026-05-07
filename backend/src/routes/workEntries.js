@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
   
   let query = `
     SELECT we.id, we.client_id, we.hours, we.description, we.date, 
-           we.created_at, we.updated_at, c.name as client_name
+           we.is_holiday_or_weekend, we.created_at, we.updated_at, c.name as client_name
     FROM work_entries we
     JOIN clients c ON we.client_id = c.id
     WHERE we.user_email = ?
@@ -56,7 +56,7 @@ router.get('/:id', (req, res) => {
   
   db.get(
     `SELECT we.id, we.client_id, we.hours, we.description, we.date, 
-            we.created_at, we.updated_at, c.name as client_name
+            we.is_holiday_or_weekend, we.created_at, we.updated_at, c.name as client_name
      FROM work_entries we
      JOIN clients c ON we.client_id = c.id
      WHERE we.id = ? AND we.user_email = ?`,
@@ -84,8 +84,16 @@ router.post('/', (req, res, next) => {
       return next(error);
     }
 
-    const { clientId, hours, description, date } = value;
+    const { clientId, hours, description, date, isHolidayOrWeekend } = value;
     const db = getDatabase();
+
+    // Auto-detect weekend if isHolidayOrWeekend not explicitly provided
+    let holidayOrWeekend = isHolidayOrWeekend || false;
+    if (!isHolidayOrWeekend) {
+      const entryDate = new Date(date);
+      const dayOfWeek = entryDate.getDay();
+      holidayOrWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+    }
 
     // Verify client exists and belongs to user
     db.get(
@@ -103,8 +111,8 @@ router.post('/', (req, res, next) => {
 
         // Create work entry
         db.run(
-          'INSERT INTO work_entries (client_id, user_email, hours, description, date) VALUES (?, ?, ?, ?, ?)',
-          [clientId, req.userEmail, hours, description || null, date],
+          'INSERT INTO work_entries (client_id, user_email, hours, description, date, is_holiday_or_weekend) VALUES (?, ?, ?, ?, ?, ?)',
+          [clientId, req.userEmail, hours, description || null, date, holidayOrWeekend ? 1 : 0],
           function(err) {
             if (err) {
               console.error('Database error:', err);
@@ -114,7 +122,7 @@ router.post('/', (req, res, next) => {
             // Return the created work entry with client name
             db.get(
               `SELECT we.id, we.client_id, we.hours, we.description, we.date, 
-                      we.created_at, we.updated_at, c.name as client_name
+                      we.is_holiday_or_weekend, we.created_at, we.updated_at, c.name as client_name
                FROM work_entries we
                JOIN clients c ON we.client_id = c.id
                WHERE we.id = ?`,
@@ -217,6 +225,11 @@ router.put('/:id', (req, res, next) => {
             values.push(value.date);
           }
 
+          if (value.isHolidayOrWeekend !== undefined) {
+            updates.push('is_holiday_or_weekend = ?');
+            values.push(value.isHolidayOrWeekend ? 1 : 0);
+          }
+
           updates.push('updated_at = CURRENT_TIMESTAMP');
           values.push(workEntryId, req.userEmail);
 
@@ -231,7 +244,7 @@ router.put('/:id', (req, res, next) => {
             // Return updated work entry with client name
             db.get(
               `SELECT we.id, we.client_id, we.hours, we.description, we.date, 
-                      we.created_at, we.updated_at, c.name as client_name
+                      we.is_holiday_or_weekend, we.created_at, we.updated_at, c.name as client_name
                FROM work_entries we
                JOIN clients c ON we.client_id = c.id
                WHERE we.id = ?`,
