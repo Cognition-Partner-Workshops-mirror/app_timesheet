@@ -1,0 +1,156 @@
+# Classification Rules Configuration
+# Rules are evaluated in priority order (lower priority number = higher priority)
+# Rule types: keyword, domain, field, composite
+
+rules:
+  # ===== HIGH CONFIDENCE KEYWORD RULES (0.95) =====
+  - rule_id: "R001"
+    name: "Metal Products - Strong Match"
+    priority: 1
+    conditions:
+      type: "keyword"
+      keywords: ["steel", "aluminum", "metal fabrication", "CNC machining", "alloy", "forging", "casting"]
+      min_match: 2
+    category: "Manufacturing - Metals"
+    confidence: 0.95
+
+  - rule_id: "R002"
+    name: "Electronics Manufacturing - Strong Match"
+    priority: 1
+    conditions:
+      type: "keyword"
+      keywords: ["PCB", "circuit board", "semiconductor", "electronic assembly", "soldering", "microchip"]
+      min_match: 2
+    category: "Manufacturing - Electronics"
+    confidence: 0.95
+
+  - rule_id: "R003"
+    name: "Aerospace & Defense - Strong Match"
+    priority: 1
+    conditions:
+      type: "keyword"
+      keywords: ["aerospace", "aircraft", "avionics", "defense", "military", "missile", "radar", "satellite"]
+      min_match: 2
+    category: "Aerospace & Defense"
+    confidence: 0.95
+
+  - rule_id: "R004"
+    name: "Healthcare Equipment - Strong Match"
+    priority: 1
+    conditions:
+      type: "keyword"
+      keywords: ["medical device", "surgical", "diagnostic", "biomedical", "implant", "clinical equipment"]
+      min_match: 2
+    category: "Healthcare Equipment"
+    confidence: 0.95
+
+  - rule_id: "R005"
+    name: "Construction Materials - Strong Match"
+    priority: 1
+    conditions:
+      type: "keyword"
+      keywords: ["concrete", "rebar", "construction materials", "cement", "lumber", "structural steel", "foundation"]
+      min_match: 2
+    category: "Construction Materials"
+    confidence: 0.95
+
+  - rule_id: "R006"
+    name: "IT Services - Strong Match"
+    priority: 1
+    conditions:
+      type: "keyword"
+      keywords: ["cloud infrastructure", "software development", "SaaS", "cybersecurity", "IT infrastructure", "data center"]
+      min_match: 2
+    category: "IT Services"
+    confidence: 0.95
+
+  # ===== DOMAIN-BASED RULES (0.85) =====
+  - rule_id: "R007"
+    name: "Aerospace Domain"
+    priority: 2
+    conditions:
+      type: "domain"
+      domains: ["aerospace.com", "boeing.com", "airbus.com", "lockheed.com", "raytheon.com", "northrop.com"]
+    category: "Aerospace & Defense"
+    confidence: 0.85
+
+  - rule_id: "R008"
+    name: "Healthcare Domain"
+    priority: 2
+    conditions:
+      type: "domain"
+      domains: ["medical.com", "healthcare.org", "hospital.org", "medtronic.com", "philips-healthcare.com"]
+    category: "Healthcare Equipment"
+    confidence: 0.85
+
+  # ===== FIELD-BASED RULES (0.90) =====
+  - rule_id: "R009"
+    name: "IT Services Form Field"
+    priority: 2
+    conditions:
+      type: "field"
+      field_name: "product_category"
+      field_values: ["IT Services", "Software", "Cloud", "Technology"]
+    category: "IT Services"
+    confidence: 0.90
+
+  - rule_id: "R010"
+    name: "Manufacturing Form Field"
+    priority: 2
+    conditions:
+      type: "field"
+      field_name: "product_category"
+      field_values: ["Manufacturing", "Metals", "Fabrication"]
+    category: "Manufacturing - Metals"
+    confidence: 0.90
+
+  # ===== MEDIUM CONFIDENCE KEYWORD RULES (0.80) =====
+  - rule_id: "R011"
+    name: "Metal Products - Weak Match"
+    priority: 3
+    conditions:
+      type: "keyword"
+      keywords: ["steel", "aluminum", "metal", "iron", "copper", "titanium", "brass", "welding", "stamping"]
+      min_match: 1
+    category: "Manufacturing - Metals"
+    confidence: 0.80
+
+  - rule_id: "R012"
+    name: "Electronics - Weak Match"
+    priority: 3
+    conditions:
+      type: "keyword"
+      keywords: ["electronics", "capacitor", "resistor", "LED", "diode", "transistor", "IC"]
+      min_match: 1
+    category: "Manufacturing - Electronics"
+    confidence: 0.80
+
+  - rule_id: "R013"
+    name: "Professional Services - Match"
+    priority: 3
+    conditions:
+      type: "keyword"
+      keywords: ["consulting", "advisory", "professional services", "audit", "compliance", "strategy", "project management", "training"]
+      min_match: 2
+    category: "Professional Services"
+    confidence: 0.85
+
+  - rule_id: "R014"
+    name: "Construction - Weak Match"
+    priority: 3
+    conditions:
+      type: "keyword"
+      keywords: ["construction", "building", "roofing", "plumbing", "insulation", "drywall", "aggregate"]
+      min_match: 1
+    category: "Construction Materials"
+    confidence: 0.80
+
+  - rule_id: "R015"
+    name: "IT Services - Weak Match"
+    priority: 3
+    conditions:
+      type: "keyword"
+      keywords: ["software", "cloud", "network", "server", "database", "API", "DevOps", "hosting"]
+      min_match: 1
+    category: "IT Services"
+    confidence: 0.80

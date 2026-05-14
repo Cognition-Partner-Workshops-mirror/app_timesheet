@@ -1,0 +1,19 @@
+# Core dependencies
+pdfplumber>=0.10.0
+pytesseract>=0.3.10
+pdf2image>=1.16.0
+Pillow>=10.0.0
+python-magic>=0.4.27
+pyyaml>=6.0
+openai>=1.0.0
+
+# Azure Document Intelligence (optional, for production OCR)
+azure-ai-formrecognizer>=3.3.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+
+# Utilities
+python-dateutil>=2.8.0

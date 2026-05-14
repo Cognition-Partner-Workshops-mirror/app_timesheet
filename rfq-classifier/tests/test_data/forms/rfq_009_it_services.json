@@ -1,0 +1,20 @@
+{
+  "rfq_id": "FORM-2024-009",
+  "subject": "Software Development Services for ERP Modernization",
+  "company_name": "Acme Corp",
+  "contact_email": "it.procurement@acme-corp.com",
+  "product_category": "IT Services",
+  "description": "We require software development services to modernize our legacy ERP system. The project involves migrating from an on-premise Oracle database to a cloud-native microservices architecture. Key deliverables include: API gateway implementation, database migration to PostgreSQL on AWS, frontend redesign using React, CI/CD pipeline setup with DevOps best practices, and comprehensive testing. The project will also include cloud hosting setup and network configuration.",
+  "requirements": "- 3+ years experience with cloud migration projects\n- AWS or Azure certified architects\n- Experience with ERP systems (SAP, Oracle)\n- Agile/Scrum methodology\n- SOC 2 compliance capability",
+  "quantity": "1 project",
+  "product_keywords": [
+    "software",
+    "cloud",
+    "ERP",
+    "migration",
+    "DevOps",
+    "API"
+  ],
+  "budget_range": "$200K - $500K",
+  "timeline": "9 months"
+}

@@ -1,0 +1,19 @@
+{
+  "rfq_id": "FORM-2024-010",
+  "subject": "Custom Metal Stamping and Sheet Metal Fabrication",
+  "company_name": "PrecisionStamp Industries",
+  "contact_email": "quotes@precisionstamp.com",
+  "product_category": "Manufacturing",
+  "description": "Request for quotation for custom metal stamping services. We need progressive die stamping of steel and aluminum automotive brackets. Parts require precision metal fabrication including blanking, forming, and piercing. Material specs: ASTM A1008 cold-rolled steel and 5052-H32 aluminum alloy. All parts must undergo CNC machining for final dimensions and tolerances.",
+  "specifications": "Part A: Steel bracket, 0.060\" thick, 15 operations\nPart B: Aluminum heat sink, 0.090\" thick, 12 operations\nPart C: Steel mounting plate, 0.125\" thick, 8 operations\nTolerances: +/- 0.003\"\nSurface finish: As-stamped with deburring",
+  "quantity": "50,000 pieces per part number (annual volume)",
+  "product_keywords": [
+    "stamping",
+    "steel",
+    "aluminum",
+    "metal fabrication",
+    "CNC"
+  ],
+  "vendor_name": "PrecisionStamp Industries",
+  "material_number": "MAT-STAMP-2024-A01"
+}

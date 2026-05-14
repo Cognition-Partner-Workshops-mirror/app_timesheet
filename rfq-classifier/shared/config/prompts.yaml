@@ -1,0 +1,126 @@
+# LLM Prompt Templates for RFQ Classification
+
+# Primary classification prompt - used when rules are inconclusive
+classification_prompt: |
+  You are an RFQ (Request for Quotation) classification expert. Given the following RFQ text and metadata, classify it into one or more categories from the predefined list below.
+
+  **Predefined Categories:**
+  {category_list}
+
+  **RFQ Text:**
+  {rfq_text}
+
+  **RFQ Metadata:**
+  {metadata}
+
+  **Instructions:**
+  - Return the most appropriate category (or categories) from the list above
+  - Provide a confidence score (0.0 to 1.0) for each category
+  - Explain your reasoning in 1-2 sentences
+  - If uncertain, return the closest category with lower confidence
+  - If the RFQ clearly fits multiple categories, return all applicable categories
+  - Determine whether this RFQ requires quote extraction (contains pricing, quantities, vendor info)
+  - Determine whether this RFQ requires human review (ambiguous, complex, or low confidence)
+
+  **Output Format (JSON):**
+  {{
+    "categories": [
+      {{
+        "category": "string",
+        "confidence": 0.0-1.0
+      }}
+    ],
+    "primary_category": "string",
+    "primary_confidence": 0.0-1.0,
+    "reasoning": "string",
+    "requires_extraction": true/false,
+    "requires_human_review": true/false,
+    "review_reason": "string or null"
+  }}
+
+# Validation prompt - used when rules provide a candidate but need LLM confirmation
+validation_prompt: |
+  You are an RFQ classification expert. A rule-based system has tentatively classified the following RFQ. Please validate or correct this classification.
+
+  **Proposed Classification:** {proposed_category} (confidence: {proposed_confidence})
+
+  **Predefined Categories:**
+  {category_list}
+
+  **RFQ Text:**
+  {rfq_text}
+
+  **Instructions:**
+  - If the proposed classification is correct, confirm it with your own confidence score
+  - If incorrect, provide the correct category with reasoning
+  - Consider whether multiple categories might apply
+
+  **Output Format (JSON):**
+  {{
+    "categories": [
+      {{
+        "category": "string",
+        "confidence": 0.0-1.0
+      }}
+    ],
+    "primary_category": "string",
+    "primary_confidence": 0.0-1.0,
+    "proposed_category_correct": true/false,
+    "reasoning": "string",
+    "requires_extraction": true/false,
+    "requires_human_review": true/false,
+    "review_reason": "string or null"
+  }}
+
+# Extraction prompt - used to extract structured quote data from RFQ text
+extraction_prompt: |
+  You are a data extraction expert. Extract the following fields from the RFQ text below. Return null for any field not found.
+
+  **RFQ Text:**
+  {rfq_text}
+
+  **Fields to Extract:**
+  - Vendor Number
+  - Vendor Name
+  - Supplier email/from address
+  - Material Number
+  - Item Description
+  - Manufacturer
+  - Manufacturer Part Number (MPN)
+  - Quantity
+  - Unit of Measure (UoM)
+  - Unit Price
+  - Currency
+  - Lead Time / Planned Delivery Time
+  - Plant information
+  - Supplier comments
+
+  **Instructions:**
+  - Extract exact values as they appear in the text
+  - For each extracted field, include the source (email body, attachment, table) and evidence text
+  - If a field appears multiple times (e.g., multiple line items), return all occurrences as a list
+  - Return null for fields that are not present in the text
+
+  **Output Format (JSON):**
+  {{
+    "extraction_results": [
+      {{
+        "vendor_number": "string or null",
+        "vendor_name": "string or null",
+        "supplier_email": "string or null",
+        "material_number": "string or null",
+        "item_description": "string or null",
+        "manufacturer": "string or null",
+        "manufacturer_part_number": "string or null",
+        "quantity": "string or null",
+        "unit_of_measure": "string or null",
+        "unit_price": "string or null",
+        "currency": "string or null",
+        "lead_time": "string or null",
+        "plant": "string or null",
+        "supplier_comments": "string or null",
+        "source": "email_body|attachment|table|both",
+        "evidence": "string showing where value was found"
+      }}
+    ]
+  }}

@@ -1,0 +1,52 @@
+{
+  "rfq_001_metals.pdf": {
+    "expected_category": "Manufacturing - Metals",
+    "input_type": "pdf",
+    "min_confidence": 0.75
+  },
+  "rfq_002_it_services.pdf": {
+    "expected_category": "IT Services",
+    "input_type": "pdf",
+    "min_confidence": 0.75
+  },
+  "rfq_003_construction.pdf": {
+    "expected_category": "Construction Materials",
+    "input_type": "pdf",
+    "min_confidence": 0.75
+  },
+  "rfq_004_aerospace.pdf": {
+    "expected_category": "Aerospace & Defense",
+    "input_type": "pdf",
+    "min_confidence": 0.75
+  },
+  "rfq_005_healthcare.pdf": {
+    "expected_category": "Healthcare Equipment",
+    "input_type": "pdf",
+    "min_confidence": 0.75
+  },
+  "rfq_006_electronics.eml": {
+    "expected_category": "Manufacturing - Electronics",
+    "input_type": "email",
+    "min_confidence": 0.75
+  },
+  "rfq_007_consulting.eml": {
+    "expected_category": "Professional Services",
+    "input_type": "email",
+    "min_confidence": 0.75
+  },
+  "rfq_008_defense_radar.eml": {
+    "expected_category": "Aerospace & Defense",
+    "input_type": "email",
+    "min_confidence": 0.75
+  },
+  "rfq_009_it_services.json": {
+    "expected_category": "IT Services",
+    "input_type": "form",
+    "min_confidence": 0.75
+  },
+  "rfq_010_metal_stamping.json": {
+    "expected_category": "Manufacturing - Metals",
+    "input_type": "form",
+    "min_confidence": 0.75
+  }
+}

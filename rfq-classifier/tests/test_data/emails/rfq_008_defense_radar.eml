@@ -1,0 +1,54 @@
+Content-Type: multipart/mixed; boundary="===============6200227621767313002=="
+MIME-Version: 1.0
+From: David Kim <d.kim@raytheon-defense.com>
+To: defense.rfq@ourcompany.com
+Subject: RFQ: Radar System Components and Military Electronics
+Date: Fri, 29 Mar 2024 09:00:00 -0500
+
+--===============6200227621767313002==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+CONTROLLED UNCLASSIFIED INFORMATION
+
+Subject: Request for Quotation - Defense Radar System Components
+
+Dear Supplier,
+
+We are soliciting quotes for the following defense radar system components:
+
+1. Phased Array Antenna Elements
+   - X-band frequency range (8-12 GHz)
+   - Material: Gallium Arsenide (GaAs)
+   - Quantity: 1,024 elements
+   - MIL-STD-810 environmental rating
+
+2. Radar Signal Processing Modules
+   - FPGA-based signal processor boards
+   - Real-time target detection algorithms
+   - Quantity: 16 modules
+   - ITAR controlled technology
+
+3. Satellite Communication Interface Units
+   - Ka-band uplink/downlink capability
+   - Military-grade encryption support
+   - Quantity: 8 units
+
+All items are defense articles subject to ITAR/EAR export controls.
+Suppliers must have active facility security clearance.
+AS9100 quality management system certification required.
+
+Award timeline: Q3 2024
+Delivery: Q1 2025 to our Tucson, AZ facility
+
+Regards,
+David Kim
+Procurement Manager - Defense Systems Division
+
+Vendor Number: VN-44892
+Material Number: MAT-RADAR-2024-001
+Unit Price: To be quoted
+Currency: USD
+
+--===============6200227621767313002==--
