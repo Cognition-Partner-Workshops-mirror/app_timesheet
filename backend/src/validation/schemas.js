@@ -1,41 +1,64 @@
 const Joi = require('joi');
 
-const clientSchema = Joi.object({
-  name: Joi.string().trim().min(1).max(255).required(),
-  description: Joi.string().trim().max(1000).optional().allow(''),
-  department: Joi.string().trim().max(255).optional().allow(''),
-  email: Joi.string().trim().email().max(255).optional().allow('')
+// Validation schemas for all ecommerce API request bodies
+
+// User registration schema
+const registerSchema = Joi.object({
+  name: Joi.string().min(2).max(100).required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).max(100).required()
 });
 
-const workEntrySchema = Joi.object({
-  clientId: Joi.number().integer().positive().required(),
-  hours: Joi.number().positive().max(24).precision(2).required(),
-  description: Joi.string().trim().max(1000).optional().allow(''),
-  date: Joi.date().iso().required()
+// User login schema
+const loginSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().required()
 });
 
-const updateWorkEntrySchema = Joi.object({
-  clientId: Joi.number().integer().positive().optional(),
-  hours: Joi.number().positive().max(24).precision(2).optional(),
-  description: Joi.string().trim().max(1000).optional().allow(''),
-  date: Joi.date().iso().optional()
-}).min(1); // At least one field must be provided
+// Product creation/update schema (admin only)
+const productSchema = Joi.object({
+  name: Joi.string().min(2).max(200).required(),
+  description: Joi.string().max(2000).allow('', null),
+  price: Joi.number().positive().precision(2).required(),
+  image_url: Joi.string().uri().allow('', null),
+  category_id: Joi.number().integer().positive().allow(null),
+  stock_quantity: Joi.number().integer().min(0).default(0),
+  featured: Joi.boolean().default(false)
+});
 
-const updateClientSchema = Joi.object({
-  name: Joi.string().trim().min(1).max(255).optional(),
-  description: Joi.string().trim().max(1000).optional().allow(''),
-  department: Joi.string().trim().max(255).optional().allow(''),
-  email: Joi.string().trim().email().max(255).optional().allow('')
-}).min(1); // At least one field must be provided
+// Cart item schema
+const cartItemSchema = Joi.object({
+  product_id: Joi.number().integer().positive().required(),
+  quantity: Joi.number().integer().min(1).max(99).required()
+});
 
-const emailSchema = Joi.object({
-  email: Joi.string().email().required()
+// Cart item update schema (quantity only)
+const cartUpdateSchema = Joi.object({
+  quantity: Joi.number().integer().min(1).max(99).required()
+});
+
+// Shipping/checkout schema
+const checkoutSchema = Joi.object({
+  shipping_name: Joi.string().min(2).max(100).required(),
+  shipping_address: Joi.string().min(5).max(200).required(),
+  shipping_city: Joi.string().min(2).max(100).required(),
+  shipping_state: Joi.string().min(2).max(100).required(),
+  shipping_zip: Joi.string().min(3).max(20).required(),
+  shipping_phone: Joi.string().max(20).allow('', null),
+  payment_method: Joi.string().valid('credit_card', 'debit_card', 'paypal').default('credit_card')
+});
+
+// Order status update schema (admin only)
+const orderStatusSchema = Joi.object({
+  status: Joi.string().valid('pending', 'processing', 'shipped', 'delivered', 'cancelled').required()
 });
 
 module.exports = {
-  clientSchema,
-  workEntrySchema,
-  updateWorkEntrySchema,
-  updateClientSchema,
-  emailSchema
+  registerSchema,
+  loginSchema,
+  productSchema,
+  cartItemSchema,
+  cartUpdateSchema,
+  checkoutSchema,
+  orderStatusSchema
 };

@@ -1,79 +1,110 @@
+// TypeScript interfaces for the ecommerce API
+
+// User model returned from auth endpoints
 export interface User {
-  email: string;
-  createdAt: string;
-}
-
-export interface Client {
   id: number;
   name: string;
-  description: string | null;
-  department: string | null;
-  email: string | null;
+  email: string;
+  role: 'customer' | 'admin';
+}
+
+// Product category with optional product count
+export interface Category {
+  id: number;
+  name: string;
+  description: string;
+  image_url: string;
+  product_count?: number;
+}
+
+// Product listing from the catalog
+export interface Product {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  category_id: number;
+  category_name: string;
+  stock_quantity: number;
+  featured: number;
   created_at: string;
   updated_at: string;
 }
 
-export interface WorkEntry {
+// Single item in the shopping cart
+export interface CartItem {
   id: number;
-  client_id: number;
-  hours: number;
-  description: string | null;
-  date: string;
+  product_id: number;
+  quantity: number;
+  name: string;
+  price: number;
+  image_url: string;
+  stock_quantity: number;
+}
+
+// Cart response including items and calculated totals
+export interface CartResponse {
+  items: CartItem[];
+  summary: {
+    itemCount: number;
+    total: number;
+  };
+}
+
+// Line item within a placed order
+export interface OrderItem {
+  id: number;
+  order_id: number;
+  product_id: number;
+  product_name: string;
+  product_price: number;
+  quantity: number;
+}
+
+// Order record with shipping, payment, and status details
+export interface Order {
+  id: number;
+  user_id: number;
+  total_amount: number;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  shipping_name: string;
+  shipping_address: string;
+  shipping_city: string;
+  shipping_state: string;
+  shipping_zip: string;
+  shipping_phone: string;
+  payment_method: string;
   created_at: string;
   updated_at: string;
-  client_name?: string;
+  customer_name?: string;
+  customer_email?: string;
+  items?: OrderItem[];
 }
 
-export interface WorkEntryWithClient extends WorkEntry {
-  client_name: string;
+// Pagination metadata returned from list endpoints
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
-export interface ClientReport {
-  client: Client;
-  workEntries: WorkEntry[];
-  totalHours: number;
-  entryCount: number;
-}
-
-export interface CreateClientRequest {
-  name: string;
-  description?: string;
-  department?: string;
-  email?: string;
-}
-
-export interface UpdateClientRequest {
-  name?: string;
-  description?: string;
-  department?: string;
-  email?: string;
-}
-
-export interface CreateWorkEntryRequest {
-  clientId: number;
-  hours: number;
-  description?: string;
-  date: string;
-}
-
-export interface UpdateWorkEntryRequest {
-  clientId?: number;
-  hours?: number;
-  description?: string;
-  date?: string;
-}
-
-export interface LoginRequest {
-  email: string;
-}
-
-export interface LoginResponse {
+// Auth response containing token and user info
+export interface AuthResponse {
   message: string;
+  token: string;
   user: User;
 }
 
-export interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-  message?: string;
+// Paginated product list response
+export interface ProductsResponse {
+  products: Product[];
+  pagination: Pagination;
+}
+
+// Paginated order list response
+export interface OrdersResponse {
+  orders: Order[];
+  pagination: Pagination;
 }

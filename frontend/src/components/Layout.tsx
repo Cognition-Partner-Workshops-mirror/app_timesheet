@@ -1,159 +1,147 @@
-import React, { type ReactNode } from 'react';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, Outlet } from 'react-router-dom';
 import {
-  AppBar,
-  Box,
-  CssBaseline,
-  Drawer,
-  IconButton,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-  Typography,
-  Button,
-  Avatar,
+  AppBar, Toolbar, Typography, Button, IconButton, Badge, Box, Container,
+  Menu, MenuItem, Divider, useTheme, useMediaQuery
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
-  Dashboard as DashboardIcon,
-  Business as BusinessIcon,
-  Assignment as AssignmentIcon,
-  Assessment as AssessmentIcon,
-  Logout as LogoutIcon,
+  ShoppingCart, Person, Store, Menu as MenuIcon, Logout, ListAlt
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import apiClient from '../api/client';
+import type { CartResponse } from '../types/api';
 
-const drawerWidth = 240;
-
-interface LayoutProps {
-  children: ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+// Main application layout with responsive navbar and footer
+export default function Layout() {
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user, logout } = useAuth();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [cartCount, setCartCount] = useState(0);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  // Fetch cart item count for the badge
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+    apiClient.get<CartResponse>('/cart')
+      .then(res => setCartCount(res.data.summary.itemCount))
+      .catch(() => setCartCount(0));
+  }, [isAuthenticated]);
+
+  const handleLogout = () => {
+    logout();
+    setAnchorEl(null);
+    navigate('/');
   };
 
-  const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Clients', icon: <BusinessIcon />, path: '/clients' },
-    { text: 'Work Entries', icon: <AssignmentIcon />, path: '/work-entries' },
-    { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
-  ];
-
-  const drawer = (
-    <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          Time Tracker
-        </Typography>
-      </Toolbar>
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => navigate(item.path)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </div>
-  );
-
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}
-      >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {menuItems.find(item => item.path === location.pathname)?.text || 'Time Tracker'}
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="body2">{user?.email}</Typography>
-            <Avatar sx={{ width: 32, height: 32 }}>
-              {user?.email?.charAt(0).toUpperCase()}
-            </Avatar>
-            <Button
-              color="inherit"
-              startIcon={<LogoutIcon />}
-              onClick={logout}
-              size="small"
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      {/* Top navigation bar */}
+      <AppBar position="sticky" sx={{ bgcolor: '#1a237e' }}>
+        <Container maxWidth="lg">
+          <Toolbar disableGutters>
+            {/* Logo / brand link */}
+            <Store sx={{ mr: 1 }} />
+            <Typography
+              variant="h6"
+              component={Link}
+              to="/"
+              sx={{ flexGrow: 1, textDecoration: 'none', color: 'inherit', fontWeight: 700 }}
             >
-              Logout
-            </Button>
-          </Box>
-        </Toolbar>
+              ShopHub
+            </Typography>
+
+            {/* Desktop navigation links */}
+            {!isMobile && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Button color="inherit" component={Link} to="/products">Products</Button>
+
+                {isAuthenticated ? (
+                  <>
+                    <IconButton color="inherit" component={Link} to="/cart">
+                      <Badge badgeContent={cartCount} color="error">
+                        <ShoppingCart />
+                      </Badge>
+                    </IconButton>
+                    <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)}>
+                      <Person />
+                    </IconButton>
+                    {/* User dropdown menu */}
+                    <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+                      <MenuItem disabled>
+                        <Typography variant="body2">{user?.name} ({user?.email})</Typography>
+                      </MenuItem>
+                      <Divider />
+                      <MenuItem onClick={() => { setAnchorEl(null); navigate('/orders'); }}>
+                        <ListAlt sx={{ mr: 1 }} /> My Orders
+                      </MenuItem>
+                      <MenuItem onClick={handleLogout}>
+                        <Logout sx={{ mr: 1 }} /> Logout
+                      </MenuItem>
+                    </Menu>
+                  </>
+                ) : (
+                  <>
+                    <Button color="inherit" component={Link} to="/login">Login</Button>
+                    <Button color="inherit" variant="outlined" component={Link} to="/register"
+                      sx={{ borderColor: 'rgba(255,255,255,0.5)' }}>
+                      Register
+                    </Button>
+                  </>
+                )}
+              </Box>
+            )}
+
+            {/* Mobile hamburger menu */}
+            {isMobile && (
+              <>
+                {isAuthenticated && (
+                  <IconButton color="inherit" component={Link} to="/cart" sx={{ mr: 1 }}>
+                    <Badge badgeContent={cartCount} color="error">
+                      <ShoppingCart />
+                    </Badge>
+                  </IconButton>
+                )}
+                <IconButton color="inherit" onClick={(e) => setMobileMenuAnchor(e.currentTarget)}>
+                  <MenuIcon />
+                </IconButton>
+                <Menu anchorEl={mobileMenuAnchor} open={Boolean(mobileMenuAnchor)} onClose={() => setMobileMenuAnchor(null)}>
+                  <MenuItem onClick={() => { setMobileMenuAnchor(null); navigate('/products'); }}>Products</MenuItem>
+                  {isAuthenticated ? (
+                    [
+                      <MenuItem key="orders" onClick={() => { setMobileMenuAnchor(null); navigate('/orders'); }}>My Orders</MenuItem>,
+                      <Divider key="div" />,
+                      <MenuItem key="logout" onClick={() => { setMobileMenuAnchor(null); handleLogout(); }}>Logout</MenuItem>
+                    ]
+                  ) : (
+                    [
+                      <MenuItem key="login" onClick={() => { setMobileMenuAnchor(null); navigate('/login'); }}>Login</MenuItem>,
+                      <MenuItem key="register" onClick={() => { setMobileMenuAnchor(null); navigate('/register'); }}>Register</MenuItem>
+                    ]
+                  )}
+                </Menu>
+              </>
+            )}
+          </Toolbar>
+        </Container>
       </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="mailbox folders"
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
+
+      {/* Main content area rendered by nested routes */}
+      <Box component="main" sx={{ flexGrow: 1, bgcolor: '#f5f5f5' }}>
+        <Outlet />
       </Box>
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-        }}
-      >
-        <Toolbar />
-        {children}
+
+      {/* Footer */}
+      <Box component="footer" sx={{ bgcolor: '#1a237e', color: 'white', py: 3, mt: 'auto' }}>
+        <Container maxWidth="lg">
+          <Typography variant="body2" align="center">
+            &copy; {new Date().getFullYear()} ShopHub - Your one-stop ecommerce store. All rights reserved.
+          </Typography>
+        </Container>
       </Box>
     </Box>
   );
-};
-
-export default Layout;
+}

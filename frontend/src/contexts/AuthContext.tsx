@@ -1,58 +1,64 @@
-import React, { useState, useEffect, type ReactNode } from 'react';
-import { type User } from '../types/api';
+import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '../api/client';
-import { AuthContext, type AuthContextType } from './AuthContextValue';
+import type { AuthResponse } from '../types/api';
+import { AuthContext } from './AuthContextDef';
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
+// Provides authentication state and actions to the component tree
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<import('../types/api').User | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [loading, setLoading] = useState(true);
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
+  // Verify stored token on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      const storedEmail = localStorage.getItem('userEmail');
-      
-      if (storedEmail) {
+    const verifyToken = async () => {
+      if (token) {
         try {
-          const response = await apiClient.getCurrentUser();
-          setUser(response.user);
-        } catch (error) {
-          console.error('Auth check failed:', error);
-          localStorage.removeItem('userEmail');
+          const response = await apiClient.get('/auth/me');
+          setUser(response.data.user);
+        } catch {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
+          setUser(null);
         }
       }
-      setIsLoading(false);
+      setLoading(false);
     };
+    verifyToken();
+  }, [token]);
 
-    checkAuth();
+  // Authenticate with email and password
+  const login = useCallback(async (email: string, password: string) => {
+    const response = await apiClient.post<AuthResponse>('/auth/login', { email, password });
+    const { token: newToken, user: newUser } = response.data;
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(newUser));
+    setToken(newToken);
+    setUser(newUser);
   }, []);
 
-  const login = async (email: string) => {
-    try {
-      const response = await apiClient.login(email);
-      setUser(response.user);
-      localStorage.setItem('userEmail', email);
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
-  };
+  // Create a new account and log in immediately
+  const register = useCallback(async (name: string, email: string, password: string) => {
+    const response = await apiClient.post<AuthResponse>('/auth/register', { name, email, password });
+    const { token: newToken, user: newUser } = response.data;
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(newUser));
+    setToken(newToken);
+    setUser(newUser);
+  }, []);
 
-  const logout = () => {
+  // Clear auth state
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
     setUser(null);
-    localStorage.removeItem('userEmail');
-  };
+  }, []);
 
-  const value: AuthContextType = {
-    user,
-    login,
-    logout,
-    isLoading,
-    isAuthenticated: !!user,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  return (
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAuthenticated: !!user }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
