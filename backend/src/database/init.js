@@ -5,12 +5,12 @@ let db = null;
 let isClosing = false;
 let isClosed = false;
 
+// Returns the SQLite database instance, creating it if needed
 function getDatabase() {
   if (!db) {
-    // Reset state when creating a new database connection
     isClosing = false;
     isClosed = false;
-    // Use in-memory database as specified in requirements
+    // Use in-memory SQLite database for development
     db = new sqlite3.Database(':memory:', (err) => {
       if (err) {
         console.error('Error opening database:', err);
@@ -18,76 +18,128 @@ function getDatabase() {
       }
       console.log('Connected to SQLite in-memory database');
     });
+    // Enable foreign keys for referential integrity
+    db.run('PRAGMA foreign_keys = ON');
   }
   return db;
 }
 
+// Creates all ecommerce tables and indexes
 async function initializeDatabase() {
   const database = getDatabase();
-  
+
   return new Promise((resolve, reject) => {
     database.serialize(() => {
-      // Create users table
+      // Users table - stores customer and admin accounts
       database.run(`
         CREATE TABLE IF NOT EXISTS users (
-          email TEXT PRIMARY KEY,
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          role TEXT DEFAULT 'customer' CHECK(role IN ('customer', 'admin')),
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
-      // Create clients table
+      // Categories table - product categories for organizing the catalog
       database.run(`
-        CREATE TABLE IF NOT EXISTS clients (
+        CREATE TABLE IF NOT EXISTS categories (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL UNIQUE,
+          description TEXT,
+          image_url TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Products table - the main product catalog
+      database.run(`
+        CREATE TABLE IF NOT EXISTS products (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           description TEXT,
-          department TEXT,
-          email TEXT,
-          user_email TEXT NOT NULL,
+          price DECIMAL(10,2) NOT NULL,
+          image_url TEXT,
+          category_id INTEGER,
+          stock_quantity INTEGER DEFAULT 0,
+          featured INTEGER DEFAULT 0,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_email) REFERENCES users (email) ON DELETE CASCADE
+          FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
         )
       `);
 
-      // Create work_entries table
+      // Cart items table - tracks items in each user's shopping cart
       database.run(`
-        CREATE TABLE IF NOT EXISTS work_entries (
+        CREATE TABLE IF NOT EXISTS cart_items (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          client_id INTEGER NOT NULL,
-          user_email TEXT NOT NULL,
-          hours DECIMAL(5,2) NOT NULL,
-          description TEXT,
-          date DATE NOT NULL,
+          user_id INTEGER NOT NULL,
+          product_id INTEGER NOT NULL,
+          quantity INTEGER NOT NULL DEFAULT 1,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE CASCADE,
-          FOREIGN KEY (user_email) REFERENCES users (email) ON DELETE CASCADE
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+          UNIQUE(user_id, product_id)
         )
       `);
 
-      // Create indexes for better performance
-      database.run(`CREATE INDEX IF NOT EXISTS idx_clients_user_email ON clients (user_email)`);
-      database.run(`CREATE INDEX IF NOT EXISTS idx_work_entries_client_id ON work_entries (client_id)`);
-      database.run(`CREATE INDEX IF NOT EXISTS idx_work_entries_user_email ON work_entries (user_email)`);
-      database.run(`CREATE INDEX IF NOT EXISTS idx_work_entries_date ON work_entries (date)`);
+      // Orders table - completed customer orders
+      database.run(`
+        CREATE TABLE IF NOT EXISTS orders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          total_amount DECIMAL(10,2) NOT NULL,
+          status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')),
+          shipping_name TEXT NOT NULL,
+          shipping_address TEXT NOT NULL,
+          shipping_city TEXT NOT NULL,
+          shipping_state TEXT NOT NULL,
+          shipping_zip TEXT NOT NULL,
+          shipping_phone TEXT,
+          payment_method TEXT DEFAULT 'credit_card',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `);
 
-      console.log('Database tables created successfully');
+      // Order items table - individual line items within an order
+      database.run(`
+        CREATE TABLE IF NOT EXISTS order_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          order_id INTEGER NOT NULL,
+          product_id INTEGER NOT NULL,
+          product_name TEXT NOT NULL,
+          product_price DECIMAL(10,2) NOT NULL,
+          quantity INTEGER NOT NULL,
+          FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
+        )
+      `);
+
+      // Performance indexes for common queries
+      database.run(`CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id)`);
+      database.run(`CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured)`);
+      database.run(`CREATE INDEX IF NOT EXISTS idx_cart_items_user ON cart_items(user_id)`);
+      database.run(`CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id)`);
+      database.run(`CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id)`);
+
+      console.log('Ecommerce database tables created successfully');
       resolve();
     });
   });
 }
 
+// Closes the database connection gracefully
 function closeDatabase() {
   return new Promise((resolve, reject) => {
     if (isClosed) {
-      // Already closed, resolve immediately
       resolve();
       return;
     }
-    
+
     if (isClosing) {
-      // Currently closing, wait for it to complete
       const checkClosed = setInterval(() => {
         if (isClosed) {
           clearInterval(checkClosed);
@@ -96,13 +148,12 @@ function closeDatabase() {
       }, 10);
       return;
     }
-    
+
     if (!db) {
-      // No database connection, resolve immediately
       resolve();
       return;
     }
-    
+
     isClosing = true;
     db.close((err) => {
       isClosed = true;

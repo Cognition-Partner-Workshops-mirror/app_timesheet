@@ -1,81 +1,103 @@
 const express = require('express');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const { getDatabase } = require('../database/init');
-const { emailSchema } = require('../validation/schemas');
-const { authenticateUser } = require('../middleware/auth');
+const { authenticate, JWT_SECRET } = require('../middleware/auth');
+const { registerSchema, loginSchema } = require('../validation/schemas');
 
 const router = express.Router();
 
-// Login endpoint - creates user if doesn't exist
-router.post('/login', async (req, res, next) => {
-  try {
-    const { error, value } = emailSchema.validate(req.body);
-    if (error) {
-      return next(error);
+// Hash password using PBKDF2 with random salt
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return `${salt}:${hash}`;
+}
+
+// Verify password against stored hash
+function verifyPassword(password, storedHash) {
+  const [salt, hash] = storedHash.split(':');
+  const verifyHash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return hash === verifyHash;
+}
+
+// POST /api/auth/register - Create a new user account
+router.post('/register', (req, res) => {
+  const { error, value } = registerSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+
+  const { name, email, password } = value;
+  const db = getDatabase();
+
+  // Check if email already exists
+  db.get('SELECT id FROM users WHERE email = ?', [email], (err, existing) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (existing) {
+      return res.status(409).json({ error: 'Email already registered' });
     }
 
-    const { email } = value;
-    const db = getDatabase();
+    const passwordHash = hashPassword(password);
 
-    // Check if user exists
-    db.get('SELECT email, created_at FROM users WHERE email = ?', [email], (err, row) => {
-      if (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    db.run(
+      'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+      [name, email, passwordHash],
+      function (err) {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to create account' });
+        }
 
-      if (row) {
-        // User exists
-        return res.json({
-          message: 'Login successful',
-          user: {
-            email: row.email,
-            createdAt: row.created_at
-          }
-        });
-      } else {
-        // Create new user
-        db.run('INSERT INTO users (email) VALUES (?)', [email], function(err) {
-          if (err) {
-            console.error('Error creating user:', err);
-            return res.status(500).json({ error: 'Failed to create user' });
-          }
+        // Generate JWT token for immediate login after registration
+        const token = jwt.sign({ userId: this.lastID }, JWT_SECRET, { expiresIn: '24h' });
 
-          res.status(201).json({
-            message: 'User created and logged in successfully',
-            user: {
-              email: email,
-              createdAt: new Date().toISOString()
-            }
-          });
+        res.status(201).json({
+          message: 'Account created successfully',
+          token,
+          user: { id: this.lastID, name, email, role: 'customer' }
         });
       }
-    });
-  } catch (error) {
-    next(error);
-  }
+    );
+  });
 });
 
-// Get current user info
-router.get('/me', authenticateUser, (req, res) => {
+// POST /api/auth/login - Authenticate user and return JWT token
+router.post('/login', (req, res) => {
+  const { error, value } = loginSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+
+  const { email, password } = value;
   const db = getDatabase();
-  
-  db.get('SELECT email, created_at FROM users WHERE email = ?', [req.userEmail], (err, row) => {
+
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
     if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    if (!row) {
-      return res.status(404).json({ error: 'User not found' });
+    if (!verifyPassword(password, user.password_hash)) {
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '24h' });
 
     res.json({
-      user: {
-        email: row.email,
-        createdAt: row.created_at
-      }
+      message: 'Login successful',
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role }
     });
   });
+});
+
+// GET /api/auth/me - Get current authenticated user info
+router.get('/me', authenticate, (req, res) => {
+  res.json({ user: req.user });
 });
 
 module.exports = router;

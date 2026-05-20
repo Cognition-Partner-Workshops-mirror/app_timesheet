@@ -4,12 +4,15 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
+// Ecommerce route handlers
 const authRoutes = require('./routes/auth');
-const clientRoutes = require('./routes/clients');
-const workEntryRoutes = require('./routes/workEntries');
-const reportRoutes = require('./routes/reports');
+const productRoutes = require('./routes/products');
+const categoryRoutes = require('./routes/categories');
+const cartRoutes = require('./routes/cart');
+const orderRoutes = require('./routes/orders');
 
 const { initializeDatabase } = require('./database/init');
+const { seedDatabase } = require('./database/seed');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -22,45 +25,47 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
+// Rate limiting to prevent abuse
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 200
 });
 app.use(limiter);
 
-// Logging
+// Request logging
 app.use(morgan('combined'));
 
-// Body parsing
+// Body parsing for JSON API requests
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
+// Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.status(200).json({ status: 'OK', app: 'ecommerce-api', timestamp: new Date().toISOString() });
 });
 
-// Routes
+// API routes for the ecommerce platform
 app.use('/api/auth', authRoutes);
-app.use('/api/clients', clientRoutes);
-app.use('/api/work-entries', workEntryRoutes);
-app.use('/api/reports', reportRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
 
-// Error handling
+// Global error handler
 app.use(errorHandler);
 
-// 404 handler
+// 404 handler for unmatched routes
 app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Initialize database and start server
+// Initialize database, seed sample data, and start the server
 async function startServer() {
   try {
     await initializeDatabase();
+    await seedDatabase();
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`Ecommerce API server running on port ${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/health`);
     });
   } catch (error) {
