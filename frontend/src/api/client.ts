@@ -133,6 +133,14 @@ class ApiClient {
     return response.data;
   }
 
+  // Admin endpoints
+
+  // Fetch aggregated employee hours for the admin view
+  async getEmployeeHours() {
+    const response = await this.client.get('/api/admin/employee-hours');
+    return response.data;
+  }
+
   // Health check
   async healthCheck() {
     const response = await this.client.get('/health');
