@@ -1,0 +1,29 @@
+/**
+ * Winston logger configuration.
+ * Provides structured logging with timestamp and environment-aware log levels.
+ */
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    winston.format.json(),
+  ),
+  defaultMeta: { service: 'product-service' },
+  transports: [
+    // Console transport with colorized output for development readability
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.printf(({ timestamp, level, message, service, ...meta }) => {
+          const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : '';
+          return `${timestamp} [${service}] ${level}: ${message} ${metaStr}`;
+        }),
+      ),
+    }),
+  ],
+});
+
+module.exports = logger;
