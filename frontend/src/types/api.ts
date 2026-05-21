@@ -77,3 +77,12 @@ export interface ApiResponse<T> {
   error?: string;
   message?: string;
 }
+
+// Aggregated employee hours returned by the admin endpoint
+export interface EmployeeHours {
+  email: string;
+  created_at: string;
+  total_hours: number;
+  total_entries: number;
+  last_entry_date: string | null;
+}
