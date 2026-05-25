@@ -1,0 +1,129 @@
+# Weekly vulnerability scan using npm audit (backend + frontend) and Trivy.
+# Triggers a Devin session to auto-remediate HIGH/CRITICAL findings via PR.
+# Scans run in CI (free); Devin is only invoked when findings exist.
+name: Weekly Vulnerability Scan & Auto-Remediate
+
+on:
+  schedule:
+    # Run every Monday at 8 AM UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    outputs:
+      has_critical: ${{ steps.parse.outputs.has_critical }}
+      findings_summary: ${{ steps.parse.outputs.findings_summary }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # Audit backend dependencies separately
+      - name: npm audit (backend)
+        working-directory: backend
+        run: |
+          npm install --package-lock-only 2>/dev/null || true
+          npm audit --json > ../backend-audit.json 2>/dev/null || true
+
+      # Audit frontend dependencies separately
+      - name: npm audit (frontend)
+        working-directory: frontend
+        run: |
+          npm install --package-lock-only 2>/dev/null || true
+          npm audit --json > ../frontend-audit.json 2>/dev/null || true
+
+      # Trivy filesystem scan for additional coverage
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          format: json
+          output: trivy-report.json
+          severity: HIGH,CRITICAL
+
+      - name: Parse findings
+        id: parse
+        run: |
+          # Parse Trivy results
+          TRIVY_COUNT=0
+          if [ -f trivy-report.json ]; then
+            TRIVY_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL" or .Severity == "HIGH")] | length' trivy-report.json 2>/dev/null || echo "0")
+          fi
+
+          # Count high/critical from npm audit for each directory
+          NPM_BACKEND=0
+          if [ -f backend-audit.json ]; then
+            NPM_BACKEND=$(jq '.metadata.vulnerabilities.high + .metadata.vulnerabilities.critical' backend-audit.json 2>/dev/null || echo "0")
+          fi
+          NPM_FRONTEND=0
+          if [ -f frontend-audit.json ]; then
+            NPM_FRONTEND=$(jq '.metadata.vulnerabilities.high + .metadata.vulnerabilities.critical' frontend-audit.json 2>/dev/null || echo "0")
+          fi
+
+          TOTAL=$((TRIVY_COUNT + NPM_BACKEND + NPM_FRONTEND))
+          echo "Total HIGH/CRITICAL: $TOTAL (Trivy: $TRIVY_COUNT, npm-backend: $NPM_BACKEND, npm-frontend: $NPM_FRONTEND)"
+
+          if [ "$TOTAL" -gt 0 ]; then
+            echo "has_critical=true" >> "$GITHUB_OUTPUT"
+            # Build summary from all scan sources (cap at 15 entries each)
+            echo "findings_summary<<EOF" >> "$GITHUB_OUTPUT"
+            echo "=== Trivy Findings ===" >> "$GITHUB_OUTPUT"
+            jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL" or .Severity == "HIGH") | "\(.VulnerabilityID) \(.PkgName) \(.InstalledVersion) -> \(.FixedVersion // "no fix") [\(.Severity)]"] | .[0:15] | join("\n")' trivy-report.json >> "$GITHUB_OUTPUT" 2>/dev/null || true
+            echo "=== npm audit (backend) ===" >> "$GITHUB_OUTPUT"
+            jq -r '.vulnerabilities | to_entries[]? | select(.value.severity == "high" or .value.severity == "critical") | "\(.key) \(.value.severity) via:\(.value.via | map(if type == "object" then .url else . end) | join(","))"' backend-audit.json >> "$GITHUB_OUTPUT" 2>/dev/null || true
+            echo "=== npm audit (frontend) ===" >> "$GITHUB_OUTPUT"
+            jq -r '.vulnerabilities | to_entries[]? | select(.value.severity == "high" or .value.severity == "critical") | "\(.key) \(.value.severity) via:\(.value.via | map(if type == "object" then .url else . end) | join(","))"' frontend-audit.json >> "$GITHUB_OUTPUT" 2>/dev/null || true
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_critical=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-reports
+          path: |
+            trivy-report.json
+            backend-audit.json
+            frontend-audit.json
+
+  # Only invoke Devin when HIGH/CRITICAL findings exist (ACU-optimized)
+  remediate:
+    needs: scan
+    if: needs.scan.outputs.has_critical == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Devin session for remediation
+        env:
+          DEVIN_API_KEY: ${{ secrets.DEVIN_API_KEY }}
+        run: |
+          curl -X POST "https://api.devin.ai/v1/sessions" \
+            -H "Authorization: Bearer $DEVIN_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg prompt "Remediate the following HIGH/CRITICAL vulnerabilities in ${{ github.repository }} (branch: main):
+
+          ${{ needs.scan.outputs.findings_summary }}
+
+          Instructions:
+          1. For backend (backend/package.json): run npm audit fix, and manually upgrade any remaining vulnerable packages
+          2. For frontend (frontend/package.json): run npm audit fix, and manually upgrade any remaining vulnerable packages
+          3. Verify both backend and frontend build and tests pass
+          4. Re-run npm audit in both directories to confirm remediation
+          5. Open a PR targeting main with:
+             - All dependency upgrades
+             - A REMEDIATION_REPORT.md listing each vulnerability fixed, before/after versions, and verification results
+
+          Only fix HIGH and CRITICAL findings. Do NOT fix MEDIUM or LOW." \
+              --arg key "weekly-vuln-${{ github.repository }}-${{ github.run_id }}" \
+              '{prompt: $prompt, idempotency_key: $key}')"
