@@ -62,11 +62,13 @@ jobs:
           # Count high/critical from npm audit for each directory
           NPM_BACKEND=0
           if [ -f backend-audit.json ]; then
-            NPM_BACKEND=$(jq '.metadata.vulnerabilities.high + .metadata.vulnerabilities.critical' backend-audit.json 2>/dev/null || echo "0")
+            NPM_BACKEND=$(jq '.metadata.vulnerabilities.high + .metadata.vulnerabilities.critical // 0' backend-audit.json 2>/dev/null || echo "0")
+            NPM_BACKEND=${NPM_BACKEND:-0}; [[ "$NPM_BACKEND" =~ ^[0-9]+$ ]] || NPM_BACKEND=0
           fi
           NPM_FRONTEND=0
           if [ -f frontend-audit.json ]; then
-            NPM_FRONTEND=$(jq '.metadata.vulnerabilities.high + .metadata.vulnerabilities.critical' frontend-audit.json 2>/dev/null || echo "0")
+            NPM_FRONTEND=$(jq '.metadata.vulnerabilities.high + .metadata.vulnerabilities.critical // 0' frontend-audit.json 2>/dev/null || echo "0")
+            NPM_FRONTEND=${NPM_FRONTEND:-0}; [[ "$NPM_FRONTEND" =~ ^[0-9]+$ ]] || NPM_FRONTEND=0
           fi
 
           TOTAL=$((TRIVY_COUNT + NPM_BACKEND + NPM_FRONTEND))
@@ -103,17 +105,22 @@ jobs:
     if: needs.scan.outputs.has_critical == 'true'
     runs-on: ubuntu-latest
     steps:
+      # Pass scan outputs via env vars to prevent script injection from
+      # untrusted data in vulnerability scan results (package names, etc.)
       - name: Trigger Devin session for remediation
         env:
           DEVIN_API_KEY: ${{ secrets.DEVIN_API_KEY }}
+          FINDINGS_SUMMARY: ${{ needs.scan.outputs.findings_summary }}
+          REPO_NAME: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           curl -X POST "https://api.devin.ai/v1/sessions" \
             -H "Authorization: Bearer $DEVIN_API_KEY" \
             -H "Content-Type: application/json" \
             -d "$(jq -n \
-              --arg prompt "Remediate the following HIGH/CRITICAL vulnerabilities in ${{ github.repository }} (branch: main):
+              --arg prompt "Remediate the following HIGH/CRITICAL vulnerabilities in $REPO_NAME (branch: main):
 
-          ${{ needs.scan.outputs.findings_summary }}
+          $FINDINGS_SUMMARY
 
           Instructions:
           1. For backend (backend/package.json): run npm audit fix, and manually upgrade any remaining vulnerable packages
@@ -125,5 +132,5 @@ jobs:
              - A REMEDIATION_REPORT.md listing each vulnerability fixed, before/after versions, and verification results
 
           Only fix HIGH and CRITICAL findings. Do NOT fix MEDIUM or LOW." \
-              --arg key "weekly-vuln-${{ github.repository }}-${{ github.run_id }}" \
+              --arg key "weekly-vuln-$REPO_NAME-$RUN_ID" \
               '{prompt: $prompt, idempotency_key: $key}')"
