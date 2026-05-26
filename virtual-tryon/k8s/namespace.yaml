@@ -1,0 +1,10 @@
+# Kubernetes Namespace for Virtual Try-On services
+# Isolates all try-on resources from other cluster workloads
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: virtual-tryon
+  labels:
+    app.kubernetes.io/part-of: virtual-tryon
+    app.kubernetes.io/managed-by: kubectl

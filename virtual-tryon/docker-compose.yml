@@ -1,0 +1,233 @@
+# Virtual Try-On Docker Compose Configuration
+# Runs all services locally for development and testing
+#
+# Usage:
+#   Development (CPU only):  docker-compose up
+#   With GPU support:        docker-compose --profile gpu up
+#   Production mode:         docker-compose --profile production up
+#
+# Prerequisites:
+#   - Docker 20.10+
+#   - Docker Compose v2
+#   - nvidia-docker2 (for GPU profile)
+
+version: "3.8"
+
+services:
+  # ──────────────────────────────────────────────
+  # Backend API Service (FastAPI)
+  # Handles REST API, business logic, job orchestration
+  # ──────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tryon-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=Virtual Try-On API
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/virtual_tryon
+      - REDIS_URL=redis://redis:6379/0
+      - STORAGE_ENDPOINT=minio:9000
+      - STORAGE_ACCESS_KEY=minioadmin
+      - STORAGE_SECRET_KEY=minioadmin
+      - STORAGE_BUCKET_NAME=virtual-tryon
+      - AI_SERVICE_URL=http://ai-service:8001
+      - JWT_SECRET_KEY=dev-secret-change-in-production
+      - CORS_ORIGINS=["http://localhost:5173","http://localhost:3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - tryon-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ──────────────────────────────────────────────
+  # AI Model Service (Python + PyTorch)
+  # Handles ML inference: pose estimation, segmentation, try-on
+  # ──────────────────────────────────────────────
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: tryon-ai-service
+    ports:
+      - "8001:8001"
+    environment:
+      - APP_NAME=Virtual Try-On AI Service
+      - DEBUG=true
+      - USE_GPU=false  # Set to true when using GPU profile
+      - MIXED_PRECISION=false
+      - STORAGE_ENDPOINT=minio:9000
+      - STORAGE_ACCESS_KEY=minioadmin
+      - STORAGE_SECRET_KEY=minioadmin
+      - STORAGE_BUCKET_NAME=virtual-tryon
+    volumes:
+      - model-cache:/app/models  # Persist downloaded models across restarts
+    depends_on:
+      minio:
+        condition: service_started
+    networks:
+      - tryon-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s  # Models take time to load
+
+  # ──────────────────────────────────────────────
+  # AI Service with GPU support (use --profile gpu)
+  # Requires nvidia-docker2 runtime
+  # ──────────────────────────────────────────────
+  ai-service-gpu:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: tryon-ai-service-gpu
+    profiles:
+      - gpu
+    ports:
+      - "8001:8001"
+    environment:
+      - APP_NAME=Virtual Try-On AI Service
+      - DEBUG=true
+      - USE_GPU=true
+      - GPU_DEVICE_ID=0
+      - MIXED_PRECISION=true
+      - STORAGE_ENDPOINT=minio:9000
+      - STORAGE_ACCESS_KEY=minioadmin
+      - STORAGE_SECRET_KEY=minioadmin
+      - STORAGE_BUCKET_NAME=virtual-tryon
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - model-cache:/app/models
+    depends_on:
+      minio:
+        condition: service_started
+    networks:
+      - tryon-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # PostgreSQL Database
+  # Stores user data, product catalog, job metadata
+  # ──────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: tryon-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=virtual_tryon
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - tryon-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────────
+  # Redis Cache & Message Queue
+  # Caches try-on results, manages job queue
+  # ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: tryon-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - tryon-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  # ──────────────────────────────────────────────
+  # MinIO Object Storage (S3-compatible)
+  # Stores user photos, product images, and try-on results
+  # ──────────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: tryon-minio
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web Console
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio-data:/data
+    networks:
+      - tryon-network
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+
+  # ──────────────────────────────────────────────
+  # MinIO Client - Auto-creates the storage bucket on startup
+  # ──────────────────────────────────────────────
+  minio-init:
+    image: minio/mc:latest
+    container_name: tryon-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb myminio/virtual-tryon --ignore-existing;
+      mc anonymous set public myminio/virtual-tryon;
+      echo 'Bucket created successfully';
+      "
+    networks:
+      - tryon-network
+
+# ──────────────────────────────────────────────
+# Persistent Volumes
+# ──────────────────────────────────────────────
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  minio-data:
+    driver: local
+  model-cache:
+    driver: local
+
+# ──────────────────────────────────────────────
+# Network
+# ──────────────────────────────────────────────
+networks:
+  tryon-network:
+    driver: bridge
