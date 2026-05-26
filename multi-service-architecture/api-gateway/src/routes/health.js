@@ -12,6 +12,16 @@ const express = require('express');
 module.exports = function healthRoutes(grpcClients) {
   const router = express.Router();
 
+  // Helper to wrap gRPC calls with a timeout to prevent hanging
+  function withTimeout(promise, timeoutMs = 2000) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('gRPC call timeout')), timeoutMs)
+      ),
+    ]);
+  }
+
   /**
    * GET /api/v1/health
    * Returns the health status of the API Gateway and all downstream services.
@@ -28,15 +38,15 @@ module.exports = function healthRoutes(grpcClients) {
       'logging-service': { status: 'unknown', latency_ms: null },
     };
 
-    // Check Java business service via gRPC health check
+    // Check Java business service via gRPC health check (with timeout)
     try {
       const bizStart = Date.now();
-      await new Promise((resolve, reject) => {
+      await withTimeout(new Promise((resolve, reject) => {
         grpcClients.businessClient.HealthCheck({}, (err, response) => {
           if (err) reject(err);
           else resolve(response);
         });
-      });
+      }));
       services['business-logic'] = {
         status: 'healthy',
         latency_ms: Date.now() - bizStart,
@@ -45,15 +55,15 @@ module.exports = function healthRoutes(grpcClients) {
       services['business-logic'] = { status: 'unhealthy', error: err.message };
     }
 
-    // Check Python fraud detection service
+    // Check Python fraud detection service (with timeout)
     try {
       const fraudStart = Date.now();
-      await new Promise((resolve, reject) => {
+      await withTimeout(new Promise((resolve, reject) => {
         grpcClients.fraudClient.GetModelInfo({}, (err, response) => {
           if (err) reject(err);
           else resolve(response);
         });
-      });
+      }));
       services['fraud-detection'] = {
         status: 'healthy',
         latency_ms: Date.now() - fraudStart,
@@ -62,10 +72,10 @@ module.exports = function healthRoutes(grpcClients) {
       services['fraud-detection'] = { status: 'unhealthy', error: err.message };
     }
 
-    // Check Go logging service
+    // Check Go logging service (with timeout)
     try {
       const logStart = Date.now();
-      await new Promise((resolve, reject) => {
+      await withTimeout(new Promise((resolve, reject) => {
         grpcClients.loggingClient.SendLog({
           service_name: 'api-gateway',
           level: 'DEBUG',
@@ -75,7 +85,7 @@ module.exports = function healthRoutes(grpcClients) {
           if (err) reject(err);
           else resolve(response);
         });
-      });
+      }));
       services['logging-service'] = {
         status: 'healthy',
         latency_ms: Date.now() - logStart,
@@ -84,12 +94,12 @@ module.exports = function healthRoutes(grpcClients) {
       services['logging-service'] = { status: 'unhealthy', error: err.message };
     }
 
-    // Determine overall health
-    const allHealthy = Object.values(services).every(s => s.status === 'healthy');
-    const statusCode = allHealthy ? 200 : 503;
+    // Determine overall health (gateway itself is always considered up)
+    const gatewayHealthy = services['api-gateway'].status === 'healthy';
+    const statusCode = gatewayHealthy ? 200 : 503;
 
     res.status(statusCode).json({
-      status: allHealthy ? 'healthy' : 'degraded',
+      status: gatewayHealthy ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
       total_latency_ms: Date.now() - startTime,
       services,

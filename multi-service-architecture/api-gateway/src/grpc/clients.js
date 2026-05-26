@@ -40,7 +40,7 @@ class GrpcClients {
    * Handles transactions, accounts, and user management.
    */
   _initBusinessClient() {
-    const protoPath = path.resolve(__dirname, '../../../proto/business.proto');
+    const protoPath = path.resolve(__dirname, '../../proto/business.proto');
     const packageDef = protoLoader.loadSync(protoPath, PROTO_OPTIONS);
     const businessProto = grpc.loadPackageDefinition(packageDef).business;
 
@@ -57,7 +57,7 @@ class GrpcClients {
    * Used for real-time transaction risk analysis.
    */
   _initFraudClient() {
-    const protoPath = path.resolve(__dirname, '../../../proto/fraud.proto');
+    const protoPath = path.resolve(__dirname, '../../proto/fraud.proto');
     const packageDef = protoLoader.loadSync(protoPath, PROTO_OPTIONS);
     const fraudProto = grpc.loadPackageDefinition(packageDef).fraud;
 
@@ -74,7 +74,7 @@ class GrpcClients {
    * Used for centralized structured logging from the API gateway.
    */
   _initLoggingClient() {
-    const protoPath = path.resolve(__dirname, '../../../proto/logging.proto');
+    const protoPath = path.resolve(__dirname, '../../proto/logging.proto');
     const packageDef = protoLoader.loadSync(protoPath, PROTO_OPTIONS);
     const loggingProto = grpc.loadPackageDefinition(packageDef).logging;
 

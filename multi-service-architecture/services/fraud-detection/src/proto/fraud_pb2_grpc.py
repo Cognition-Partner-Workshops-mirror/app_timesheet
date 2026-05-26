@@ -37,26 +37,33 @@ class FraudDetectionServiceServicer:
 
 def add_FraudDetectionServiceServicer_to_server(servicer, server):
     """Register the FraudDetectionService servicer with a gRPC server."""
-    from grpc import unary_unary_rpc_method_handler
-    from grpc import unary_stream_rpc_method_handler
-    from grpc import stream_stream_rpc_method_handler
+    from . import fraud_pb2
 
     rpc_method_handlers = {
-        "CheckTransaction": unary_unary_rpc_method_handler(
+        "CheckTransaction": grpc.unary_unary_rpc_method_handler(
             servicer.CheckTransaction,
+            request_deserializer=fraud_pb2.Transaction.FromString,
+            response_serializer=fraud_pb2.FraudCheckResponse.SerializeToString,
         ),
-        "CheckBatchTransactions": unary_unary_rpc_method_handler(
+        "CheckBatchTransactions": grpc.unary_unary_rpc_method_handler(
             servicer.CheckBatchTransactions,
+            request_deserializer=fraud_pb2.BatchFraudCheckRequest.FromString,
+            response_serializer=fraud_pb2.BatchFraudCheckResponse.SerializeToString,
         ),
-        "StreamTransactions": stream_stream_rpc_method_handler(
+        "StreamTransactions": grpc.stream_stream_rpc_method_handler(
             servicer.StreamTransactions,
+            request_deserializer=fraud_pb2.Transaction.FromString,
+            response_serializer=fraud_pb2.FraudCheckResponse.SerializeToString,
         ),
-        "GetModelInfo": unary_unary_rpc_method_handler(
+        "GetModelInfo": grpc.unary_unary_rpc_method_handler(
             servicer.GetModelInfo,
+            request_deserializer=fraud_pb2.ModelInfoRequest.FromString,
+            response_serializer=fraud_pb2.ModelInfoResponse.SerializeToString,
         ),
     }
 
-    generic_handler = grpc.method_service_handler(
+    # Register service using the grpc generic handler
+    generic_handler = grpc.method_handlers_generic_handler(
         "fraud.FraudDetectionService",
         rpc_method_handlers,
     )

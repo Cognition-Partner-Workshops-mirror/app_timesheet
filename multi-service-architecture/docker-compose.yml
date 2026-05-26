@@ -81,8 +81,8 @@ services:
   # Single entry point for frontend, routes to backend services via gRPC
   api-gateway:
     build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api-gateway/Dockerfile
     ports:
       - "4000:4000"
     environment:

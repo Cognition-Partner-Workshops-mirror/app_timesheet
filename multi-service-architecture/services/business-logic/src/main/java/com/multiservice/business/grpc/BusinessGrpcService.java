@@ -1,11 +1,10 @@
 package com.multiservice.business.grpc;
 
-import com.multiservice.business.model.Account;
-import com.multiservice.business.model.TransactionRecord;
 import com.multiservice.business.service.TransactionService;
+import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import io.grpc.stub.StreamObserver;
+import io.grpc.ServerServiceDefinition;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * gRPC server component for the Business Logic service.
@@ -67,7 +65,7 @@ public class BusinessGrpcService {
      * Inner class implementing the business gRPC service methods.
      * Uses the TransactionService for actual business logic execution.
      */
-    private class BusinessServiceImpl extends io.grpc.BindableService {
+    private class BusinessServiceImpl implements BindableService {
 
         /**
          * Process a financial transaction with fraud validation.
@@ -108,9 +106,9 @@ public class BusinessGrpcService {
         }
 
         @Override
-        public io.grpc.ServerServiceDefinition bindService() {
+        public ServerServiceDefinition bindService() {
             // Service binding would be auto-generated from proto in production
-            return io.grpc.ServerServiceDefinition.builder("business.BusinessService")
+            return ServerServiceDefinition.builder("business.BusinessService")
                     .build();
         }
     }
