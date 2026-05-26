@@ -1,0 +1,135 @@
+# CareAI Platform - Docker Compose Configuration
+# Full-stack deployment: Backend + Admin + PostgreSQL + MinIO (S3) + Nginx
+# Usage: docker-compose up -d
+
+version: "3.9"
+
+services:
+  # ============ PostgreSQL Database ============
+  # Primary relational database for all application data
+  postgres:
+    image: postgres:16-alpine
+    container_name: careai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: careai
+      POSTGRES_PASSWORD: careai_password
+      POSTGRES_DB: careai_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # SQL initialization scripts run on first startup
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U careai -d careai_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - careai-network
+
+  # ============ MinIO (S3-Compatible Object Storage) ============
+  # Open-source S3-compatible storage for file uploads
+  # Stores health records, prescriptions, lab reports, profile images
+  minio:
+    image: minio/minio:latest
+    container_name: careai-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: careai_minio_admin
+      MINIO_ROOT_PASSWORD: careai_minio_secret
+    ports:
+      - "9000:9000"   # S3 API endpoint
+      - "9001:9001"   # MinIO web console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - careai-network
+
+  # ============ FastAPI Backend ============
+  # Core API server handling all business logic and AI services
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: careai-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      # PostgreSQL connection
+      DATABASE_URL: postgresql+asyncpg://careai:careai_password@postgres:5432/careai_db
+      USE_SQLITE: "false"
+      # JWT settings
+      JWT_SECRET_KEY: careai-jwt-secret-change-in-production
+      SECRET_KEY: careai-secret-key-change-in-production
+      # S3/MinIO storage configuration
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_BUCKET_NAME: careai-uploads
+      S3_ACCESS_KEY_ID: careai_minio_admin
+      S3_SECRET_ACCESS_KEY: careai_minio_secret
+      S3_REGION: us-east-1
+      # OpenAI (optional - leave empty for fallback AI responses)
+      OPENAI_API_KEY: ""
+      # Server
+      DEBUG: "false"
+      HOST: "0.0.0.0"
+      PORT: "8000"
+    ports:
+      - "8000:8000"
+    networks:
+      - careai-network
+
+  # ============ React Admin Panel ============
+  # Web-based admin dashboard for platform management
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    container_name: careai-admin
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - careai-network
+
+  # ============ Nginx Reverse Proxy ============
+  # Main entry point - routes traffic to backend and admin
+  nginx:
+    image: nginx:alpine
+    container_name: careai-nginx
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - admin
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - careai-network
+
+# Named volumes for persistent data storage
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+
+# Internal network for inter-service communication
+networks:
+  careai-network:
+    driver: bridge
