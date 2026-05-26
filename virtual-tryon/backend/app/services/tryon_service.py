@@ -12,8 +12,9 @@ from uuid import UUID
 
 import httpx
 import structlog
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.database.models import TryOnJob, TryOnResult, UserImage
@@ -151,9 +152,11 @@ class TryOnService:
         return job
 
     async def get_job_status(self, db: AsyncSession, job_id: UUID) -> Optional[TryOnJob]:
-        """Retrieve the current status of a try-on job."""
+        """Retrieve the current status of a try-on job with eager-loaded result."""
         result = await db.execute(
-            select(TryOnJob).where(TryOnJob.id == job_id)
+            select(TryOnJob)
+            .where(TryOnJob.id == job_id)
+            .options(selectinload(TryOnJob.result))
         )
         return result.scalar_one_or_none()
 
@@ -180,11 +183,12 @@ class TryOnService:
         count_result = await db.execute(count_query)
         total_items = len(count_result.scalars().all())
 
-        # Fetch paginated results
+        # Fetch paginated results with eager-loaded result relationship
         offset = (page - 1) * per_page
         query = (
             select(TryOnJob)
             .where(TryOnJob.user_id == user_id)
+            .options(selectinload(TryOnJob.result))
             .order_by(TryOnJob.created_at.desc())
             .offset(offset)
             .limit(per_page)

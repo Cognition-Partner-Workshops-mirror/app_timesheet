@@ -95,6 +95,12 @@ async def login_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
             )
+    elif user.password_hash and not request.password:
+        # User has a password set but no password was provided
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Password required",
+        )
 
     token = create_access_token(data={"sub": str(user.id), "email": user.email})
 

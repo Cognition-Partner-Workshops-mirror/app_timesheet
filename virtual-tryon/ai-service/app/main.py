@@ -16,6 +16,7 @@ Integration:
 - Reports metrics via Prometheus endpoint
 """
 
+import asyncio
 import io
 import time
 import uuid
@@ -201,8 +202,9 @@ async def process_tryon(request: InferenceRequest):
         user_image_bytes = _fetch_image(request.user_image_path)
         product_image_bytes = _fetch_image(f"product_image/{request.product_image_id}.jpg")
 
-        # Run the complete try-on pipeline
-        result = pipeline.process(
+        # Run ML inference in a thread to avoid blocking the async event loop
+        result = await asyncio.to_thread(
+            pipeline.process,
             user_image_bytes=user_image_bytes,
             garment_image_bytes=product_image_bytes,
             options=request.options,
