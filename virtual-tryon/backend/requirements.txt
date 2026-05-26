@@ -1,0 +1,41 @@
+# FastAPI Backend Dependencies
+# All open-source libraries
+
+# Web framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.12
+
+# Database
+sqlalchemy==2.0.35
+asyncpg==0.29.0
+alembic==1.13.3
+
+# Redis
+redis==5.1.1
+
+# Object Storage (S3-compatible, works with MinIO)
+boto3==1.35.36
+
+# Image Processing
+Pillow==10.4.0
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Validation
+pydantic==2.9.2
+pydantic-settings==2.5.2
+email-validator==2.2.0
+
+# HTTP Client (for AI service communication)
+httpx==0.27.2
+
+# Utilities
+python-dotenv==1.0.1
+structlog==24.4.0
+
+# Testing
+pytest==8.3.3
+pytest-asyncio==0.24.0
