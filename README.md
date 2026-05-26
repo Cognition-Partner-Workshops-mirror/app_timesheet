@@ -1,297 +1,155 @@
-# Employee Time Tracking Application
+# HLD/LLD Generator
 
-A full-stack web application for tracking and reporting employee hourly work across different clients.
-
-## ⚠️ Important Notes
-
-### Data Persistence
-**This application uses SQLite in-memory database as specified in requirements.**
-- ⚠️ **All data is lost when the backend server restarts**
-- Suitable for development and testing
-- For production use, modify `backend/src/database/init.js` to use file-based SQLite instead of `:memory:`
-
-### Authentication
-- Email-only authentication with JWT tokens
-- No password required - assumes trusted internal network
-- Anyone with a valid email can create an account and log in
-- Consider integrating with company SSO for production use
+AI-powered High-Level Design (HLD) and Low-Level Design (LLD) document generator for microservices architectures.
 
 ## Features
 
-- ✅ User authentication (email-based with JWT tokens)
-- ✅ Add, edit, and delete clients
-- ✅ Add, edit, and delete hourly work entries for each client
-- ✅ View hourly reports for each client
-- ✅ Export hourly reports to CSV or PDF
+- **Upload UI Design Images**: Drag-and-drop UI mockups for AI-powered analysis — the system extracts endpoints, components, and data models from your designs
+- **Requirements Management**: Add requirements via text input or file upload (TXT, MD, PDF, DOCX)
+- **AI-Generated HLD**: Generates comprehensive High-Level Design documents including:
+  - System overview and architecture description
+  - Microservice definitions with endpoints, tech stacks, and dependencies
+  - Design pattern recommendations (API Gateway, Circuit Breaker, CQRS, Saga, etc.)
+  - Scalability, security, reliability, communication, and deployment strategies
+- **AI-Generated LLD**: Generates detailed Low-Level Design for each service including:
+  - Component diagrams and class design
+  - Database schemas with indexes and constraints
+  - API contracts with request/response schemas
+  - Sequence flows, error handling, caching, logging, and security details
+- **Interactive Editing**: Edit any section of HLD/LLD in real-time with Markdown support
+- **Service-to-LLD Navigation**: Click any service in the HLD to navigate directly to its LLD
+- **Add/Remove Services**: Dynamically add or remove services from the architecture
+- **Project Management**: Create multiple projects with different configurations
 
 ## Tech Stack
 
-### Frontend
-- **React** with TypeScript
-- **Vite** for build tooling
-- **Material UI** for components
-- **React Query** for server state management
-- **React Router** for navigation
-- **Axios** for API calls
+| Layer     | Technology                                |
+|-----------|-------------------------------------------|
+| Frontend  | React 19, TypeScript, Material UI, Vite   |
+| Backend   | Python, FastAPI, Uvicorn                  |
+| AI        | OpenAI GPT-4o (vision + text generation)  |
+| Storage   | File-based JSON persistence               |
 
-### Backend
-- **Node.js** with Express
-- **SQLite** in-memory database
-- **JWT** for authentication
-- **Joi** for validation
-- **PDFKit** for PDF generation
-- **csv-writer** for CSV export
+## Prerequisites
+
+- **Python 3.10+**
+- **Node.js 18+**
+- **OpenAI API Key** (GPT-4o access required for image analysis)
+
+## Quick Start
+
+### 1. Clone and set up the backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+
+# Set your OpenAI API key
+export OPENAI_API_KEY="your-api-key-here"
+
+# Start the backend server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### 2. Set up the frontend
+
+```bash
+cd frontend
+npm install
+
+# Start the development server
+npm run dev
+```
+
+### 3. Open the application
+
+Navigate to `http://localhost:5173` in your browser.
+
+## Usage Guide
+
+1. **Create a Project**: Click "New Project" on the dashboard. Configure target scale, primary language, and cloud provider.
+
+2. **Upload UI Designs**: In the project workspace, drag & drop UI design images. Each image is automatically analyzed by AI to extract endpoints and components. You can tag each image with the endpoint name it represents.
+
+3. **Add Requirements**: Switch to the Requirements tab to add text requirements or upload requirement documents.
+
+4. **Generate HLD**: Click "Generate HLD" — the AI analyzes all your images and requirements to produce a comprehensive architecture design following microservices best practices.
+
+5. **Review & Edit HLD**: Navigate through the HLD tabs (Overview, Services, Design Patterns, Strategies, Full Document). Click the edit icon on any section to modify content inline.
+
+6. **Generate LLDs**: On each service card, click "Generate LLD" to create a detailed low-level design. Each LLD includes components, class design, database schema, API contracts, and more.
+
+7. **Edit LLDs**: Navigate to any LLD and edit individual sections (Components, Database Schema, API Contracts, etc.) using the edit button.
 
 ## Project Structure
 
 ```
-.
+hld-lld-generator/
 ├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── projects.py        # REST API endpoints
+│   │   ├── core/
+│   │   │   └── config.py          # Application configuration
+│   │   ├── models/
+│   │   │   └── schemas.py         # Pydantic data models
+│   │   ├── services/
+│   │   │   ├── ai_service.py      # OpenAI integration
+│   │   │   └── storage.py         # JSON file persistence
+│   │   └── main.py                # FastAPI application entry
+│   └── requirements.txt
+├── frontend/
 │   ├── src/
-│   │   ├── database/
-│   │   │   └── init.js           # Database initialization
-│   │   ├── middleware/
-│   │   │   ├── auth.js           # JWT authentication
-│   │   │   └── errorHandler.js  # Error handling
-│   │   ├── routes/
-│   │   │   ├── auth.js           # Authentication endpoints
-│   │   │   ├── clients.js        # Client CRUD
-│   │   │   ├── workEntries.js    # Work entry CRUD
-│   │   │   └── reports.js        # Reporting & export
-│   │   ├── validation/
-│   │   │   └── schemas.js        # Joi validation schemas
-│   │   └── server.js             # Express server
-│   ├── package.json
-│   └── DEPLOYMENT.md             # Production deployment guide
-│
-└── frontend/
-    ├── src/
-    │   ├── api/
-    │   │   └── client.ts         # API client with JWT
-    │   ├── components/
-    │   │   └── Layout.tsx        # Main layout
-    │   ├── contexts/
-    │   │   └── AuthContext.tsx   # Auth state management
-    │   ├── pages/
-    │   │   ├── LoginPage.tsx     # Login page
-    │   │   ├── DashboardPage.tsx # Dashboard
-    │   │   ├── ClientsPage.tsx   # Client management
-    │   │   ├── WorkEntriesPage.tsx # Work entry management
-    │   │   └── ReportsPage.tsx   # Reports & exports
-    │   ├── types/
-    │   │   └── api.ts            # TypeScript interfaces
-    │   └── App.tsx               # Main app component
-    └── package.json
+│   │   ├── api/
+│   │   │   └── client.ts          # API client functions
+│   │   ├── components/
+│   │   │   └── Layout.tsx         # Global layout
+│   │   ├── pages/
+│   │   │   ├── Dashboard.tsx      # Project listing & creation
+│   │   │   ├── ProjectView.tsx    # Project workspace
+│   │   │   ├── HLDView.tsx        # HLD viewer/editor
+│   │   │   └── LLDView.tsx        # LLD viewer/editor
+│   │   ├── types/
+│   │   │   └── index.ts           # TypeScript type definitions
+│   │   ├── App.tsx                # Root component with routing
+│   │   └── main.tsx               # Entry point
+│   └── package.json
+└── README.md
 ```
-
-## Getting Started
-
-### Prerequisites
-- Node.js 18+ installed
-- npm or yarn package manager
-
-### Backend Setup
-
-1. Navigate to backend directory:
-```bash
-cd backend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create environment file:
-```bash
-cp .env.example .env
-```
-
-4. Update `.env` with your configuration:
-```bash
-PORT=3001
-NODE_ENV=development
-FRONTEND_URL=http://localhost:5173
-JWT_SECRET=your-secure-secret-key-change-this
-```
-
-5. Start the development server:
-```bash
-npm run dev
-```
-
-Backend will be running at `http://localhost:3001`
-
-### Frontend Setup
-
-1. Navigate to frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create environment file:
-```bash
-cp .env.example .env
-```
-
-4. Update `.env`:
-```bash
-VITE_API_URL=http://localhost:3001
-```
-
-5. Start the development server:
-```bash
-npm run dev
-```
-
-Frontend will be running at `http://localhost:5173`
-
-## Usage
-
-1. Open `http://localhost:5173` in your browser
-2. Enter any email address to log in (no password required)
-3. Start adding clients and tracking work hours
-4. View reports and export data as CSV or PDF
 
 ## API Endpoints
 
-### Authentication
-- `POST /api/auth/login` - Login with email, returns JWT token
-- `GET /api/auth/me` - Get current user info (requires auth)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/projects` | List all projects |
+| POST | `/api/projects` | Create a new project |
+| GET | `/api/projects/{id}` | Get project details |
+| PUT | `/api/projects/{id}` | Update project |
+| DELETE | `/api/projects/{id}` | Delete project |
+| POST | `/api/projects/{id}/images` | Upload UI design image |
+| POST | `/api/projects/{id}/requirements` | Add requirements |
+| POST | `/api/projects/{id}/hld/generate` | Generate HLD |
+| PUT | `/api/projects/{id}/hld` | Update HLD |
+| POST | `/api/projects/{id}/lld/generate` | Generate LLD |
+| PUT | `/api/projects/{id}/lld/{service_id}` | Update LLD |
+| POST | `/api/projects/{id}/services` | Add service to HLD |
+| DELETE | `/api/projects/{id}/services/{service_id}` | Remove service |
 
-### Clients
-- `GET /api/clients` - Get all clients
-- `POST /api/clients` - Create new client
-- `GET /api/clients/:id` - Get specific client
-- `PUT /api/clients/:id` - Update client
-- `DELETE /api/clients/:id` - Delete client
+## Design Patterns Applied
 
-### Work Entries
-- `GET /api/work-entries` - Get all work entries (optional ?clientId filter)
-- `POST /api/work-entries` - Create new work entry
-- `GET /api/work-entries/:id` - Get specific work entry
-- `PUT /api/work-entries/:id` - Update work entry
-- `DELETE /api/work-entries/:id` - Delete work entry
+The AI recommends and documents these microservice patterns when applicable:
 
-### Reports
-- `GET /api/reports/client/:clientId` - Get hourly report for client
-- `GET /api/reports/export/csv/:clientId` - Export report as CSV
-- `GET /api/reports/export/pdf/:clientId` - Export report as PDF
-
-All authenticated endpoints require `Authorization: Bearer <token>` header.
-
-## Security Features
-
-- JWT-based authentication with 24-hour token expiration
-- Rate limiting on authentication endpoints (5 attempts per 15 minutes)
-- CORS protection
-- Helmet security headers
-- Input validation with Joi schemas
-- SQL injection protection with parameterized queries
-
-## Development
-
-### Backend Development
-```bash
-cd backend
-npm run dev  # Starts with nodemon for auto-reload
-```
-
-### Frontend Development
-```bash
-cd frontend
-npm run dev  # Starts Vite dev server with HMR
-```
-
-### Running Tests
-
-**Backend:**
-```bash
-cd backend
-npm test                    # Run all tests
-npm run test:coverage       # Run tests with coverage report
-npm run test:watch          # Run tests in watch mode
-```
-
-### Test Coverage
-
-The backend has comprehensive test coverage with **161 tests** across 8 test suites:
-
-| File | Statements | Branches | Functions | Lines |
-|------|------------|----------|-----------|-------|
-| **Overall** | **90.16%** | **93.82%** | **92.18%** | **90.35%** |
-| database/init.js | 100% | 100% | 100% | 100% |
-| middleware/auth.js | 100% | 100% | 100% | 100% |
-| middleware/errorHandler.js | 100% | 100% | 100% | 100% |
-| routes/auth.js | 100% | 100% | 100% | 100% |
-| routes/clients.js | 97.89% | 100% | 100% | 97.89% |
-| routes/workEntries.js | 98.41% | 100% | 100% | 98.41% |
-| routes/reports.js | 64.15% | 69.44% | 68.75% | 64.42% |
-| validation/schemas.js | 100% | 100% | 100% | 100% |
-
-Coverage thresholds are configured in `jest.config.js`:
-- Statements: 60%
-- Branches: 60%
-- Functions: 65%
-- Lines: 60%
-
-### Building for Production
-
-**Backend:**
-```bash
-cd backend
-npm start  # Production mode
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm run build  # Creates optimized production build in dist/
-npm run preview  # Preview production build
-```
-
-## Production Deployment
-
-See `backend/DEPLOYMENT.md` for detailed production deployment instructions.
-
-### Quick Production Checklist
-- [ ] Set strong `JWT_SECRET` in environment variables
-- [ ] Configure proper `FRONTEND_URL` for CORS
-- [ ] Consider switching to file-based SQLite for data persistence
-- [ ] Set up HTTPS/SSL certificates
-- [ ] Configure proper logging and monitoring
-- [ ] Set up automated backups (if using persistent storage)
-- [ ] Review and adjust rate limiting settings
-- [ ] Consider integrating with company SSO
-
-## Known Limitations
-
-1. **In-memory database** - All data is lost on server restart
-2. **Email-only auth** - No password protection, assumes trusted network
-3. **No user roles** - All users have equal access to all data
-4. **Single-server architecture** - Not designed for horizontal scaling
-5. **No real-time updates** - Changes require page refresh
-
-## Future Enhancements
-
-- Persistent database storage
-- User roles and permissions
-- Multi-tenancy support
-- Real-time updates with WebSockets
-- Advanced reporting and analytics
-- Email notifications
-- Mobile app
-- Integration with calendar systems
+- **API Gateway**: Unified entry point for client traffic
+- **Service Discovery**: Dynamic service registration and lookup
+- **Circuit Breaker**: Fault tolerance for inter-service calls
+- **CQRS**: Separate read/write models for performance
+- **Event Sourcing**: Event-based state management
+- **Saga Pattern**: Distributed transaction coordination
+- **Database per Service**: Isolated data ownership
+- **BFF (Backend for Frontend)**: Tailored API layers per client
+- **Sidecar / Ambassador**: Cross-cutting concerns injection
+- **Strangler Fig**: Incremental migration strategy
 
 ## License
 
 MIT
-
-## Support
-
-For issues or questions, please contact your system administrator.
