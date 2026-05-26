@@ -1,0 +1,78 @@
+// fraud.proto - Defines the gRPC service for ML-based fraud detection.
+// The Python ML service implements this to analyze transactions for suspicious activity.
+
+syntax = "proto3";
+
+package fraud;
+
+option go_package = "github.com/multi-service-arch/logging-service/proto/fraud";
+option java_package = "com.multiservice.proto.fraud";
+
+// Transaction represents a financial transaction to be analyzed for fraud
+message Transaction {
+  string transaction_id = 1;     // Unique transaction identifier
+  string user_id = 2;            // User performing the transaction
+  double amount = 3;             // Transaction amount
+  string currency = 4;           // Currency code (e.g., "USD")
+  string merchant_id = 5;        // Merchant identifier
+  string merchant_category = 6;  // Merchant category code (MCC)
+  string location = 7;           // Geographic location of transaction
+  string timestamp = 8;          // Transaction timestamp (ISO 8601)
+  string card_type = 9;          // Type of payment card used
+  string ip_address = 10;        // IP address of the requester
+  map<string, string> metadata = 11; // Additional context
+}
+
+// FraudCheckResponse contains the fraud analysis result
+message FraudCheckResponse {
+  string transaction_id = 1;     // Transaction that was analyzed
+  bool is_fraudulent = 2;        // Whether the transaction is flagged as fraud
+  double risk_score = 3;         // Risk score from 0.0 (safe) to 1.0 (fraudulent)
+  string risk_level = 4;         // Risk level: LOW, MEDIUM, HIGH, CRITICAL
+  repeated string risk_factors = 5; // Contributing risk factors
+  string recommendation = 6;    // Recommended action: ALLOW, REVIEW, BLOCK
+  string model_version = 7;      // ML model version used for analysis
+}
+
+// BatchFraudCheckRequest allows batch analysis of multiple transactions
+message BatchFraudCheckRequest {
+  repeated Transaction transactions = 1;
+}
+
+// BatchFraudCheckResponse returns fraud analysis for multiple transactions
+message BatchFraudCheckResponse {
+  repeated FraudCheckResponse results = 1;
+  int32 total_processed = 2;
+  int32 flagged_count = 3;
+}
+
+// ModelInfoRequest for querying ML model metadata
+message ModelInfoRequest {
+  string model_name = 1; // Optional: specific model name
+}
+
+// ModelInfoResponse returns ML model information
+message ModelInfoResponse {
+  string model_name = 1;
+  string model_version = 2;
+  string last_trained = 3;       // When the model was last trained
+  double accuracy = 4;           // Model accuracy metric
+  double precision = 5;          // Model precision metric
+  double recall = 6;             // Model recall metric
+  int32 total_predictions = 7;   // Total predictions made
+}
+
+// FraudDetectionService provides ML-powered fraud analysis
+service FraudDetectionService {
+  // CheckTransaction analyzes a single transaction for fraud
+  rpc CheckTransaction(Transaction) returns (FraudCheckResponse);
+
+  // CheckBatchTransactions analyzes multiple transactions at once
+  rpc CheckBatchTransactions(BatchFraudCheckRequest) returns (BatchFraudCheckResponse);
+
+  // StreamTransactions allows real-time streaming of transactions for analysis
+  rpc StreamTransactions(stream Transaction) returns (stream FraudCheckResponse);
+
+  // GetModelInfo returns metadata about the ML model currently in use
+  rpc GetModelInfo(ModelInfoRequest) returns (ModelInfoResponse);
+}
