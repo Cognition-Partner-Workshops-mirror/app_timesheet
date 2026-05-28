@@ -132,8 +132,22 @@ export default function Home() {
                 maximizedSection={maximizedSection}
                 onMaximizeToggle={setMaximizedSection}
               >
+                {/* Show detected algorithm name and data structures */}
+                {state.animationResult.algorithmName && (
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">
+                      {state.animationResult.algorithmName}
+                    </span>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {(state.animationResult as any).codeAnalysis?.detectedDS?.map((ds: { key: string; label: string }) => (
+                      <span key={ds.key} className="px-2 py-0.5 bg-surface-light text-foreground/60 text-[10px] font-mono rounded-full border border-border">
+                        {ds.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <Suspense fallback={<SectionLoader />}>
-                  {/* Combined player for tree traversals (multiple data structures), otherwise standard player */}
+                  {/* Combined player for tree/linked-list/graph (multiple data structures), otherwise standard player */}
                   {state.animationResult.combined ? (
                     <CombinedAnimationPlayer result={state.animationResult} code={state.code || ''} />
                   ) : (

@@ -10,7 +10,7 @@ const { ANIMATION_STEPS_PROMPT, STORYBOARD_PROMPT } = require('../prompts');
 const { validate, animationSchema, codeSchema } = require('../middleware/validate');
 const { getDatabase } = require('../database/init');
 const { v4: uuidv4 } = require('uuid');
-const { generateLocalAnimation } = require('../services/animationEngine');
+const { generateLocalAnimation, analyzeCodeForDS } = require('../services/animationEngine');
 
 /**
  * Extract numeric array from code (e.g. [64, 34, 25, 12]).
@@ -26,10 +26,24 @@ function extractInputFromCode(code) {
 }
 
 /**
- * Detect algorithm type from code by matching common patterns.
- * Returns a local engine key (e.g. 'bubble_sort') or the raw type.
+ * Detect algorithm type from code using the universal code analyzer.
+ * First tries the AI-powered pattern matching from codeAnalyzer, then
+ * falls back to keyword-based heuristics for edge cases.
+ * Returns a local engine key (e.g. 'bubble_sort', 'bfs', 'dp_fibonacci').
  */
 function detectAlgorithmFromCode(code) {
+  // Use the universal code analyzer for comprehensive detection
+  const analysis = analyzeCodeForDS(code);
+  if (analysis.algorithm && analysis.algorithm.key && analysis.algorithm.confidence >= 1) {
+    // Map analyzer keys to ALGORITHM_MAP keys where they differ
+    const keyMap = {
+      dp: 'dp_fibonacci',
+      postorder_traversal: 'preorder_traversal', // fallback until postorder is implemented
+    };
+    return keyMap[analysis.algorithm.key] || analysis.algorithm.key;
+  }
+
+  // Fallback: keyword-based heuristics for cases the analyzer might miss
   const lower = code.toLowerCase();
   if (lower.includes('bubble') || (lower.includes('swap') && lower.includes('for') && lower.includes('> arr'))) return 'bubble_sort';
   if (lower.includes('selection') || (lower.includes('min') && lower.includes('for') && lower.includes('swap'))) return 'selection_sort';
@@ -38,20 +52,32 @@ function detectAlgorithmFromCode(code) {
   if (lower.includes('quick_sort') || lower.includes('quicksort') || (lower.includes('pivot') && lower.includes('partition'))) return 'quick_sort';
   if (lower.includes('binary_search') || lower.includes('binarysearch') || (lower.includes('mid') && lower.includes('left') && lower.includes('right') && !lower.includes('merge'))) return 'binary_search';
   if (lower.includes('linear_search') || lower.includes('linearsearch')) return 'linear_search';
-  // Linked list reversal — detect reverse linked list patterns
-  // Matches: ListNode prev/curr/temp pattern, reverselist, reverse linked list
+  // Linked list reversal
   if ((lower.includes('listnode') || lower.includes('linkedlist') || lower.includes('linked_list')) &&
       (lower.includes('reverse') || (lower.includes('prev') && lower.includes('curr') && lower.includes('next')))) return 'linked_list_reversal';
-  // Also detect the pointer-swapping pattern: curr.next = prev with a while loop
   if (lower.includes('listnode') && lower.includes('prev') && lower.includes('.next') && lower.includes('while')) return 'linked_list_reversal';
-  // Tree traversals — detect inorder/preorder patterns
+  // BFS / DFS detection
+  if ((lower.includes('queue') || lower.includes('poll') || lower.includes('offer')) && lower.includes('visited')) return 'bfs';
+  if ((lower.includes('stack') && lower.includes('visited')) || (lower.includes('dfs') && !lower.includes('bfs'))) return 'dfs';
+  // DP detection
+  if (lower.includes('dp[') || lower.includes('memo[') || lower.includes('fibonacci') || lower.includes('fib(')) return 'dp_fibonacci';
+  // Two pointer
+  if ((lower.includes('left') && lower.includes('right') && lower.includes('while') && lower.includes('left') && lower.includes('<') && lower.includes('right')) && !lower.includes('merge') && !lower.includes('binary')) return 'two_pointer';
+  // Sliding window
+  if (lower.includes('window') && (lower.includes('start') || lower.includes('end') || lower.includes('size'))) return 'sliding_window';
+  // HashMap / frequency
+  if (lower.includes('hashmap') || lower.includes('getordefault') || lower.includes('frequency') || lower.includes('freq')) return 'hashmap_count';
+  if ((lower.includes('map') || lower.includes('dict')) && lower.includes('put')) return 'hashmap_count';
+  // Set
+  if (lower.includes('hashset') || lower.includes('new set') || lower.includes('set()')) return 'set_operations';
+  // String operations
+  if ((lower.includes('charat') || lower.includes('tochararray') || lower.includes('stringbuilder')) && (lower.includes('reverse') || lower.includes('palindrome'))) return 'string_reverse';
+  // Tree traversals
   if ((lower.includes('inorder') || lower.includes('in_order') || lower.includes('in-order')) && (lower.includes('tree') || lower.includes('treenode'))) return 'inorder_traversal';
   if ((lower.includes('preorder') || lower.includes('pre_order') || lower.includes('pre-order')) && (lower.includes('tree') || lower.includes('treenode'))) return 'preorder_traversal';
-  // Generic tree with stack = inorder traversal pattern
   if (lower.includes('treenode') && lower.includes('stack') && (lower.includes('.push') || lower.includes('.pop'))) return 'inorder_traversal';
   if (lower.includes('stack') || lower.includes('.push') && lower.includes('.pop')) return 'stack_operations';
   if (lower.includes('queue') || lower.includes('enqueue') || lower.includes('dequeue')) return 'queue_operations';
-  // Default to bubble_sort for generic sorting code
   if (lower.includes('sort')) return 'bubble_sort';
   return 'auto_detect';
 }
@@ -73,6 +99,9 @@ router.post('/generate', validate(animationSchema), async (req, res) => {
     // Extract input data from code if none provided
     const resolvedInput = inputData || extractInputFromCode(code);
 
+    // Analyze code for detected data structures (included in response)
+    const codeAnalysis = code ? analyzeCodeForDS(code) : null;
+
     // Try local animation engine first — works without OpenAI API key
     const localResult = generateLocalAnimation(algorithmType, resolvedInput);
     if (localResult) {
@@ -89,7 +118,8 @@ router.post('/generate', validate(animationSchema), async (req, res) => {
         VALUES (?, ?, ?, ?, ?)
       `).run(id, sessionId, algorithmType, JSON.stringify(localResult.steps), JSON.stringify(localResult));
 
-      return res.json({ id, sessionId, ...localResult });
+      // Include detected data structures in the response
+      return res.json({ id, sessionId, ...localResult, codeAnalysis });
     }
 
     // Fall back to AI for unknown algorithm types

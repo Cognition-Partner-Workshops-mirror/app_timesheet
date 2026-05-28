@@ -239,18 +239,9 @@ export default function CodeAnimationPlayer({ result, code }: CodeAnimationPlaye
         />
       </div>
 
-      {/* Complexity info */}
+      {/* Detailed Complexity Analysis */}
       {result.complexity && (
-        <div className="flex gap-4">
-          <div className="bg-surface border border-border rounded-xl px-4 py-2">
-            <span className="text-xs text-foreground/50">Time Complexity</span>
-            <p className="text-sm font-mono text-accent font-semibold">{result.complexity.time}</p>
-          </div>
-          <div className="bg-surface border border-border rounded-xl px-4 py-2">
-            <span className="text-xs text-foreground/50">Space Complexity</span>
-            <p className="text-sm font-mono text-accent font-semibold">{result.complexity.space}</p>
-          </div>
-        </div>
+        <ComplexityPanel complexity={result.complexity} />
       )}
 
       {/* Dynamic output — updates on every step showing live state changes */}
@@ -359,4 +350,74 @@ function getExecutingLine(step: AnimationStep | undefined, codeLines: string[]):
     }
   }
   return null;
+}
+
+/**
+ * Detailed complexity panel for the standard (non-combined) animation player.
+ * Shows time/space with expandable best/worst/avg and explanations.
+ */
+function ComplexityPanel({ complexity }: { complexity: Record<string, string> }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasDetails = complexity.timeExplain || complexity.best || complexity.analogy;
+
+  return (
+    <div className="bg-surface border border-border rounded-xl overflow-hidden">
+      <button
+        onClick={() => hasDetails && setExpanded(!expanded)}
+        className="w-full flex items-center gap-4 px-4 py-3 hover:bg-surface-light/50 transition-colors"
+      >
+        <div className="flex flex-col items-start">
+          <span className="text-[10px] text-foreground/40 uppercase font-semibold">Time</span>
+          <span className="text-lg font-mono font-bold text-primary">{complexity.time}</span>
+        </div>
+        <div className="flex flex-col items-start">
+          <span className="text-[10px] text-foreground/40 uppercase font-semibold">Space</span>
+          <span className="text-lg font-mono font-bold text-accent">{complexity.space}</span>
+        </div>
+        {complexity.best && (
+          <div className="flex gap-2 ml-auto">
+            <div className="flex flex-col items-center px-2 py-1 bg-emerald-500/10 rounded-lg">
+              <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">BEST</span>
+              <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">{complexity.best}</span>
+            </div>
+            <div className="flex flex-col items-center px-2 py-1 bg-amber-500/10 rounded-lg">
+              <span className="text-[9px] text-amber-600 dark:text-amber-400 font-semibold">AVG</span>
+              <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">{complexity.average || complexity.time}</span>
+            </div>
+            <div className="flex flex-col items-center px-2 py-1 bg-red-500/10 rounded-lg">
+              <span className="text-[9px] text-red-600 dark:text-red-400 font-semibold">WORST</span>
+              <span className="text-xs font-mono font-bold text-red-600 dark:text-red-400">{complexity.worst || complexity.time}</span>
+            </div>
+          </div>
+        )}
+        {hasDetails && (
+          <span className="text-foreground/30 text-sm ml-2">{expanded ? '▲' : '▼'}</span>
+        )}
+      </button>
+      {expanded && hasDetails && (
+        <div className="px-4 pb-4 border-t border-border">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+            {complexity.timeExplain && (
+              <div className="space-y-1">
+                <h4 className="text-xs font-semibold text-primary uppercase">⏱ Time: {complexity.time}</h4>
+                <p className="text-xs text-foreground/70 leading-relaxed">{complexity.timeExplain}</p>
+              </div>
+            )}
+            {complexity.spaceExplain && (
+              <div className="space-y-1">
+                <h4 className="text-xs font-semibold text-accent uppercase">💾 Space: {complexity.space}</h4>
+                <p className="text-xs text-foreground/70 leading-relaxed">{complexity.spaceExplain}</p>
+              </div>
+            )}
+          </div>
+          {complexity.analogy && (
+            <div className="mt-3 p-3 bg-amber-500/5 border border-amber-500/10 rounded-lg">
+              <h4 className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase mb-1">💡 Real-World Analogy</h4>
+              <p className="text-xs text-foreground/70 leading-relaxed">{complexity.analogy}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }

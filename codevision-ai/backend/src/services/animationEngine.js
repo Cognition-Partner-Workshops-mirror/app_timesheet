@@ -3,7 +3,14 @@
  * Generates step-by-step animation data for common algorithms
  * without requiring OpenAI API. Each algorithm produces
  * structured steps with state snapshots for the frontend player.
+ *
+ * Supports: sorting, searching, tree traversals, linked list,
+ * BFS, DFS, DP, two-pointer, sliding window, HashMap, Set, String ops.
  */
+
+// Import additional DS animation generators
+const { bfs, dfs, dpFibonacci, twoPointer, slidingWindow, hashMapCount, setOperations, stringReverse } = require('./dsAnimations');
+const { analyzeCode: analyzeCodeForDS } = require('./codeAnalyzer');
 
 // Generate animation steps for bubble sort
 function bubbleSort(inputArray) {
@@ -1043,20 +1050,155 @@ const DEFAULT_ARRAYS = {
   linkedList: [1, 2, 3, 4, 5],
 };
 
-// Map algorithm type to generator function
+// Map algorithm type to generator function, with detailed complexity explanations
 const ALGORITHM_MAP = {
-  bubble_sort: { fn: bubbleSort, type: 'sorting', name: 'Bubble Sort', complexity: { time: 'O(n²)', space: 'O(1)' } },
-  selection_sort: { fn: selectionSort, type: 'sorting', name: 'Selection Sort', complexity: { time: 'O(n²)', space: 'O(1)' } },
-  insertion_sort: { fn: insertionSort, type: 'sorting', name: 'Insertion Sort', complexity: { time: 'O(n²)', space: 'O(1)' } },
-  merge_sort: { fn: mergeSort, type: 'sorting', name: 'Merge Sort', complexity: { time: 'O(n log n)', space: 'O(n)' } },
-  quick_sort: { fn: quickSort, type: 'sorting', name: 'Quick Sort', complexity: { time: 'O(n log n) avg', space: 'O(log n)' } },
-  linear_search: { fn: linearSearch, type: 'searching', name: 'Linear Search', complexity: { time: 'O(n)', space: 'O(1)' } },
-  binary_search: { fn: binarySearch, type: 'searching', name: 'Binary Search', complexity: { time: 'O(log n)', space: 'O(1)' } },
-  stack_operations: { fn: stackOperations, type: 'stack', name: 'Stack Operations', complexity: { time: 'O(1) per op', space: 'O(n)' } },
-  queue_operations: { fn: queueOperations, type: 'queue', name: 'Queue Operations', complexity: { time: 'O(1) per op', space: 'O(n)' } },
-  inorder_traversal: { fn: inorderTraversal, type: 'tree', name: 'Inorder Traversal', complexity: { time: 'O(n)', space: 'O(h)' }, combined: true },
-  preorder_traversal: { fn: preorderTraversal, type: 'tree', name: 'Preorder Traversal', complexity: { time: 'O(n)', space: 'O(h)' }, combined: true },
-  linked_list_reversal: { fn: linkedListReversal, type: 'linkedList', name: 'Linked List Reversal', complexity: { time: 'O(n)', space: 'O(1)' }, combined: true },
+  bubble_sort: { fn: bubbleSort, type: 'sorting', name: 'Bubble Sort', complexity: {
+    time: 'O(n²)', space: 'O(1)',
+    best: 'O(n)', worst: 'O(n²)', average: 'O(n²)',
+    timeExplain: 'Two nested loops: outer runs n times, inner compares adjacent pairs. In the worst case (reverse sorted), every pair must be swapped — giving n × n = n² comparisons.',
+    spaceExplain: 'Only uses a single temp variable for swapping. No extra arrays or data structures needed — constant O(1) extra space.',
+    analogy: 'Like bubbles rising in water: the largest element "bubbles up" to the end of the array in each pass.',
+  }},
+  selection_sort: { fn: selectionSort, type: 'sorting', name: 'Selection Sort', complexity: {
+    time: 'O(n²)', space: 'O(1)',
+    best: 'O(n²)', worst: 'O(n²)', average: 'O(n²)',
+    timeExplain: 'Always scans the remaining unsorted portion to find the minimum. Even if the array is already sorted, it still makes n(n-1)/2 comparisons.',
+    spaceExplain: 'Sorts in-place by swapping elements. Only needs one temp variable — constant O(1) space.',
+    analogy: 'Like picking the smallest card from a hand and placing it at the front, one by one.',
+  }},
+  insertion_sort: { fn: insertionSort, type: 'sorting', name: 'Insertion Sort', complexity: {
+    time: 'O(n²)', space: 'O(1)',
+    best: 'O(n)', worst: 'O(n²)', average: 'O(n²)',
+    timeExplain: 'Each element is inserted into its correct position in the sorted portion. Best case: already sorted (one comparison per element = O(n)). Worst case: reverse sorted (must shift all previous elements).',
+    spaceExplain: 'Sorts in-place using a key variable. No extra space needed — O(1).',
+    analogy: 'Like sorting playing cards in your hand: you pick up each card and slide it into the right spot among the cards you already hold.',
+  }},
+  merge_sort: { fn: mergeSort, type: 'sorting', name: 'Merge Sort', complexity: {
+    time: 'O(n log n)', space: 'O(n)',
+    best: 'O(n log n)', worst: 'O(n log n)', average: 'O(n log n)',
+    timeExplain: 'Divides the array in half (log n levels), then merges each level in O(n) time. Total: n × log n. Always the same regardless of input order.',
+    spaceExplain: 'Needs temporary arrays to merge halves. At any point, up to n extra elements are stored — O(n) auxiliary space.',
+    analogy: 'Like splitting a deck of cards into halves repeatedly until you have single cards, then merging sorted piles back together.',
+  }},
+  quick_sort: { fn: quickSort, type: 'sorting', name: 'Quick Sort', complexity: {
+    time: 'O(n log n) avg', space: 'O(log n)',
+    best: 'O(n log n)', worst: 'O(n²)', average: 'O(n log n)',
+    timeExplain: 'Picks a pivot and partitions the array around it. Average case: balanced partitions give log n depth × n work = O(n log n). Worst case: already sorted with bad pivot choice gives O(n²).',
+    spaceExplain: 'In-place partitioning, but recursion stack takes O(log n) space on average. Worst case recursion depth is O(n).',
+    analogy: 'Like organizing books by picking one book as the divider: everything smaller goes left, bigger goes right. Then repeat for each side.',
+  }},
+  linear_search: { fn: linearSearch, type: 'searching', name: 'Linear Search', complexity: {
+    time: 'O(n)', space: 'O(1)',
+    best: 'O(1)', worst: 'O(n)', average: 'O(n/2)',
+    timeExplain: 'Checks each element one by one from start to end. Best case: target is the first element. Worst case: target is last or not present — must check all n elements.',
+    spaceExplain: 'Only uses a loop counter. No extra storage needed — O(1) space.',
+    analogy: 'Like looking for a specific book on a shelf by checking each one from left to right until you find it.',
+  }},
+  binary_search: { fn: binarySearch, type: 'searching', name: 'Binary Search', complexity: {
+    time: 'O(log n)', space: 'O(1)',
+    best: 'O(1)', worst: 'O(log n)', average: 'O(log n)',
+    timeExplain: 'Halves the search space each step. With n=1000 elements, only ~10 comparisons needed (log₂ 1000 ≈ 10). Requires sorted input.',
+    spaceExplain: 'Iterative version uses only left, right, mid pointers — O(1) space. Recursive version would use O(log n) stack space.',
+    analogy: 'Like looking up a word in a dictionary: open to the middle, decide if the word is in the left or right half, and repeat.',
+  }},
+  stack_operations: { fn: stackOperations, type: 'stack', name: 'Stack Operations', complexity: {
+    time: 'O(1) per op', space: 'O(n)',
+    best: 'O(1)', worst: 'O(1)', average: 'O(1)',
+    timeExplain: 'Push and pop both operate on the top element only — no traversal needed. Each operation is instant regardless of stack size.',
+    spaceExplain: 'The stack itself stores up to n elements — O(n) total space for n items.',
+    analogy: 'Like a stack of plates: you can only add or remove from the top. Last In, First Out (LIFO).',
+  }},
+  queue_operations: { fn: queueOperations, type: 'queue', name: 'Queue Operations', complexity: {
+    time: 'O(1) per op', space: 'O(n)',
+    best: 'O(1)', worst: 'O(1)', average: 'O(1)',
+    timeExplain: 'Enqueue adds to the back, dequeue removes from the front — both are O(1) with a proper implementation (linked list or circular array).',
+    spaceExplain: 'The queue holds up to n elements — O(n) total space.',
+    analogy: 'Like a line at a ticket counter: first person in line gets served first. First In, First Out (FIFO).',
+  }},
+  inorder_traversal: { fn: inorderTraversal, type: 'tree', name: 'Inorder Traversal', complexity: {
+    time: 'O(n)', space: 'O(h)',
+    best: 'O(n)', worst: 'O(n)', average: 'O(n)',
+    timeExplain: 'Visits every node exactly once — n nodes = O(n) time. Cannot do better since we need to process all nodes.',
+    spaceExplain: 'Uses a stack that grows up to the height h of the tree. Balanced tree: h = log n → O(log n). Skewed tree: h = n → O(n).',
+    analogy: 'Like reading a book in order: go to the leftmost page first, read it, then move right. For a BST, this gives sorted output.',
+  }, combined: true },
+  preorder_traversal: { fn: preorderTraversal, type: 'tree', name: 'Preorder Traversal', complexity: {
+    time: 'O(n)', space: 'O(h)',
+    best: 'O(n)', worst: 'O(n)', average: 'O(n)',
+    timeExplain: 'Visits every node once — root first, then left subtree, then right subtree. Always O(n) since all nodes must be visited.',
+    spaceExplain: 'Stack depth = tree height h. Balanced: O(log n). Skewed: O(n). Each node pushed/popped exactly once.',
+    analogy: 'Like exploring a building: visit the current floor first, then go deeper left, then right.',
+  }, combined: true },
+  linked_list_reversal: { fn: linkedListReversal, type: 'linkedList', name: 'Linked List Reversal', complexity: {
+    time: 'O(n)', space: 'O(1)',
+    best: 'O(n)', worst: 'O(n)', average: 'O(n)',
+    timeExplain: 'Single pass through the list: visit each of the n nodes exactly once, reversing the pointer at each step. Always exactly n iterations.',
+    spaceExplain: 'Only uses 3 pointer variables (curr, prev, temp) regardless of list size. No extra data structures — constant O(1) space.',
+    analogy: 'Like a train reversing direction: each car (node) points to the one behind it instead of ahead. You walk through the train once, flipping each connection.',
+  }, combined: true },
+  bfs: { fn: bfs, type: 'graph', name: 'BFS (Breadth-First Search)', complexity: {
+    time: 'O(V+E)', space: 'O(V)',
+    best: 'O(1)', worst: 'O(V+E)', average: 'O(V+E)',
+    timeExplain: 'Visits every vertex V once and examines every edge E once. The "+ E" part comes from checking all neighbors of each vertex. V = vertices, E = edges.',
+    spaceExplain: 'Queue can hold up to V vertices (in a wide graph). Visited set also stores V entries. Total: O(V) extra space.',
+    analogy: 'Like ripples in a pond: you explore all neighbors at distance 1 first, then distance 2, then distance 3. Layer by layer, outward.',
+  }, combined: true },
+  dfs: { fn: dfs, type: 'graph', name: 'DFS (Depth-First Search)', complexity: {
+    time: 'O(V+E)', space: 'O(V)',
+    best: 'O(1)', worst: 'O(V+E)', average: 'O(V+E)',
+    timeExplain: 'Same as BFS — visits each vertex and edge once. The difference is traversal order (depth-first vs breadth-first), not total work.',
+    spaceExplain: 'Stack (explicit or recursion) can grow up to V deep in the worst case (long chain graph). Visited set holds V entries.',
+    analogy: 'Like exploring a maze: go as deep as possible down one path before backtracking. Always try to go deeper before going wider.',
+  }, combined: true },
+  dp_fibonacci: { fn: dpFibonacci, type: 'dp', name: 'Dynamic Programming (Fibonacci)', complexity: {
+    time: 'O(n)', space: 'O(n)',
+    best: 'O(n)', worst: 'O(n)', average: 'O(n)',
+    timeExplain: 'Fills a table of size n+1, computing each entry in O(1) by adding two previous values. Total: n additions = O(n). Without DP, naive recursion would be O(2^n)!',
+    spaceExplain: 'Stores the entire DP table of size n+1. Could be optimized to O(1) by only keeping the last 2 values, but the table is useful for visualization.',
+    analogy: 'Like building steps: each step stands on the two steps below it. Instead of recalculating from scratch each time, you remember (memoize) the results.',
+  }, combined: true },
+  fibonacci: { fn: dpFibonacci, type: 'dp', name: 'Fibonacci (DP Tabulation)', complexity: {
+    time: 'O(n)', space: 'O(n)',
+    best: 'O(n)', worst: 'O(n)', average: 'O(n)',
+    timeExplain: 'Bottom-up approach: fill dp[0], dp[1], ..., dp[n] in order. Each cell computed in O(1). Total n computations. Avoids the exponential blowup of naive recursion.',
+    spaceExplain: 'Array of size n+1 to store all intermediate Fibonacci numbers. Trade-off: more space for much faster time (O(n) vs O(2^n)).',
+    analogy: 'Like filling in a multiplication table: start from what you know (F(0)=0, F(1)=1) and build up row by row.',
+  }, combined: true },
+  two_pointer: { fn: twoPointer, type: 'array', name: 'Two Pointer Technique', complexity: {
+    time: 'O(n)', space: 'O(1)',
+    best: 'O(1)', worst: 'O(n)', average: 'O(n)',
+    timeExplain: 'Two pointers start at opposite ends and move inward. Each pointer moves at most n times total — they never revisit elements. Total work: O(n).',
+    spaceExplain: 'Only two integer variables (left, right) are needed. No extra arrays or data structures — O(1) space.',
+    analogy: 'Like two people walking toward each other from opposite ends of a bridge. They meet in the middle, having covered the entire bridge between them.',
+  }, combined: true },
+  sliding_window: { fn: slidingWindow, type: 'array', name: 'Sliding Window', complexity: {
+    time: 'O(n)', space: 'O(1)',
+    best: 'O(n)', worst: 'O(n)', average: 'O(n)',
+    timeExplain: 'The window slides from left to right, adding one element and removing one at each step. Each element is added and removed at most once — O(n) total.',
+    spaceExplain: 'Only tracks the window sum and boundaries — O(1) extra space. The window is just two indices, not a separate data structure.',
+    analogy: 'Like looking through a fixed-width window on a train: as the train moves, new scenery enters one side and old scenery exits the other. You always see exactly k elements.',
+  }, combined: true },
+  hashmap_count: { fn: hashMapCount, type: 'map', name: 'HashMap Frequency Count', complexity: {
+    time: 'O(n)', space: 'O(n)',
+    best: 'O(n)', worst: 'O(n)', average: 'O(n)',
+    timeExplain: 'One pass through the array: for each element, HashMap get/put is O(1) average. Total: n × O(1) = O(n). Worst case with hash collisions: O(n²), but very rare.',
+    spaceExplain: 'HashMap stores up to n unique keys. If all elements are distinct, space = O(n). If many duplicates, space is less but still O(n) worst case.',
+    analogy: 'Like tallying votes: for each ballot, look up the candidate name in a quick-lookup table and add 1 to their count.',
+  }, combined: true },
+  set_operations: { fn: setOperations, type: 'set', name: 'Set Operations', complexity: {
+    time: 'O(n)', space: 'O(n)',
+    best: 'O(n)', worst: 'O(n)', average: 'O(n)',
+    timeExplain: 'Iterate through n elements, checking membership (O(1) avg) and inserting (O(1) avg) for each. Total: O(n). HashSet uses hashing for constant-time lookups.',
+    spaceExplain: 'Set stores up to n unique elements. In the worst case (all unique), space = O(n).',
+    analogy: 'Like a guest list at a party: check if the name is already on the list (instant lookup). If not, add it. Duplicates are automatically ignored.',
+  }, combined: true },
+  string_reverse: { fn: stringReverse, type: 'string', name: 'String Reverse', complexity: {
+    time: 'O(n)', space: 'O(1)',
+    best: 'O(n)', worst: 'O(n)', average: 'O(n)',
+    timeExplain: 'Two pointers meet in the middle, making n/2 swaps. Each swap is O(1). Total: O(n/2) = O(n). Must touch every character at least once.',
+    spaceExplain: 'In-place reversal using character array swap — only a temp variable needed. If the string is immutable (like in Java), converting to char[] costs O(n) space.',
+    analogy: 'Like flipping a word written on cards: swap the first and last card, then the second and second-to-last, until you reach the middle.',
+  }, combined: true },
 };
 
 /**
@@ -1094,4 +1236,4 @@ function generateLocalAnimation(algorithmType, inputData) {
   };
 }
 
-module.exports = { generateLocalAnimation, ALGORITHM_MAP };
+module.exports = { generateLocalAnimation, ALGORITHM_MAP, analyzeCodeForDS };

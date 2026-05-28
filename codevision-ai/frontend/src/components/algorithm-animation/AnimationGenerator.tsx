@@ -33,6 +33,8 @@ const ALGORITHM_CATEGORIES = [
       { type: 'stack_operations', label: 'Stack Operations', defaultInput: [1, 2, 3, 4, 5] },
       { type: 'queue_operations', label: 'Queue Operations', defaultInput: [1, 2, 3, 4, 5] },
       { type: 'linked_list_reversal', label: 'Linked List Reversal', defaultInput: [1, 2, 3, 4, 5] },
+      { type: 'hashmap_count', label: 'HashMap Frequency Count', defaultInput: [1, 3, 2, 1, 4, 1, 3, 2] },
+      { type: 'set_operations', label: 'Set (Unique Elements)', defaultInput: [3, 1, 4, 1, 5, 9, 2, 6, 5, 3] },
     ],
   },
   {
@@ -40,15 +42,17 @@ const ALGORITHM_CATEGORIES = [
     algorithms: [
       { type: 'inorder_traversal', label: 'Inorder Traversal', defaultInput: [1, 2, 3, 4, 5, 6, 7] },
       { type: 'preorder_traversal', label: 'Preorder Traversal', defaultInput: [1, 2, 3, 4, 5, 6, 7] },
-      { type: 'bfs', label: 'BFS (Breadth-First)', defaultInput: [1, 2, 3, 4, 5, 6] },
-      { type: 'dfs', label: 'DFS (Depth-First)', defaultInput: [1, 2, 3, 4, 5, 6] },
+      { type: 'bfs', label: 'BFS (Breadth-First)', defaultInput: [6] },
+      { type: 'dfs', label: 'DFS (Depth-First)', defaultInput: [6] },
     ],
   },
   {
-    category: 'Dynamic Programming',
+    category: 'Techniques',
     algorithms: [
-      { type: 'fibonacci', label: 'Fibonacci Sequence', defaultInput: [0, 1, 1, 2, 3, 5, 8] },
-      { type: 'two_pointer', label: 'Two Pointer Technique', defaultInput: [1, 2, 3, 4, 5, 6, 7] },
+      { type: 'fibonacci', label: 'DP — Fibonacci', defaultInput: [8] },
+      { type: 'two_pointer', label: 'Two Pointer', defaultInput: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+      { type: 'sliding_window', label: 'Sliding Window', defaultInput: [2, 1, 5, 1, 3, 2, 7, 4] },
+      { type: 'string_reverse', label: 'String Reverse', defaultInput: [104, 101, 108, 108, 111] },
     ],
   },
 ];

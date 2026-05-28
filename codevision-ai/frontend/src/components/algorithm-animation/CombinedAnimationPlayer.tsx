@@ -23,7 +23,8 @@ const SPEED_OPTIONS = [
   { label: '2x', ms: 500 },
 ];
 
-// Extended step type with dataStructures field — supports tree, stack, linked list, etc.
+// Extended step type with dataStructures field — supports tree, stack, linked list,
+// graph, map, set, array with pointers, and more.
 interface CombinedStep extends AnimationStep {
   dataStructures?: {
     tree?: { nodes: number[]; highlighted: number[]; label: string };
@@ -35,7 +36,14 @@ interface CombinedStep extends AnimationStep {
       pointers: { curr: number; prev: number; temp: number };
       label: string;
     };
-    pointerState?: { curr: number | string; prev: number | string; temp: number | string; label: string };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pointerState?: Record<string, any> & { label: string };
+    graph?: { nodes: number; edges: number[][]; highlighted: number[]; label: string };
+    queue?: { elements: number[]; highlighted: number[]; label: string };
+    set?: { elements: (number | string)[]; highlighted: number[]; label: string };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    map?: { entries: Record<string, any>; highlighted: string[]; label: string };
+    array?: { elements: (number | string)[]; highlighted: number[]; label: string };
   };
 }
 
@@ -93,6 +101,11 @@ export default function CombinedAnimationPlayer({ result, code }: CombinedAnimat
   const resultData = ds?.resultList;
   const linkedListData = ds?.linkedList;
   const pointerData = ds?.pointerState;
+  const graphData = ds?.graph;
+  const queueData = ds?.queue;
+  const setData = ds?.set;
+  const mapData = ds?.map;
+  const arrayData = ds?.array;
 
   return (
     <motion.div
@@ -254,6 +267,231 @@ export default function CombinedAnimationPlayer({ result, code }: CombinedAnimat
         </div>
       )}
 
+      {/* Graph visualization (for BFS/DFS) */}
+      {graphData && (
+        <div className="bg-surface border border-border rounded-xl overflow-hidden">
+          <div className="bg-cyan-500/10 px-4 py-2 border-b border-border">
+            <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase">
+              🔀 {graphData.label}
+            </span>
+          </div>
+          <div className="p-4 min-h-[160px]">
+            <GraphVisualization nodes={graphData.nodes} edges={graphData.edges} highlighted={graphData.highlighted} />
+          </div>
+        </div>
+      )}
+
+      {/* Array visualization with highlighted indices (for DP, sliding window, two-pointer) */}
+      {arrayData && (
+        <div className="bg-surface border border-border rounded-xl overflow-hidden">
+          <div className="bg-indigo-500/10 px-4 py-2 border-b border-border">
+            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase">
+              📊 {arrayData.label}
+            </span>
+          </div>
+          <div className="p-3 min-h-[60px]">
+            <div className="flex flex-wrap gap-1">
+              {arrayData.elements.map((el, idx) => {
+                const isHigh = arrayData.highlighted?.includes(idx);
+                return (
+                  <motion.div
+                    key={`arr-${idx}`}
+                    animate={{
+                      backgroundColor: isHigh ? '#6366f1' : 'var(--surface-light)',
+                      scale: isHigh ? 1.1 : 1,
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className="px-2.5 py-1.5 rounded-lg border border-border text-xs font-mono font-bold min-w-[36px] text-center"
+                    style={{ color: isHigh ? '#ffffff' : 'var(--foreground)' }}
+                  >
+                    {String(el)}
+                    <div className="text-[9px] opacity-50">[{idx}]</div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generic pointer state panel (for two-pointer, sliding window, etc.) — when not linked list */}
+      {pointerData && !linkedListData && (
+        <div className="bg-surface border border-border rounded-xl overflow-hidden">
+          <div className="bg-violet-500/10 px-3 py-2 border-b border-border">
+            <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 uppercase">
+              🎯 {pointerData.label}
+            </span>
+          </div>
+          <div className="p-3 flex flex-wrap gap-3 items-center justify-center">
+            {Object.entries(pointerData).filter(([k]) => k !== 'label').map(([key, val]) => (
+              <motion.div
+                key={`ptr-${key}`}
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col items-center gap-1 px-3 py-2 bg-violet-500/10 rounded-lg border border-violet-500/20"
+              >
+                <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 uppercase">{key}</span>
+                <span className="text-sm font-mono font-bold text-violet-600 dark:text-violet-400">
+                  {String(val)}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Flexible DS grid: graph queue/set/map + resultList */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Queue visualization (for BFS) */}
+        {queueData && (
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="bg-orange-500/10 px-3 py-2 border-b border-border">
+              <span className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase">
+                📥 {queueData.label}
+              </span>
+            </div>
+            <div className="p-3 min-h-[100px]">
+              <div className="flex flex-wrap gap-1">
+                <AnimatePresence mode="popLayout">
+                  {queueData.elements.length === 0 ? (
+                    <span className="text-xs text-foreground/30 italic">Empty</span>
+                  ) : (
+                    queueData.elements.map((el, idx) => {
+                      const isHigh = queueData.highlighted?.includes(idx);
+                      const isFront = idx === 0;
+                      return (
+                        <motion.div
+                          key={`q-${idx}-${el}`}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0, backgroundColor: isHigh ? '#f97316' : isFront ? '#fb923c' : 'var(--surface-light)' }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ duration: 0.3 }}
+                          className="px-2.5 py-1.5 rounded-lg border border-border text-xs font-mono font-bold"
+                          style={{ color: isHigh || isFront ? '#ffffff' : 'var(--foreground)' }}
+                        >
+                          {el}{isFront && <span className="text-[9px] ml-1 opacity-70">←front</span>}
+                        </motion.div>
+                      );
+                    })
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Set visualization */}
+        {setData && (
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="bg-teal-500/10 px-3 py-2 border-b border-border">
+              <span className="text-xs font-semibold text-teal-600 dark:text-teal-400 uppercase">
+                🔹 {setData.label}
+              </span>
+            </div>
+            <div className="p-3 min-h-[100px]">
+              <div className="flex flex-wrap gap-1">
+                <AnimatePresence mode="popLayout">
+                  {setData.elements.length === 0 ? (
+                    <span className="text-xs text-foreground/30 italic">Empty</span>
+                  ) : (
+                    setData.elements.map((el, idx) => {
+                      const isHigh = setData.highlighted?.includes(idx);
+                      return (
+                        <motion.div
+                          key={`set-${idx}-${el}`}
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1, backgroundColor: isHigh ? '#14b8a6' : 'var(--surface-light)' }}
+                          transition={{ duration: 0.3 }}
+                          className="px-2.5 py-1.5 rounded-full border border-border text-xs font-mono font-bold"
+                          style={{ color: isHigh ? '#ffffff' : 'var(--foreground)' }}
+                        >
+                          {String(el)}
+                        </motion.div>
+                      );
+                    })
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* HashMap visualization */}
+        {mapData && (
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="bg-pink-500/10 px-3 py-2 border-b border-border">
+              <span className="text-xs font-semibold text-pink-600 dark:text-pink-400 uppercase">
+                🗂 {mapData.label}
+              </span>
+            </div>
+            <div className="p-3 min-h-[100px]">
+              <div className="flex flex-wrap gap-1">
+                <AnimatePresence mode="popLayout">
+                  {Object.keys(mapData.entries).length === 0 ? (
+                    <span className="text-xs text-foreground/30 italic">Empty</span>
+                  ) : (
+                    Object.entries(mapData.entries).map(([key, val], idx) => {
+                      const isHigh = mapData.highlighted?.includes(key);
+                      return (
+                        <motion.div
+                          key={`map-${key}`}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1, backgroundColor: isHigh ? '#ec4899' : 'var(--surface-light)' }}
+                          transition={{ duration: 0.3 }}
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-border text-xs font-mono"
+                          style={{ color: isHigh ? '#ffffff' : 'var(--foreground)' }}
+                        >
+                          <span className="font-bold">{key}</span>
+                          <span className="opacity-50">→</span>
+                          <span className="font-bold">{String(val)}</span>
+                          <span className="text-[9px] opacity-40">[{idx}]</span>
+                        </motion.div>
+                      );
+                    })
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Result list — shared across all combined animations (when not tree or linked list specific) */}
+        {resultData && !linkedListData && !treeData && (
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="bg-emerald-500/10 px-3 py-2 border-b border-border">
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">
+                📋 {resultData.label}
+              </span>
+            </div>
+            <div className="p-3 min-h-[100px]">
+              <div className="flex flex-wrap gap-1.5">
+                <AnimatePresence mode="popLayout">
+                  {resultData.elements.length === 0 ? (
+                    <span className="text-xs text-foreground/30 italic">Empty</span>
+                  ) : (
+                    resultData.elements.map((el, idx) => {
+                      const isHigh = resultData.highlighted?.includes(idx);
+                      return (
+                        <motion.div
+                          key={`res-${idx}`}
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1, backgroundColor: isHigh ? '#10b981' : 'var(--surface-light)' }}
+                          transition={{ duration: 0.3 }}
+                          className="px-2.5 py-1.5 rounded-lg border border-border text-xs font-mono font-bold"
+                          style={{ color: isHigh ? '#ffffff' : 'var(--foreground)' }}
+                        >
+                          {String(el)}
+                        </motion.div>
+                      );
+                    })
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Three data structures side by side (for tree traversals) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Tree visualization */}
@@ -313,8 +551,8 @@ export default function CombinedAnimationPlayer({ result, code }: CombinedAnimat
           </div>
         )}
 
-        {/* Result ArrayList visualization (only for tree traversals, not linked list) */}
-        {resultData && !linkedListData && (
+        {/* Result ArrayList visualization (only for tree traversals — others use the flexible grid) */}
+        {resultData && !linkedListData && treeData && (
           <div className="bg-surface border border-border rounded-xl overflow-hidden">
             <div className="bg-emerald-500/10 px-3 py-2 border-b border-border">
               <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">
@@ -417,20 +655,101 @@ export default function CombinedAnimationPlayer({ result, code }: CombinedAnimat
         />
       </div>
 
-      {/* Complexity info */}
+      {/* Detailed Complexity Analysis */}
       {result.complexity && (
-        <div className="flex gap-4">
-          <div className="bg-surface border border-border rounded-xl px-4 py-2">
-            <span className="text-xs text-foreground/50">Time Complexity</span>
-            <p className="text-sm font-mono text-accent font-semibold">{result.complexity.time}</p>
-          </div>
-          <div className="bg-surface border border-border rounded-xl px-4 py-2">
-            <span className="text-xs text-foreground/50">Space Complexity</span>
-            <p className="text-sm font-mono text-accent font-semibold">{result.complexity.space}</p>
-          </div>
-        </div>
+        <ComplexityExplainer complexity={result.complexity} />
       )}
     </motion.div>
+  );
+}
+
+/**
+ * Detailed complexity breakdown component.
+ * Shows time/space with best/worst/avg cases, explanations, and analogy.
+ * Collapsible to keep the UI clean.
+ */
+function ComplexityExplainer({ complexity }: { complexity: Record<string, string> }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasDetails = complexity.timeExplain || complexity.best || complexity.analogy;
+
+  return (
+    <div className="bg-surface border border-border rounded-xl overflow-hidden">
+      {/* Header row: always visible */}
+      <button
+        onClick={() => hasDetails && setExpanded(!expanded)}
+        className="w-full flex items-center gap-4 px-4 py-3 hover:bg-surface-light/50 transition-colors"
+      >
+        {/* Time complexity badge */}
+        <div className="flex flex-col items-start">
+          <span className="text-[10px] text-foreground/40 uppercase font-semibold">Time</span>
+          <span className="text-lg font-mono font-bold text-primary">{complexity.time}</span>
+        </div>
+        {/* Space complexity badge */}
+        <div className="flex flex-col items-start">
+          <span className="text-[10px] text-foreground/40 uppercase font-semibold">Space</span>
+          <span className="text-lg font-mono font-bold text-accent">{complexity.space}</span>
+        </div>
+        {/* Best/Worst/Avg badges */}
+        {complexity.best && (
+          <div className="flex gap-2 ml-auto">
+            <div className="flex flex-col items-center px-2 py-1 bg-emerald-500/10 rounded-lg">
+              <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">BEST</span>
+              <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">{complexity.best}</span>
+            </div>
+            <div className="flex flex-col items-center px-2 py-1 bg-amber-500/10 rounded-lg">
+              <span className="text-[9px] text-amber-600 dark:text-amber-400 font-semibold">AVG</span>
+              <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">{complexity.average || complexity.time}</span>
+            </div>
+            <div className="flex flex-col items-center px-2 py-1 bg-red-500/10 rounded-lg">
+              <span className="text-[9px] text-red-600 dark:text-red-400 font-semibold">WORST</span>
+              <span className="text-xs font-mono font-bold text-red-600 dark:text-red-400">{complexity.worst || complexity.time}</span>
+            </div>
+          </div>
+        )}
+        {/* Expand/collapse indicator */}
+        {hasDetails && (
+          <span className="text-foreground/30 text-sm ml-2">{expanded ? '▲' : '▼'}</span>
+        )}
+      </button>
+
+      {/* Expanded details */}
+      {expanded && hasDetails && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="px-4 pb-4 border-t border-border"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+            {/* Time explanation */}
+            {complexity.timeExplain && (
+              <div className="space-y-1">
+                <h4 className="text-xs font-semibold text-primary uppercase flex items-center gap-1">
+                  ⏱ Time: {complexity.time}
+                </h4>
+                <p className="text-xs text-foreground/70 leading-relaxed">{complexity.timeExplain}</p>
+              </div>
+            )}
+            {/* Space explanation */}
+            {complexity.spaceExplain && (
+              <div className="space-y-1">
+                <h4 className="text-xs font-semibold text-accent uppercase flex items-center gap-1">
+                  💾 Space: {complexity.space}
+                </h4>
+                <p className="text-xs text-foreground/70 leading-relaxed">{complexity.spaceExplain}</p>
+              </div>
+            )}
+          </div>
+          {/* Real-world analogy */}
+          {complexity.analogy && (
+            <div className="mt-3 p-3 bg-amber-500/5 border border-amber-500/10 rounded-lg">
+              <h4 className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase mb-1">💡 Real-World Analogy</h4>
+              <p className="text-xs text-foreground/70 leading-relaxed">{complexity.analogy}</p>
+            </div>
+          )}
+        </motion.div>
+      )}
+    </div>
   );
 }
 
@@ -585,6 +904,80 @@ function LinkedListVisualization({
           <polygon points="0 0, 8 3, 0 6" fill="#ef4444" />
         </marker>
       </defs>
+    </svg>
+  );
+}
+
+/**
+ * SVG-based graph visualization for BFS/DFS.
+ * Positions nodes in a circular layout with edges between them.
+ * Highlighted nodes shown in accent color.
+ */
+function GraphVisualization({
+  nodes: nodeCount,
+  edges,
+  highlighted,
+}: {
+  nodes: number;
+  edges: number[][];
+  highlighted: number[];
+}) {
+  if (!nodeCount || nodeCount === 0) return <span className="text-xs text-foreground/30">No graph</span>;
+
+  const svgSize = 260;
+  const center = svgSize / 2;
+  const radius = 90;
+  const nodeRadius = 18;
+
+  // Position nodes in a circle
+  const positions = Array.from({ length: nodeCount }, (_, i) => {
+    const angle = (2 * Math.PI * i) / nodeCount - Math.PI / 2;
+    return { x: center + radius * Math.cos(angle), y: center + radius * Math.sin(angle) };
+  });
+
+  return (
+    <svg width="100%" height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`} className="mx-auto">
+      {/* Draw edges */}
+      {edges.map(([a, b], i) => {
+        if (a >= nodeCount || b >= nodeCount) return null;
+        const bothHighlighted = highlighted.includes(a) && highlighted.includes(b);
+        return (
+          <line
+            key={`edge-${i}`}
+            x1={positions[a].x} y1={positions[a].y}
+            x2={positions[b].x} y2={positions[b].y}
+            stroke={bothHighlighted ? '#06b6d4' : 'var(--border)'}
+            strokeWidth={bothHighlighted ? 2.5 : 1.5}
+            opacity={bothHighlighted ? 1 : 0.5}
+          />
+        );
+      })}
+      {/* Draw nodes */}
+      {positions.map((pos, i) => {
+        const isHigh = highlighted.includes(i);
+        return (
+          <g key={`gnode-${i}`}>
+            <motion.circle
+              cx={pos.x} cy={pos.y} r={nodeRadius}
+              animate={{
+                fill: isHigh ? '#06b6d4' : 'var(--surface-light)',
+                stroke: isHigh ? '#0891b2' : 'var(--border)',
+                scale: isHigh ? 1.15 : 1,
+              }}
+              transition={{ duration: 0.3 }}
+              strokeWidth="2"
+            />
+            <text
+              x={pos.x} y={pos.y + 5}
+              textAnchor="middle"
+              fontSize="13" fontWeight="700"
+              fill={isHigh ? '#ffffff' : 'var(--foreground)'}
+            >
+              {i}
+            </text>
+          </g>
+        );
+      })}
     </svg>
   );
 }
