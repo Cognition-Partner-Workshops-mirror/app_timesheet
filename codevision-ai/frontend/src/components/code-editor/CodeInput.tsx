@@ -190,6 +190,31 @@ export default function CodeInput({
           </motion.button>
         ))}
       </div>
+
+      {/* Output console — shows run result preview */}
+      {code.trim() && (
+        <div className="bg-surface border border-border rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
+              Output Console
+            </span>
+            <span className="text-[10px] text-foreground/40">
+              Click Analyze or Animate to see results
+            </span>
+          </div>
+          <div className="bg-surface-light border border-border rounded-lg p-3 font-mono text-sm text-foreground/50 min-h-[48px]">
+            {/* Placeholder showing expected input/output format */}
+            <div className="flex items-center gap-1 text-xs">
+              <span className="text-foreground/40">Input:</span>
+              <span className="text-primary">{customInput || 'No input provided'}</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs mt-1">
+              <span className="text-foreground/40">Output:</span>
+              <span className="text-foreground/30 italic">Run animation to see output here...</span>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
