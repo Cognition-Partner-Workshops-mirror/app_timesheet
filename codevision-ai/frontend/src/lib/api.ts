@@ -121,6 +121,37 @@ export async function deleteSession(id: string): Promise<void> {
   await api.delete(`/session/${id}`);
 }
 
+// Generate code from a problem statement/question
+export async function generateCode(
+  problem: string, language: Language, difficulty: Difficulty
+): Promise<{
+  code: string; approach: string; dataStructures: string[];
+  algorithm: string; timeComplexity: string; spaceComplexity: string;
+  testInput: string; expectedOutput: string;
+}> {
+  const { data } = await api.post('/problem/generate-code', { problem, language, difficulty });
+  return data;
+}
+
+// Get progressive hints for a coding problem
+export async function getHints(
+  problem: string, language: Language, difficulty: Difficulty
+): Promise<{ hints: Array<{ level: number; category: string; hint: string }> }> {
+  const { data } = await api.post('/problem/hints', { problem, language, difficulty });
+  return data;
+}
+
+// Interactive discussion about a coding problem
+export async function discuss(
+  problem: string, question: string, language: Language, difficulty: Difficulty
+): Promise<{
+  response: string; followUpQuestion: string;
+  relatedConcepts: string[]; encouragement: string;
+}> {
+  const { data } = await api.post('/problem/discuss', { problem, question, language, difficulty });
+  return data;
+}
+
 // Fetch all interview questions organized by category
 export async function getInterviewQuestions(): Promise<Record<string, InterviewCategory>> {
   const { data } = await api.get('/interview/questions');

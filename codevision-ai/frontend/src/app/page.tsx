@@ -18,6 +18,7 @@ import ErrorBanner from '@/components/ui/ErrorBanner';
 import type { ActiveSection } from '@/types';
 
 // --- Lazy-loaded heavy components (only fetched when section is first opened) ---
+const QuestionInput = lazy(() => import('@/components/question-input/QuestionInput'));
 const CodeInput = lazy(() => import('@/components/code-editor/CodeInput'));
 const ExplanationView = lazy(() => import('@/components/code-editor/ExplanationView'));
 const OptimizationView = lazy(() => import('@/components/complexity/OptimizationView'));
@@ -94,12 +95,43 @@ export default function Home() {
           {/* Loading indicator (non-blocking — shown inline) */}
           {state.loading && <LoadingSpinner />}
 
-          {/* ===== CODE INPUT — lazy-loaded, always visible at top ===== */}
+          {/* ===== QUESTION / CODE INPUT — unified top section ===== */}
+          <div ref={setSectionRef('question-input')}>
+            <CollapsibleSection
+              title="Question / Code Input"
+              icon="🎯"
+              defaultOpen={true}
+              sectionId="question-input"
+              maximizedSection={maximizedSection}
+              onMaximizeToggle={setMaximizedSection}
+            >
+              <Suspense fallback={<SectionLoader />}>
+                <QuestionInput
+                  code={state.code}
+                  problemStatement={state.problemStatement}
+                  loading={state.loading}
+                  hints={state.hints}
+                  discussionMessages={state.discussionMessages}
+                  codeGenResult={state.codeGenResult}
+                  onCodeChange={state.setCode}
+                  onProblemChange={state.setProblemStatement}
+                  onGenerateCode={state.generateCodeFromQuestion}
+                  onAnimate={() => state.generateAnimation('auto_detect', undefined)}
+                  onExplain={state.explainCode}
+                  onOptimize={state.optimizeCode}
+                  onGetHints={state.getHintsForProblem}
+                  onDiscuss={state.discussProblem}
+                />
+              </Suspense>
+            </CollapsibleSection>
+          </div>
+
+          {/* ===== CODE INPUT — lazy-loaded, for advanced editing ===== */}
           <div ref={setSectionRef('code-input')}>
             <CollapsibleSection
-              title="Code Input"
+              title="Code Editor"
               icon="📝"
-              defaultOpen={true}
+              defaultOpen={false}
               sectionId="code-input"
               maximizedSection={maximizedSection}
               onMaximizeToggle={setMaximizedSection}

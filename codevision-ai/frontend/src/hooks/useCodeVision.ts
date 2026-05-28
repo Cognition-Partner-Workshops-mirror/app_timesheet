@@ -40,6 +40,22 @@ export interface CodeVisionState {
   error: string | null;
 }
 
+// Hint item returned by the hints API
+export interface HintItem {
+  level: number;
+  category: string;
+  hint: string;
+}
+
+// Discussion response from the discuss API
+export interface DiscussionMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  followUpQuestion?: string;
+  relatedConcepts?: string[];
+  encouragement?: string;
+}
+
 export interface CodeVisionActions {
   setCode: (code: string) => void;
   setProblemStatement: (problem: string) => void;
@@ -52,8 +68,15 @@ export interface CodeVisionActions {
   generateAnimation: (algorithmType: string, inputData?: unknown) => Promise<void>;
   generateStoryboard: () => Promise<void>;
   solveProblem: () => Promise<void>;
+  generateCodeFromQuestion: () => Promise<void>;
+  getHintsForProblem: () => Promise<void>;
+  discussProblem: (question: string) => Promise<void>;
   clearError: () => void;
   clearResults: () => void;
+  // New state for hints & discussion
+  hints: HintItem[];
+  discussionMessages: DiscussionMessage[];
+  codeGenResult: { approach: string; dataStructures: string[]; algorithm: string } | null;
 }
 
 export function useCodeVision(): CodeVisionState & CodeVisionActions {
@@ -70,6 +93,11 @@ export function useCodeVision(): CodeVisionState & CodeVisionActions {
   const [storyboardResult, setStoryboardResult] = useState<StoryboardResult | null>(null);
   const [problemResult, setProblemResult] = useState<ProblemResult | null>(null);
 
+  // Hints and discussion state
+  const [hints, setHints] = useState<HintItem[]>([]);
+  const [discussionMessages, setDiscussionMessages] = useState<DiscussionMessage[]>([]);
+  const [codeGenResult, setCodeGenResult] = useState<{ approach: string; dataStructures: string[]; algorithm: string } | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +109,9 @@ export function useCodeVision(): CodeVisionState & CodeVisionActions {
     setAnimationResult(null);
     setStoryboardResult(null);
     setProblemResult(null);
+    setHints([]);
+    setDiscussionMessages([]);
+    setCodeGenResult(null);
   }, []);
 
   // Wraps an async API call with loading/error state management
@@ -133,14 +164,48 @@ export function useCodeVision(): CodeVisionState & CodeVisionActions {
     setActiveSection('problem-input');
   }), [problemStatement, language, difficulty, withLoading]);
 
+  // Generate code from a question/problem statement and populate the code editor
+  const generateCodeFromQuestion = useCallback(() => withLoading(async () => {
+    const result = await api.generateCode(problemStatement, language, difficulty);
+    setCode(result.code);
+    setCodeGenResult({
+      approach: result.approach,
+      dataStructures: result.dataStructures,
+      algorithm: result.algorithm,
+    });
+  }), [problemStatement, language, difficulty, withLoading]);
+
+  // Get progressive hints for the current problem
+  const getHintsForProblem = useCallback(() => withLoading(async () => {
+    const result = await api.getHints(problemStatement, language, difficulty);
+    setHints(result.hints || []);
+  }), [problemStatement, language, difficulty, withLoading]);
+
+  // Send a discussion question about the current problem
+  const discussProblem = useCallback((question: string) => withLoading(async () => {
+    // Add user message to discussion
+    setDiscussionMessages(prev => [...prev, { role: 'user', content: question }]);
+    const result = await api.discuss(problemStatement, question, language, difficulty);
+    // Add assistant response to discussion
+    setDiscussionMessages(prev => [...prev, {
+      role: 'assistant',
+      content: result.response,
+      followUpQuestion: result.followUpQuestion,
+      relatedConcepts: result.relatedConcepts,
+      encouragement: result.encouragement,
+    }]);
+  }), [problemStatement, language, difficulty, withLoading]);
+
   return {
     code, problemStatement, language, difficulty, activeSection,
     analysisResult, explanationResult, optimizationResult,
     animationResult, storyboardResult, problemResult,
     loading, error,
+    hints, discussionMessages, codeGenResult,
     setCode, setProblemStatement, setLanguage, setDifficulty, setActiveSection,
     analyzeCode, explainCode, optimizeCode,
     generateAnimation, generateStoryboard, solveProblem,
+    generateCodeFromQuestion, getHintsForProblem, discussProblem,
     clearError, clearResults,
   };
 }
