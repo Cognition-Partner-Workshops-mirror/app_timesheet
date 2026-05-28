@@ -100,7 +100,7 @@ export default function Home() {
 
       case 'storyboard':
         return state.storyboardResult ? (
-          <StoryboardPlayer result={state.storyboardResult} />
+          <StoryboardPlayer result={state.storyboardResult} language={state.language} />
         ) : (
           <EmptyState
             title="No Storyboard Yet"

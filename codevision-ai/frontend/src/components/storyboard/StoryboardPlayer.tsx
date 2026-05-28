@@ -7,11 +7,12 @@
  */
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { StoryboardResult } from '@/types';
+import type { StoryboardResult, Language } from '@/types';
 import CodeHighlight from '../code-editor/CodeHighlight';
 
 interface StoryboardPlayerProps {
   result: StoryboardResult;
+  language: Language;
 }
 
 // Slide type to color/icon mapping for visual distinction
@@ -25,7 +26,7 @@ const SLIDE_STYLES: Record<string, { bg: string; icon: string }> = {
   summary: { bg: 'from-emerald-600/20 to-green-600/20', icon: '🎉' },
 };
 
-export default function StoryboardPlayer({ result }: StoryboardPlayerProps) {
+export default function StoryboardPlayer({ result, language }: StoryboardPlayerProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
@@ -135,7 +136,7 @@ export default function StoryboardPlayer({ result }: StoryboardPlayerProps) {
             <div className="mt-4">
               <CodeHighlight
                 code={slide.codeSnippet}
-                language="python"
+                language={language}
                 highlightLines={slide.highlightLines || []}
               />
             </div>

@@ -130,7 +130,7 @@ export function useCodeVision(): CodeVisionState & CodeVisionActions {
   const solveProblem = useCallback(() => withLoading(async () => {
     const result = await api.solveProblem(problemStatement, language, difficulty);
     setProblemResult(result);
-    setActiveSection('problem-solver');
+    setActiveSection('problem-input');
   }), [problemStatement, language, difficulty, withLoading]);
 
   return {
