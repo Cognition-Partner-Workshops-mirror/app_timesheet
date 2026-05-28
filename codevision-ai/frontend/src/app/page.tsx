@@ -2,9 +2,12 @@
 
 /**
  * Main application page for CodeVision AI.
- * Orchestrates all sections with collapsible panels.
- * Supports light/dark theme toggle.
+ * Single-page layout — all sections visible simultaneously.
+ * Each section supports collapse/expand and maximize/restore.
+ * When a section is maximized, others hide and it takes full width.
+ * Sidebar navigates by scrolling to the section instead of switching views.
  */
+import { useState, useRef, useCallback } from 'react';
 import { useCodeVision } from '@/hooks/useCodeVision';
 import { useTheme } from '@/hooks/useTheme';
 import Sidebar from '@/components/ui/Sidebar';
@@ -22,152 +25,34 @@ import ProblemInput from '@/components/problem-solver/ProblemInput';
 import ProblemResultView from '@/components/problem-solver/ProblemResultView';
 import DataStructurePlayground from '@/components/data-structures/DataStructurePlayground';
 import LogicBuilder from '@/components/logic-builder/LogicBuilder';
+import type { ActiveSection } from '@/types';
 
 export default function Home() {
   const state = useCodeVision();
   const { theme, toggleTheme } = useTheme();
 
-  // Renders the active section based on sidebar selection
-  const renderContent = () => {
-    switch (state.activeSection) {
-      case 'code-input':
-        return (
-          <CollapsibleSection title="Code Input" icon="📝" defaultOpen={true}>
-            <CodeInput
-              code={state.code}
-              language={state.language}
-              difficulty={state.difficulty}
-              loading={state.loading}
-              onCodeChange={state.setCode}
-              onAnalyze={state.analyzeCode}
-              onExplain={state.explainCode}
-              onOptimize={state.optimizeCode}
-              onAnimate={() => state.generateAnimation('auto_detect', undefined)}
-              onStoryboard={state.generateStoryboard}
-            />
-          </CollapsibleSection>
-        );
+  // Track which section is maximized (null = none)
+  const [maximizedSection, setMaximizedSection] = useState<string | null>(null);
 
-      case 'problem-input':
-        return (
-          <div className="space-y-4">
-            <CollapsibleSection title="Problem Solver" icon="🧩" defaultOpen={true}>
-              <ProblemInput
-                problem={state.problemStatement}
-                loading={state.loading}
-                onProblemChange={state.setProblemStatement}
-                onSolve={state.solveProblem}
-              />
-            </CollapsibleSection>
-            {state.problemResult && (
-              <CollapsibleSection title="Solution" icon="💡" defaultOpen={true}>
-                <ProblemResultView result={state.problemResult} language={state.language} />
-              </CollapsibleSection>
-            )}
-          </div>
-        );
+  // Refs for scrolling to sections
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-      case 'explanation':
-        return state.explanationResult ? (
-          <CollapsibleSection title="Line-by-Line Explanation" icon="📖" defaultOpen={true}>
-            <ExplanationView result={state.explanationResult} />
-          </CollapsibleSection>
-        ) : (
-          <EmptyState
-            title="No Explanation Yet"
-            description="Enter code in the Code Input section and click 'Explain' to get a line-by-line explanation."
-            onAction={() => state.setActiveSection('code-input')}
-            actionLabel="Go to Code Input"
-          />
-        );
-
-      case 'optimization':
-        return state.optimizationResult ? (
-          <CollapsibleSection title="Optimization Suggestions" icon="⚡" defaultOpen={true}>
-            <OptimizationView
-              result={state.optimizationResult}
-              language={state.language}
-              originalCode={state.code}
-            />
-          </CollapsibleSection>
-        ) : (
-          <EmptyState
-            title="No Optimization Yet"
-            description="Enter code in the Code Input section and click 'Optimize' to see optimization suggestions."
-            onAction={() => state.setActiveSection('code-input')}
-            actionLabel="Go to Code Input"
-          />
-        );
-
-      case 'animation':
-        return (
-          <div className="space-y-4">
-            {/* Algorithm selector — collapsible */}
-            <CollapsibleSection title="Select Algorithm" icon="🎬" defaultOpen={!state.animationResult}>
-              <AnimationGenerator
-                onGenerate={state.generateAnimation}
-                loading={state.loading}
-              />
-            </CollapsibleSection>
-
-            {/* Code-based animation with line highlighting */}
-            {state.animationResult && state.code && (
-              <CollapsibleSection title="Code Execution View" icon="▶" defaultOpen={true}>
-                <CodeAnimationPlayer result={state.animationResult} code={state.code} />
-              </CollapsibleSection>
-            )}
-
-            {/* Standard array animation when no code present */}
-            {state.animationResult && !state.code && (
-              <CollapsibleSection title="Animation Player" icon="📊" defaultOpen={true}>
-                <AnimationPlayer result={state.animationResult} />
-              </CollapsibleSection>
-            )}
-
-            {/* Array visualization (collapsed by default when code view is shown) */}
-            {state.animationResult && state.code && (
-              <CollapsibleSection title="Array Visualization" icon="📊" defaultOpen={false}>
-                <AnimationPlayer result={state.animationResult} />
-              </CollapsibleSection>
-            )}
-          </div>
-        );
-
-      case 'storyboard':
-        return state.storyboardResult ? (
-          <CollapsibleSection title="Teaching Storyboard" icon="🎓" defaultOpen={true}>
-            <StoryboardPlayer result={state.storyboardResult} language={state.language} />
-          </CollapsibleSection>
-        ) : (
-          <EmptyState
-            title="No Storyboard Yet"
-            description="Enter code in the Code Input section and click 'Storyboard' to generate a teaching presentation."
-            onAction={() => state.setActiveSection('code-input')}
-            actionLabel="Go to Code Input"
-          />
-        );
-
-      case 'playground':
-        return (
-          <CollapsibleSection title="Data Structure Playground" icon="🔧" defaultOpen={true}>
-            <DataStructurePlayground
-              language={state.language}
-              difficulty={state.difficulty}
-            />
-          </CollapsibleSection>
-        );
-
-      case 'logic-builder':
-        return (
-          <CollapsibleSection title="Logic Builder" icon="🧱" defaultOpen={true}>
-            <LogicBuilder language={state.language} />
-          </CollapsibleSection>
-        );
-
-      default:
-        return null;
+  // Sidebar click scrolls to the section instead of switching views
+  const handleSectionChange = useCallback((section: ActiveSection) => {
+    state.setActiveSection(section);
+    // Restore from maximize when navigating
+    setMaximizedSection(null);
+    // Scroll to the section
+    const ref = sectionRefs.current[section];
+    if (ref) {
+      ref.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  };
+  }, [state]);
+
+  // Assign a ref to a section div
+  const setSectionRef = useCallback((id: string) => (el: HTMLDivElement | null) => {
+    sectionRefs.current[id] = el;
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -177,15 +62,15 @@ export default function Home() {
         language={state.language}
         difficulty={state.difficulty}
         theme={theme}
-        onSectionChange={state.setActiveSection}
+        onSectionChange={handleSectionChange}
         onLanguageChange={state.setLanguage}
         onDifficultyChange={state.setDifficulty}
         onThemeToggle={toggleTheme}
       />
 
-      {/* Main content area */}
+      {/* Main content area — single scrollable page with all sections */}
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto p-6">
+        <div className="max-w-5xl mx-auto p-6 space-y-4">
           {/* Error banner */}
           {state.error && (
             <div className="mb-4">
@@ -193,44 +78,205 @@ export default function Home() {
             </div>
           )}
 
-          {/* Loading overlay */}
+          {/* Loading indicator (non-blocking — shown inline, doesn't hide sections) */}
           {state.loading && <LoadingSpinner />}
 
-          {/* Active section content */}
-          {!state.loading && renderContent()}
+          {/* ===== CODE INPUT — always visible at the top ===== */}
+          <div ref={setSectionRef('code-input')}>
+            <CollapsibleSection
+              title="Code Input"
+              icon="📝"
+              defaultOpen={true}
+              sectionId="code-input"
+              maximizedSection={maximizedSection}
+              onMaximizeToggle={setMaximizedSection}
+            >
+              <CodeInput
+                code={state.code}
+                language={state.language}
+                difficulty={state.difficulty}
+                loading={state.loading}
+                onCodeChange={state.setCode}
+                onAnalyze={state.analyzeCode}
+                onExplain={state.explainCode}
+                onOptimize={state.optimizeCode}
+                onAnimate={() => state.generateAnimation('auto_detect', undefined)}
+                onStoryboard={state.generateStoryboard}
+              />
+            </CollapsibleSection>
+          </div>
+
+          {/* ===== ANIMATION — shown below code when results exist ===== */}
+          {state.animationResult && (
+            <>
+              {/* Code-based animation with line highlighting */}
+              {state.code && (
+                <div ref={setSectionRef('animation')}>
+                  <CollapsibleSection
+                    title="Code Execution View"
+                    icon="▶"
+                    defaultOpen={true}
+                    sectionId="animation"
+                    maximizedSection={maximizedSection}
+                    onMaximizeToggle={setMaximizedSection}
+                  >
+                    <CodeAnimationPlayer result={state.animationResult} code={state.code} />
+                  </CollapsibleSection>
+                </div>
+              )}
+
+              {/* Array visualization */}
+              <div>
+                <CollapsibleSection
+                  title="Array Visualization"
+                  icon="📊"
+                  defaultOpen={!state.code}
+                  sectionId="array-viz"
+                  maximizedSection={maximizedSection}
+                  onMaximizeToggle={setMaximizedSection}
+                >
+                  <AnimationPlayer result={state.animationResult} />
+                </CollapsibleSection>
+              </div>
+            </>
+          )}
+
+          {/* ===== ALGORITHM SELECTOR — for direct algorithm picking ===== */}
+          <div ref={setSectionRef('algorithm-selector')}>
+            <CollapsibleSection
+              title="Select Algorithm"
+              icon="🎬"
+              defaultOpen={!state.animationResult}
+              sectionId="algorithm-selector"
+              maximizedSection={maximizedSection}
+              onMaximizeToggle={setMaximizedSection}
+            >
+              <AnimationGenerator
+                onGenerate={state.generateAnimation}
+                loading={state.loading}
+              />
+            </CollapsibleSection>
+          </div>
+
+          {/* ===== EXPLANATION — shown when results exist ===== */}
+          {state.explanationResult && (
+            <div ref={setSectionRef('explanation')}>
+              <CollapsibleSection
+                title="Line-by-Line Explanation"
+                icon="📖"
+                defaultOpen={true}
+                sectionId="explanation"
+                maximizedSection={maximizedSection}
+                onMaximizeToggle={setMaximizedSection}
+              >
+                <ExplanationView result={state.explanationResult} />
+              </CollapsibleSection>
+            </div>
+          )}
+
+          {/* ===== OPTIMIZATION — shown when results exist ===== */}
+          {state.optimizationResult && (
+            <div ref={setSectionRef('optimization')}>
+              <CollapsibleSection
+                title="Optimization Suggestions"
+                icon="⚡"
+                defaultOpen={true}
+                sectionId="optimization"
+                maximizedSection={maximizedSection}
+                onMaximizeToggle={setMaximizedSection}
+              >
+                <OptimizationView
+                  result={state.optimizationResult}
+                  language={state.language}
+                  originalCode={state.code}
+                />
+              </CollapsibleSection>
+            </div>
+          )}
+
+          {/* ===== PROBLEM SOLVER ===== */}
+          <div ref={setSectionRef('problem-input')}>
+            <CollapsibleSection
+              title="Problem Solver"
+              icon="🧩"
+              defaultOpen={false}
+              sectionId="problem-input"
+              maximizedSection={maximizedSection}
+              onMaximizeToggle={setMaximizedSection}
+            >
+              <ProblemInput
+                problem={state.problemStatement}
+                loading={state.loading}
+                onProblemChange={state.setProblemStatement}
+                onSolve={state.solveProblem}
+              />
+            </CollapsibleSection>
+          </div>
+
+          {/* Problem solution — shown when results exist */}
+          {state.problemResult && (
+            <div>
+              <CollapsibleSection
+                title="Solution"
+                icon="💡"
+                defaultOpen={true}
+                sectionId="problem-solution"
+                maximizedSection={maximizedSection}
+                onMaximizeToggle={setMaximizedSection}
+              >
+                <ProblemResultView result={state.problemResult} language={state.language} />
+              </CollapsibleSection>
+            </div>
+          )}
+
+          {/* ===== STORYBOARD — shown when results exist ===== */}
+          {state.storyboardResult && (
+            <div ref={setSectionRef('storyboard')}>
+              <CollapsibleSection
+                title="Teaching Storyboard"
+                icon="🎓"
+                defaultOpen={true}
+                sectionId="storyboard"
+                maximizedSection={maximizedSection}
+                onMaximizeToggle={setMaximizedSection}
+              >
+                <StoryboardPlayer result={state.storyboardResult} language={state.language} />
+              </CollapsibleSection>
+            </div>
+          )}
+
+          {/* ===== DATA STRUCTURE PLAYGROUND ===== */}
+          <div ref={setSectionRef('playground')}>
+            <CollapsibleSection
+              title="Data Structure Playground"
+              icon="🔧"
+              defaultOpen={false}
+              sectionId="playground"
+              maximizedSection={maximizedSection}
+              onMaximizeToggle={setMaximizedSection}
+            >
+              <DataStructurePlayground
+                language={state.language}
+                difficulty={state.difficulty}
+              />
+            </CollapsibleSection>
+          </div>
+
+          {/* ===== LOGIC BUILDER ===== */}
+          <div ref={setSectionRef('logic-builder')}>
+            <CollapsibleSection
+              title="Logic Builder"
+              icon="🧱"
+              defaultOpen={false}
+              sectionId="logic-builder"
+              maximizedSection={maximizedSection}
+              onMaximizeToggle={setMaximizedSection}
+            >
+              <LogicBuilder language={state.language} />
+            </CollapsibleSection>
+          </div>
         </div>
       </main>
-    </div>
-  );
-}
-
-/**
- * Empty state placeholder shown when a section has no data yet.
- */
-function EmptyState({
-  title,
-  description,
-  onAction,
-  actionLabel,
-}: {
-  title: string;
-  description: string;
-  onAction: () => void;
-  actionLabel: string;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 bg-surface-light rounded-full flex items-center justify-center mb-4">
-        <span className="text-3xl text-foreground/20">💡</span>
-      </div>
-      <h3 className="text-lg font-semibold text-foreground/60 mb-2">{title}</h3>
-      <p className="text-sm text-foreground/40 max-w-md mb-4">{description}</p>
-      <button
-        onClick={onAction}
-        className="px-4 py-2 bg-primary hover:bg-primary-light text-white rounded-lg text-sm font-medium transition-colors"
-      >
-        {actionLabel}
-      </button>
     </div>
   );
 }
