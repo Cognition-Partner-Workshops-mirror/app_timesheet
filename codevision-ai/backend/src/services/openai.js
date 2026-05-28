@@ -49,8 +49,54 @@ async function chatCompletion(systemPrompt, userMessage, expectJson = true) {
 
     if (expectJson) {
       // Strip markdown code fences if present (common with Groq/Llama)
-      const cleaned = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-      return JSON.parse(cleaned);
+      let cleaned = content
+        .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
+        .trim();
+
+      // Attempt 1: direct parse
+      try {
+        return JSON.parse(cleaned);
+      } catch (_e1) { /* fall through */ }
+
+      // Attempt 2: extract the first { ... } or [ ... ] block from the response
+      const jsonMatch = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+      if (jsonMatch) {
+        try {
+          return JSON.parse(jsonMatch[1]);
+        } catch (_e2) {
+          // Attempt 3: sanitize control characters inside JSON string values
+          // by replacing raw newlines/tabs within quoted strings
+          let sanitized = jsonMatch[1];
+          // Replace unescaped control chars: walk through and fix inside strings
+          sanitized = sanitized.replace(/("(?:[^"\\])*(?:\\.[^"\\])*")/g, (m) => {
+            return m; // regex already handles escaped chars
+          });
+          // Brute force: replace all literal newlines inside strings by finding
+          // content between quotes that contains raw newlines
+          const parts = [];
+          let inString = false;
+          let escaped = false;
+          for (let i = 0; i < sanitized.length; i++) {
+            const ch = sanitized[i];
+            if (escaped) { parts.push(ch); escaped = false; continue; }
+            if (ch === '\\' && inString) { parts.push(ch); escaped = true; continue; }
+            if (ch === '"') { inString = !inString; parts.push(ch); continue; }
+            if (inString && ch === '\n') { parts.push('\\n'); continue; }
+            if (inString && ch === '\r') { parts.push('\\r'); continue; }
+            if (inString && ch === '\t') { parts.push('\\t'); continue; }
+            parts.push(ch);
+          }
+          try {
+            return JSON.parse(parts.join(''));
+          } catch (_e3) {
+            console.error('JSON parse failed. Raw (first 500 chars):', content.substring(0, 500));
+            throw _e3;
+          }
+        }
+      }
+
+      // No JSON object found — throw with helpful message
+      throw new Error('No valid JSON found in AI response');
     }
     return content;
   } catch (error) {

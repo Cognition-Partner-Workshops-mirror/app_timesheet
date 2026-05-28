@@ -16,7 +16,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 // Load environment variables
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '.env'), override: true });
 
 const { initializeDatabase } = require('./database/init');
 const analyzeRoutes = require('./routes/analyze');
