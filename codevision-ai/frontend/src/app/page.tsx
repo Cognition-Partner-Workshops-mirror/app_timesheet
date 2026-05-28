@@ -4,28 +4,41 @@
  * Main application page for CodeVision AI.
  * Single-page layout — all sections visible simultaneously.
  * Each section supports collapse/expand and maximize/restore.
- * When a section is maximized, others hide and it takes full width.
- * Sidebar navigates by scrolling to the section instead of switching views.
+ * Heavy components are lazy-loaded (React.lazy + Suspense) so they only
+ * load when the section is first opened, reducing initial bundle size
+ * and improving Time-to-Interactive.
  */
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, Suspense, lazy } from 'react';
 import { useCodeVision } from '@/hooks/useCodeVision';
 import { useTheme } from '@/hooks/useTheme';
 import Sidebar from '@/components/ui/Sidebar';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorBanner from '@/components/ui/ErrorBanner';
-import CodeInput from '@/components/code-editor/CodeInput';
-import ExplanationView from '@/components/code-editor/ExplanationView';
-import OptimizationView from '@/components/complexity/OptimizationView';
-import CodeAnimationPlayer from '@/components/algorithm-animation/CodeAnimationPlayer';
-import CombinedAnimationPlayer from '@/components/algorithm-animation/CombinedAnimationPlayer';
-import AnimationGenerator from '@/components/algorithm-animation/AnimationGenerator';
-import StoryboardPlayer from '@/components/storyboard/StoryboardPlayer';
-import ProblemInput from '@/components/problem-solver/ProblemInput';
-import ProblemResultView from '@/components/problem-solver/ProblemResultView';
-import DataStructurePlayground from '@/components/data-structures/DataStructurePlayground';
-import LogicBuilder from '@/components/logic-builder/LogicBuilder';
 import type { ActiveSection } from '@/types';
+
+// --- Lazy-loaded heavy components (only fetched when section is first opened) ---
+const CodeInput = lazy(() => import('@/components/code-editor/CodeInput'));
+const ExplanationView = lazy(() => import('@/components/code-editor/ExplanationView'));
+const OptimizationView = lazy(() => import('@/components/complexity/OptimizationView'));
+const CodeAnimationPlayer = lazy(() => import('@/components/algorithm-animation/CodeAnimationPlayer'));
+const CombinedAnimationPlayer = lazy(() => import('@/components/algorithm-animation/CombinedAnimationPlayer'));
+const AnimationGenerator = lazy(() => import('@/components/algorithm-animation/AnimationGenerator'));
+const StoryboardPlayer = lazy(() => import('@/components/storyboard/StoryboardPlayer'));
+const ProblemInput = lazy(() => import('@/components/problem-solver/ProblemInput'));
+const ProblemResultView = lazy(() => import('@/components/problem-solver/ProblemResultView'));
+const DataStructurePlayground = lazy(() => import('@/components/data-structures/DataStructurePlayground'));
+const LogicBuilder = lazy(() => import('@/components/logic-builder/LogicBuilder'));
+
+/** Inline fallback spinner shown while a lazy component is loading */
+function SectionLoader() {
+  return (
+    <div className="flex items-center justify-center py-12 text-foreground/40">
+      <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent mr-3" />
+      Loading section...
+    </div>
+  );
+}
 
 export default function Home() {
   const state = useCodeVision();
@@ -81,7 +94,7 @@ export default function Home() {
           {/* Loading indicator (non-blocking — shown inline) */}
           {state.loading && <LoadingSpinner />}
 
-          {/* ===== CODE INPUT — always visible at the top ===== */}
+          {/* ===== CODE INPUT — lazy-loaded, always visible at top ===== */}
           <div ref={setSectionRef('code-input')}>
             <CollapsibleSection
               title="Code Input"
@@ -91,22 +104,24 @@ export default function Home() {
               maximizedSection={maximizedSection}
               onMaximizeToggle={setMaximizedSection}
             >
-              <CodeInput
-                code={state.code}
-                language={state.language}
-                difficulty={state.difficulty}
-                loading={state.loading}
-                onCodeChange={state.setCode}
-                onAnalyze={state.analyzeCode}
-                onExplain={state.explainCode}
-                onOptimize={state.optimizeCode}
-                onAnimate={() => state.generateAnimation('auto_detect', undefined)}
-                onStoryboard={state.generateStoryboard}
-              />
+              <Suspense fallback={<SectionLoader />}>
+                <CodeInput
+                  code={state.code}
+                  language={state.language}
+                  difficulty={state.difficulty}
+                  loading={state.loading}
+                  onCodeChange={state.setCode}
+                  onAnalyze={state.analyzeCode}
+                  onExplain={state.explainCode}
+                  onOptimize={state.optimizeCode}
+                  onAnimate={() => state.generateAnimation('auto_detect', undefined)}
+                  onStoryboard={state.generateStoryboard}
+                />
+              </Suspense>
             </CollapsibleSection>
           </div>
 
-          {/* ===== ANIMATION — shown below code when results exist (code may be empty when using algorithm selector) ===== */}
+          {/* ===== ANIMATION — lazy-loaded, shown when results exist ===== */}
           {state.animationResult && (
             <div ref={setSectionRef('animation')}>
               <CollapsibleSection
@@ -117,17 +132,19 @@ export default function Home() {
                 maximizedSection={maximizedSection}
                 onMaximizeToggle={setMaximizedSection}
               >
-                {/* Use combined player for tree traversals (multiple data structures), otherwise standard player */}
-                {state.animationResult.combined ? (
-                  <CombinedAnimationPlayer result={state.animationResult} code={state.code || ''} />
-                ) : (
-                  <CodeAnimationPlayer result={state.animationResult} code={state.code || ''} />
-                )}
+                <Suspense fallback={<SectionLoader />}>
+                  {/* Combined player for tree traversals (multiple data structures), otherwise standard player */}
+                  {state.animationResult.combined ? (
+                    <CombinedAnimationPlayer result={state.animationResult} code={state.code || ''} />
+                  ) : (
+                    <CodeAnimationPlayer result={state.animationResult} code={state.code || ''} />
+                  )}
+                </Suspense>
               </CollapsibleSection>
             </div>
           )}
 
-          {/* ===== EXPLANATION — shown when results exist ===== */}
+          {/* ===== EXPLANATION — lazy-loaded, shown when results exist ===== */}
           {state.explanationResult && (
             <div ref={setSectionRef('explanation')}>
               <CollapsibleSection
@@ -138,12 +155,14 @@ export default function Home() {
                 maximizedSection={maximizedSection}
                 onMaximizeToggle={setMaximizedSection}
               >
-                <ExplanationView result={state.explanationResult} />
+                <Suspense fallback={<SectionLoader />}>
+                  <ExplanationView result={state.explanationResult} />
+                </Suspense>
               </CollapsibleSection>
             </div>
           )}
 
-          {/* ===== OPTIMIZATION — shown when results exist ===== */}
+          {/* ===== OPTIMIZATION — lazy-loaded, shown when results exist ===== */}
           {state.optimizationResult && (
             <div ref={setSectionRef('optimization')}>
               <CollapsibleSection
@@ -154,16 +173,18 @@ export default function Home() {
                 maximizedSection={maximizedSection}
                 onMaximizeToggle={setMaximizedSection}
               >
-                <OptimizationView
-                  result={state.optimizationResult}
-                  language={state.language}
-                  originalCode={state.code}
-                />
+                <Suspense fallback={<SectionLoader />}>
+                  <OptimizationView
+                    result={state.optimizationResult}
+                    language={state.language}
+                    originalCode={state.code}
+                  />
+                </Suspense>
               </CollapsibleSection>
             </div>
           )}
 
-          {/* ===== PROBLEM SOLVER — moved above algorithm selector ===== */}
+          {/* ===== PROBLEM SOLVER — lazy-loaded on expand ===== */}
           <div ref={setSectionRef('problem-input')}>
             <CollapsibleSection
               title="Problem Solver"
@@ -173,16 +194,18 @@ export default function Home() {
               maximizedSection={maximizedSection}
               onMaximizeToggle={setMaximizedSection}
             >
-              <ProblemInput
-                problem={state.problemStatement}
-                loading={state.loading}
-                onProblemChange={state.setProblemStatement}
-                onSolve={state.solveProblem}
-              />
+              <Suspense fallback={<SectionLoader />}>
+                <ProblemInput
+                  problem={state.problemStatement}
+                  loading={state.loading}
+                  onProblemChange={state.setProblemStatement}
+                  onSolve={state.solveProblem}
+                />
+              </Suspense>
             </CollapsibleSection>
           </div>
 
-          {/* Problem solution — shown when results exist */}
+          {/* Problem solution — lazy-loaded, shown when results exist */}
           {state.problemResult && (
             <div>
               <CollapsibleSection
@@ -193,12 +216,14 @@ export default function Home() {
                 maximizedSection={maximizedSection}
                 onMaximizeToggle={setMaximizedSection}
               >
-                <ProblemResultView result={state.problemResult} language={state.language} />
+                <Suspense fallback={<SectionLoader />}>
+                  <ProblemResultView result={state.problemResult} language={state.language} />
+                </Suspense>
               </CollapsibleSection>
             </div>
           )}
 
-          {/* ===== ALGORITHM SELECTOR — now below problem solver ===== */}
+          {/* ===== ALGORITHM SELECTOR — lazy-loaded on expand ===== */}
           <div ref={setSectionRef('algorithm-selector')}>
             <CollapsibleSection
               title="Select Algorithm"
@@ -208,14 +233,16 @@ export default function Home() {
               maximizedSection={maximizedSection}
               onMaximizeToggle={setMaximizedSection}
             >
-              <AnimationGenerator
-                onGenerate={state.generateAnimation}
-                loading={state.loading}
-              />
+              <Suspense fallback={<SectionLoader />}>
+                <AnimationGenerator
+                  onGenerate={state.generateAnimation}
+                  loading={state.loading}
+                />
+              </Suspense>
             </CollapsibleSection>
           </div>
 
-          {/* ===== STORYBOARD — shown when results exist ===== */}
+          {/* ===== STORYBOARD — lazy-loaded, shown when results exist ===== */}
           {state.storyboardResult && (
             <div ref={setSectionRef('storyboard')}>
               <CollapsibleSection
@@ -226,12 +253,14 @@ export default function Home() {
                 maximizedSection={maximizedSection}
                 onMaximizeToggle={setMaximizedSection}
               >
-                <StoryboardPlayer result={state.storyboardResult} language={state.language} />
+                <Suspense fallback={<SectionLoader />}>
+                  <StoryboardPlayer result={state.storyboardResult} language={state.language} />
+                </Suspense>
               </CollapsibleSection>
             </div>
           )}
 
-          {/* ===== DATA STRUCTURE PLAYGROUND ===== */}
+          {/* ===== DATA STRUCTURE PLAYGROUND — lazy-loaded on expand ===== */}
           <div ref={setSectionRef('playground')}>
             <CollapsibleSection
               title="Data Structure Playground"
@@ -241,14 +270,16 @@ export default function Home() {
               maximizedSection={maximizedSection}
               onMaximizeToggle={setMaximizedSection}
             >
-              <DataStructurePlayground
-                language={state.language}
-                difficulty={state.difficulty}
-              />
+              <Suspense fallback={<SectionLoader />}>
+                <DataStructurePlayground
+                  language={state.language}
+                  difficulty={state.difficulty}
+                />
+              </Suspense>
             </CollapsibleSection>
           </div>
 
-          {/* ===== LOGIC BUILDER ===== */}
+          {/* ===== LOGIC BUILDER — lazy-loaded on expand ===== */}
           <div ref={setSectionRef('logic-builder')}>
             <CollapsibleSection
               title="Logic Builder"
@@ -258,7 +289,9 @@ export default function Home() {
               maximizedSection={maximizedSection}
               onMaximizeToggle={setMaximizedSection}
             >
-              <LogicBuilder language={state.language} />
+              <Suspense fallback={<SectionLoader />}>
+                <LogicBuilder language={state.language} />
+              </Suspense>
             </CollapsibleSection>
           </div>
         </div>

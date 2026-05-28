@@ -5,7 +5,14 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
+    "start:monolith": "node src/index.js",
+    "start:services": "node start-services.js",
+    "start:gateway": "node src/gateway/index.js",
+    "start:animation": "node src/microservices/animation-service.js",
+    "start:interview": "node src/microservices/interview-service.js",
+    "start:ai": "node src/microservices/ai-service.js",
     "dev": "nodemon src/index.js",
+    "dev:services": "node start-services.js",
     "test": "echo \"Tests passed\" && exit 0",
     "lint": "echo \"Lint passed\" && exit 0"
   },
@@ -15,6 +22,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.1",
     "helmet": "^8.0.0",
+    "http-proxy-middleware": "^3.0.5",
     "joi": "^17.13.3",
     "morgan": "^1.10.0",
     "openai": "^4.77.0",
