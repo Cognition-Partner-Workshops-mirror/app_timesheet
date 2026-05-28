@@ -38,6 +38,11 @@ function detectAlgorithmFromCode(code) {
   if (lower.includes('quick_sort') || lower.includes('quicksort') || (lower.includes('pivot') && lower.includes('partition'))) return 'quick_sort';
   if (lower.includes('binary_search') || lower.includes('binarysearch') || (lower.includes('mid') && lower.includes('left') && lower.includes('right') && !lower.includes('merge'))) return 'binary_search';
   if (lower.includes('linear_search') || lower.includes('linearsearch')) return 'linear_search';
+  // Tree traversals — detect inorder/preorder patterns
+  if ((lower.includes('inorder') || lower.includes('in_order') || lower.includes('in-order')) && (lower.includes('tree') || lower.includes('treenode'))) return 'inorder_traversal';
+  if ((lower.includes('preorder') || lower.includes('pre_order') || lower.includes('pre-order')) && (lower.includes('tree') || lower.includes('treenode'))) return 'preorder_traversal';
+  // Generic tree with stack = inorder traversal pattern
+  if (lower.includes('treenode') && lower.includes('stack') && (lower.includes('.push') || lower.includes('.pop'))) return 'inorder_traversal';
   if (lower.includes('stack') || lower.includes('.push') && lower.includes('.pop')) return 'stack_operations';
   if (lower.includes('queue') || lower.includes('enqueue') || lower.includes('dequeue')) return 'queue_operations';
   // Default to bubble_sort for generic sorting code

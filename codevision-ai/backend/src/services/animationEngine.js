@@ -598,6 +598,251 @@ function mergeSort(inputArray) {
   return { steps, sortedArray: arr };
 }
 
+/**
+ * Tree inorder traversal using stack — combined animation showing
+ * Tree, Stack, and Result ArrayList changing together per step.
+ * Each step includes state for all three data structures.
+ */
+function inorderTraversal(inputArray) {
+  // Build a binary tree from the array (level-order / BFS style)
+  const arr = [...inputArray];
+  const nodes = arr.map((val, idx) => (val !== null ? { val, left: null, right: null, id: idx } : null));
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i]) {
+      const li = 2 * i + 1;
+      const ri = 2 * i + 2;
+      if (li < nodes.length) nodes[i].left = nodes[li];
+      if (ri < nodes.length) nodes[i].right = nodes[ri];
+    }
+  }
+  const root = nodes[0] || null;
+
+  const steps = [];
+  let stepNum = 1;
+  const stack = [];
+  const result = [];
+
+  // Helper to snapshot tree node ids that are highlighted
+  const treeSnapshot = () => nodes.filter(n => n).map(n => n.val);
+  const stackSnapshot = () => stack.map(n => n.val);
+
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    description: `Starting Inorder Traversal. Tree: [${arr.join(', ')}]. Stack is empty. Result list is empty.`,
+    state: {
+      elements: treeSnapshot(),
+      variables: { curr: root ? root.val : 'null' },
+    },
+    dataStructures: {
+      tree: { nodes: arr, highlighted: [], label: 'Binary Tree' },
+      stack: { elements: [], highlighted: [], label: 'Stack (leftEnds)' },
+      resultList: { elements: [], highlighted: [], label: 'ArrayList (inorder)' },
+    },
+    highlightIndices: root ? [nodes.indexOf(root)] : [],
+    activeElements: [],
+  });
+
+  let curr = root;
+  while (stack.length > 0 || curr !== null) {
+    // Push left nodes onto stack
+    while (curr !== null) {
+      stack.push(curr);
+      const nodeIdx = nodes.indexOf(curr);
+      steps.push({
+        stepNumber: stepNum++,
+        operation: 'push',
+        description: `Push node ${curr.val} onto stack. Stack: [${stackSnapshot().join(', ')}]. Moving to left child.`,
+        codeLineHighlight: 7, // leftEnds.push(curr)
+        state: {
+          elements: treeSnapshot(),
+          variables: { curr: curr.val },
+        },
+        dataStructures: {
+          tree: { nodes: arr, highlighted: [nodeIdx], label: 'Binary Tree' },
+          stack: { elements: stackSnapshot(), highlighted: [stack.length - 1], label: 'Stack (leftEnds)' },
+          resultList: { elements: [...result], highlighted: [], label: 'ArrayList (inorder)' },
+        },
+        highlightIndices: [nodeIdx],
+        activeElements: [nodeIdx],
+      });
+      curr = curr.left;
+    }
+
+    // Pop from stack
+    curr = stack.pop();
+    const nodeIdx = nodes.indexOf(curr);
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'pop',
+      description: `Pop node ${curr.val} from stack. Stack: [${stackSnapshot().join(', ')}].`,
+      codeLineHighlight: 10, // curr=leftEnds.pop()
+      state: {
+        elements: treeSnapshot(),
+        variables: { curr: curr.val },
+      },
+      dataStructures: {
+        tree: { nodes: arr, highlighted: [nodeIdx], label: 'Binary Tree' },
+        stack: { elements: stackSnapshot(), highlighted: stack.length > 0 ? [stack.length - 1] : [], label: 'Stack (leftEnds)' },
+        resultList: { elements: [...result], highlighted: [], label: 'ArrayList (inorder)' },
+      },
+      highlightIndices: [nodeIdx],
+      activeElements: [nodeIdx],
+    });
+
+    // Add to result
+    result.push(curr.val);
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'add_result',
+      description: `Add ${curr.val} to result list. Result: [${result.join(', ')}]. Moving to right child.`,
+      codeLineHighlight: 11, // inorder.add(curr.val)
+      state: {
+        elements: treeSnapshot(),
+        variables: { curr: curr.val },
+      },
+      dataStructures: {
+        tree: { nodes: arr, highlighted: [nodeIdx], label: 'Binary Tree' },
+        stack: { elements: stackSnapshot(), highlighted: [], label: 'Stack (leftEnds)' },
+        resultList: { elements: [...result], highlighted: [result.length - 1], label: 'ArrayList (inorder)' },
+      },
+      highlightIndices: [nodeIdx],
+      activeElements: [],
+    });
+
+    curr = curr.right;
+  }
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'complete',
+    description: `Inorder Traversal complete! Result: [${result.join(', ')}]`,
+    state: {
+      elements: [...result],
+      variables: {},
+    },
+    dataStructures: {
+      tree: { nodes: arr, highlighted: [], label: 'Binary Tree' },
+      stack: { elements: [], highlighted: [], label: 'Stack (leftEnds)' },
+      resultList: { elements: [...result], highlighted: [], label: 'ArrayList (inorder)' },
+    },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps, resultArray: result };
+}
+
+/**
+ * Preorder traversal using stack — combined animation with Tree + Stack + Result.
+ */
+function preorderTraversal(inputArray) {
+  const arr = [...inputArray];
+  const nodes = arr.map((val, idx) => (val !== null ? { val, left: null, right: null, id: idx } : null));
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i]) {
+      const li = 2 * i + 1;
+      const ri = 2 * i + 2;
+      if (li < nodes.length) nodes[i].left = nodes[li];
+      if (ri < nodes.length) nodes[i].right = nodes[ri];
+    }
+  }
+  const root = nodes[0] || null;
+  if (!root) return { steps: [], resultArray: [] };
+
+  const steps = [];
+  let stepNum = 1;
+  const stack = [root];
+  const result = [];
+
+  const treeSnapshot = () => nodes.filter(n => n).map(n => n.val);
+  const stackSnapshot = () => stack.map(n => n.val);
+
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    description: `Starting Preorder Traversal. Push root ${root.val} onto stack.`,
+    state: { elements: treeSnapshot(), variables: {} },
+    dataStructures: {
+      tree: { nodes: arr, highlighted: [0], label: 'Binary Tree' },
+      stack: { elements: [root.val], highlighted: [0], label: 'Stack' },
+      resultList: { elements: [], highlighted: [], label: 'Result' },
+    },
+    highlightIndices: [0],
+    activeElements: [],
+  });
+
+  while (stack.length > 0) {
+    const curr = stack.pop();
+    const nodeIdx = nodes.indexOf(curr);
+    result.push(curr.val);
+
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'visit',
+      description: `Pop ${curr.val}, add to result. Result: [${result.join(', ')}].`,
+      state: { elements: treeSnapshot(), variables: { curr: curr.val } },
+      dataStructures: {
+        tree: { nodes: arr, highlighted: [nodeIdx], label: 'Binary Tree' },
+        stack: { elements: stackSnapshot(), highlighted: [], label: 'Stack' },
+        resultList: { elements: [...result], highlighted: [result.length - 1], label: 'Result' },
+      },
+      highlightIndices: [nodeIdx],
+      activeElements: [nodeIdx],
+    });
+
+    // Push right then left (so left is processed first)
+    if (curr.right) {
+      stack.push(curr.right);
+      steps.push({
+        stepNumber: stepNum++,
+        operation: 'push',
+        description: `Push right child ${curr.right.val} onto stack. Stack: [${stackSnapshot().join(', ')}].`,
+        state: { elements: treeSnapshot(), variables: {} },
+        dataStructures: {
+          tree: { nodes: arr, highlighted: [nodes.indexOf(curr.right)], label: 'Binary Tree' },
+          stack: { elements: stackSnapshot(), highlighted: [stack.length - 1], label: 'Stack' },
+          resultList: { elements: [...result], highlighted: [], label: 'Result' },
+        },
+        highlightIndices: [nodes.indexOf(curr.right)],
+        activeElements: [],
+      });
+    }
+    if (curr.left) {
+      stack.push(curr.left);
+      steps.push({
+        stepNumber: stepNum++,
+        operation: 'push',
+        description: `Push left child ${curr.left.val} onto stack. Stack: [${stackSnapshot().join(', ')}].`,
+        state: { elements: treeSnapshot(), variables: {} },
+        dataStructures: {
+          tree: { nodes: arr, highlighted: [nodes.indexOf(curr.left)], label: 'Binary Tree' },
+          stack: { elements: stackSnapshot(), highlighted: [stack.length - 1], label: 'Stack' },
+          resultList: { elements: [...result], highlighted: [], label: 'Result' },
+        },
+        highlightIndices: [nodes.indexOf(curr.left)],
+        activeElements: [],
+      });
+    }
+  }
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'complete',
+    description: `Preorder Traversal complete! Result: [${result.join(', ')}]`,
+    state: { elements: [...result], variables: {} },
+    dataStructures: {
+      tree: { nodes: arr, highlighted: [], label: 'Binary Tree' },
+      stack: { elements: [], highlighted: [], label: 'Stack' },
+      resultList: { elements: [...result], highlighted: [], label: 'Result' },
+    },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps, resultArray: result };
+}
+
 // Default sample arrays for different algorithms
 const DEFAULT_ARRAYS = {
   sorting: [64, 34, 25, 12, 22, 11, 90],
@@ -605,6 +850,7 @@ const DEFAULT_ARRAYS = {
   stack: [10, 20, 30, 40, 50],
   queue: [10, 20, 30, 40, 50],
   fibonacci: [0, 1, 1, 2, 3, 5, 8, 13],
+  tree: [1, 2, 3, 4, 5, 6, 7],
 };
 
 // Map algorithm type to generator function
@@ -618,6 +864,8 @@ const ALGORITHM_MAP = {
   binary_search: { fn: binarySearch, type: 'searching', name: 'Binary Search', complexity: { time: 'O(log n)', space: 'O(1)' } },
   stack_operations: { fn: stackOperations, type: 'stack', name: 'Stack Operations', complexity: { time: 'O(1) per op', space: 'O(n)' } },
   queue_operations: { fn: queueOperations, type: 'queue', name: 'Queue Operations', complexity: { time: 'O(1) per op', space: 'O(n)' } },
+  inorder_traversal: { fn: inorderTraversal, type: 'tree', name: 'Inorder Traversal', complexity: { time: 'O(n)', space: 'O(h)' }, combined: true },
+  preorder_traversal: { fn: preorderTraversal, type: 'tree', name: 'Preorder Traversal', complexity: { time: 'O(n)', space: 'O(h)' }, combined: true },
 };
 
 /**
@@ -646,10 +894,12 @@ function generateLocalAnimation(algorithmType, inputData) {
   return {
     algorithmName: config.name,
     algorithmType,
+    dataStructureType: config.combined ? 'combined' : config.type,
     initialState: { elements: config.type === 'searching' ? [...arr].sort((a, b) => a - b) : [...(inputData && Array.isArray(inputData) && inputData.length > 0 ? inputData.map(Number) : arr)] },
     steps: result.steps,
     complexity: config.complexity,
     totalSteps: result.steps.length,
+    combined: !!config.combined,
   };
 }
 

@@ -19,8 +19,7 @@ export type ActiveSection =
   | 'animation'
   | 'storyboard'
   | 'playground'
-  | 'problem-solver'
-  | 'interview';
+  | 'problem-solver';
 
 // Interview question answer from AI
 export interface InterviewAnswer {
@@ -138,6 +137,7 @@ export interface AnimationResult {
   steps: AnimationStep[];
   finalState: { elements: (number | string)[] };
   complexity: { time: string; space: string };
+  combined?: boolean;
 }
 
 // Single storyboard slide for teaching videos

@@ -18,11 +18,11 @@ import CodeInput from '@/components/code-editor/CodeInput';
 import ExplanationView from '@/components/code-editor/ExplanationView';
 import OptimizationView from '@/components/complexity/OptimizationView';
 import CodeAnimationPlayer from '@/components/algorithm-animation/CodeAnimationPlayer';
+import CombinedAnimationPlayer from '@/components/algorithm-animation/CombinedAnimationPlayer';
 import AnimationGenerator from '@/components/algorithm-animation/AnimationGenerator';
 import StoryboardPlayer from '@/components/storyboard/StoryboardPlayer';
 import ProblemInput from '@/components/problem-solver/ProblemInput';
 import ProblemResultView from '@/components/problem-solver/ProblemResultView';
-import InterviewPrep from '@/components/interview/InterviewPrep';
 import DataStructurePlayground from '@/components/data-structures/DataStructurePlayground';
 import LogicBuilder from '@/components/logic-builder/LogicBuilder';
 import type { ActiveSection } from '@/types';
@@ -106,8 +106,8 @@ export default function Home() {
             </CollapsibleSection>
           </div>
 
-          {/* ===== ANIMATION — shown below code when results exist ===== */}
-          {state.animationResult && state.code && (
+          {/* ===== ANIMATION — shown below code when results exist (code may be empty when using algorithm selector) ===== */}
+          {state.animationResult && (
             <div ref={setSectionRef('animation')}>
               <CollapsibleSection
                 title="Code Execution View"
@@ -117,7 +117,12 @@ export default function Home() {
                 maximizedSection={maximizedSection}
                 onMaximizeToggle={setMaximizedSection}
               >
-                <CodeAnimationPlayer result={state.animationResult} code={state.code} />
+                {/* Use combined player for tree traversals (multiple data structures), otherwise standard player */}
+                {state.animationResult.combined ? (
+                  <CombinedAnimationPlayer result={state.animationResult} code={state.code || ''} />
+                ) : (
+                  <CodeAnimationPlayer result={state.animationResult} code={state.code || ''} />
+                )}
               </CollapsibleSection>
             </div>
           )}
@@ -225,20 +230,6 @@ export default function Home() {
               </CollapsibleSection>
             </div>
           )}
-
-          {/* ===== INTERVIEW PREP — DSA, System Design, Production ===== */}
-          <div ref={setSectionRef('interview')}>
-            <CollapsibleSection
-              title="Interview Prep"
-              icon="🎯"
-              defaultOpen={false}
-              sectionId="interview"
-              maximizedSection={maximizedSection}
-              onMaximizeToggle={setMaximizedSection}
-            >
-              <InterviewPrep difficulty={state.difficulty} />
-            </CollapsibleSection>
-          </div>
 
           {/* ===== DATA STRUCTURE PLAYGROUND ===== */}
           <div ref={setSectionRef('playground')}>

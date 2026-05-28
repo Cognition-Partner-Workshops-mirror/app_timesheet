@@ -38,9 +38,10 @@ const ALGORITHM_CATEGORIES = [
   {
     category: 'Graph & Tree',
     algorithms: [
+      { type: 'inorder_traversal', label: 'Inorder Traversal', defaultInput: [1, 2, 3, 4, 5, 6, 7] },
+      { type: 'preorder_traversal', label: 'Preorder Traversal', defaultInput: [1, 2, 3, 4, 5, 6, 7] },
       { type: 'bfs', label: 'BFS (Breadth-First)', defaultInput: [1, 2, 3, 4, 5, 6] },
       { type: 'dfs', label: 'DFS (Depth-First)', defaultInput: [1, 2, 3, 4, 5, 6] },
-      { type: 'binary_tree_traversal', label: 'Binary Tree Traversal', defaultInput: [1, 2, 3, 4, 5, 6, 7] },
     ],
   },
   {

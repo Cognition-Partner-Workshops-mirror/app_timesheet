@@ -6,6 +6,7 @@
  * and a light/dark theme toggle.
  */
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import type { ActiveSection, Language, Difficulty } from '@/types';
 import type { Theme } from '@/hooks/useTheme';
 
@@ -17,7 +18,6 @@ const NAV_ITEMS: Array<{ id: ActiveSection; label: string; icon: string }> = [
   { id: 'optimization', label: 'Optimization', icon: '⚡' },
   { id: 'animation', label: 'Animation', icon: '🎬' },
   { id: 'storyboard', label: 'Storyboard', icon: '🎓' },
-  { id: 'interview', label: 'Interview Prep', icon: '🎯' },
   { id: 'playground', label: 'Playground', icon: '🔧' },
   { id: 'logic-builder', label: 'Logic Builder', icon: '🧱' },
 ];
@@ -126,6 +126,15 @@ export default function Sidebar({
             <span>{item.label}</span>
           </motion.button>
         ))}
+        {/* Interview Prep — separate page link */}
+        <Link
+          href="/interview"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all mb-1 hover:bg-surface-light text-foreground/60 hover:text-primary"
+        >
+          <span className="text-lg">🎯</span>
+          <span>Interview Prep</span>
+          <span className="ml-auto text-xs text-foreground/30">↗</span>
+        </Link>
       </nav>
     </aside>
   );
