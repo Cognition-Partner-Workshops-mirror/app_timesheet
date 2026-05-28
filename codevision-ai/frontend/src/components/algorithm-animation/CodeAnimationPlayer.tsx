@@ -252,6 +252,73 @@ export default function CodeAnimationPlayer({ result, code }: CodeAnimationPlaye
           </div>
         </div>
       )}
+
+      {/* Dynamic output — updates on every step showing live state changes */}
+      <div className="bg-surface border border-border rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Output</span>
+          <span className="text-[10px] text-foreground/40 font-mono">Step {currentStep + 1}/{totalSteps}</span>
+          {currentStep >= totalSteps - 1 && (
+            <span className="px-2 py-0.5 bg-success/10 text-success text-[10px] font-semibold rounded uppercase">Complete</span>
+          )}
+        </div>
+        <div className="bg-surface-light border border-border rounded-lg p-3 font-mono text-sm space-y-2">
+          {/* Live array state — highlights changed positions */}
+          <div>
+            <span className="text-foreground/50 text-xs">Array State:</span>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {elements.map((el, idx) => {
+                const isHighlighted = step?.highlightIndices?.includes(idx);
+                const isActive = step?.activeElements?.includes(idx);
+                return (
+                  <motion.span
+                    key={idx}
+                    animate={{
+                      scale: isActive ? 1.1 : 1,
+                      backgroundColor: isActive ? 'var(--danger)' : isHighlighted ? 'var(--primary)' : 'var(--surface)',
+                      color: (isActive || isHighlighted) ? '#ffffff' : 'var(--foreground)',
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 rounded border border-border text-xs font-medium"
+                  >
+                    {el}
+                  </motion.span>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Variables state — shows i, j, etc. */}
+          {step?.state?.variables && Object.keys(step.state.variables).length > 0 && (
+            <div>
+              <span className="text-foreground/50 text-xs">Variables:</span>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {Object.entries(step.state.variables).map(([key, val]) => (
+                  <span key={key} className="px-2 py-0.5 bg-accent/10 text-accent rounded text-xs font-medium">
+                    {key} = {String(val)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Current operation description */}
+          <div className="pt-1 border-t border-border/50">
+            <span className="text-foreground/50 text-xs">Operation: </span>
+            <span className="text-foreground text-xs">{step?.description || step?.explanation || 'Initializing...'}</span>
+          </div>
+
+          {/* Final sorted result shown when complete */}
+          {currentStep >= totalSteps - 1 && (
+            <div className="pt-2 border-t border-border">
+              <span className="text-success text-xs font-semibold">Final Result: </span>
+              <span className="text-foreground font-medium">
+                [{(result.finalState?.elements ?? result.steps[totalSteps - 1]?.state?.elements ?? elements).join(', ')}]
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
     </motion.div>
   );
 }

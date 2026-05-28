@@ -2,10 +2,12 @@
 
 /**
  * Sidebar navigation component.
- * Provides section switching for all major features of CodeVision AI.
+ * Provides section switching, language/difficulty selectors,
+ * and a light/dark theme toggle.
  */
 import { motion } from 'framer-motion';
 import type { ActiveSection, Language, Difficulty } from '@/types';
+import type { Theme } from '@/hooks/useTheme';
 
 // Navigation items with icons and labels for each section
 const NAV_ITEMS: Array<{ id: ActiveSection; label: string; icon: string }> = [
@@ -27,34 +29,48 @@ const LANGUAGES: Array<{ value: Language; label: string }> = [
   { value: 'cpp', label: 'C++' },
 ];
 
-// Difficulty level options
-const DIFFICULTIES: Array<{ value: Difficulty; label: string; color: string }> = [
-  { value: 'beginner', label: 'Beginner', color: 'text-green-600' },
-  { value: 'intermediate', label: 'Intermediate', color: 'text-yellow-600' },
-  { value: 'advanced', label: 'Advanced', color: 'text-red-600' },
+// Difficulty level options — uses theme-adaptive colors
+const DIFFICULTIES: Array<{ value: Difficulty; label: string; lightColor: string; darkColor: string }> = [
+  { value: 'beginner', label: 'Beginner', lightColor: 'text-green-600', darkColor: 'text-green-400' },
+  { value: 'intermediate', label: 'Intermediate', lightColor: 'text-yellow-600', darkColor: 'text-yellow-400' },
+  { value: 'advanced', label: 'Advanced', lightColor: 'text-red-600', darkColor: 'text-red-400' },
 ];
 
 interface SidebarProps {
   activeSection: ActiveSection;
   language: Language;
   difficulty: Difficulty;
+  theme: Theme;
   onSectionChange: (section: ActiveSection) => void;
   onLanguageChange: (language: Language) => void;
   onDifficultyChange: (difficulty: Difficulty) => void;
+  onThemeToggle: () => void;
 }
 
 export default function Sidebar({
-  activeSection, language, difficulty,
-  onSectionChange, onLanguageChange, onDifficultyChange,
+  activeSection, language, difficulty, theme,
+  onSectionChange, onLanguageChange, onDifficultyChange, onThemeToggle,
 }: SidebarProps) {
   return (
     <aside className="w-64 bg-surface border-r border-border flex flex-col h-full">
-      {/* App branding */}
+      {/* App branding + theme toggle */}
       <div className="p-4 border-b border-border">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-primary-light to-secondary bg-clip-text text-transparent">
-          CodeVision AI
-        </h1>
-        <p className="text-xs text-foreground/50 mt-1">AI-Powered Code Learning</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary-light to-secondary bg-clip-text text-transparent">
+              CodeVision AI
+            </h1>
+            <p className="text-xs text-foreground/50 mt-1">AI-Powered Code Learning</p>
+          </div>
+          {/* Light/Dark mode toggle button */}
+          <button
+            onClick={onThemeToggle}
+            className="p-2 rounded-lg bg-surface-light hover:bg-primary/20 transition-colors text-lg"
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          >
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+        </div>
       </div>
 
       {/* Language selector */}
@@ -85,7 +101,7 @@ export default function Sidebar({
                   : 'hover:bg-surface-light text-foreground/60'
               }`}
             >
-              <span className={diff.color}>{diff.label}</span>
+              <span className={theme === 'dark' ? diff.darkColor : diff.lightColor}>{diff.label}</span>
             </button>
           ))}
         </div>

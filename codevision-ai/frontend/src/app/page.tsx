@@ -3,10 +3,10 @@
 /**
  * Main application page for CodeVision AI.
  * Orchestrates all sections with collapsible panels.
- * Sections: code input, problem solver, explanation,
- * optimization, animation, storyboard, playground, and logic builder.
+ * Supports light/dark theme toggle.
  */
 import { useCodeVision } from '@/hooks/useCodeVision';
+import { useTheme } from '@/hooks/useTheme';
 import Sidebar from '@/components/ui/Sidebar';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -25,6 +25,7 @@ import LogicBuilder from '@/components/logic-builder/LogicBuilder';
 
 export default function Home() {
   const state = useCodeVision();
+  const { theme, toggleTheme } = useTheme();
 
   // Renders the active section based on sidebar selection
   const renderContent = () => {
@@ -101,7 +102,7 @@ export default function Home() {
       case 'animation':
         return (
           <div className="space-y-4">
-            {/* Algorithm selector section — collapsible */}
+            {/* Algorithm selector — collapsible */}
             <CollapsibleSection title="Select Algorithm" icon="🎬" defaultOpen={!state.animationResult}>
               <AnimationGenerator
                 onGenerate={state.generateAnimation}
@@ -116,14 +117,14 @@ export default function Home() {
               </CollapsibleSection>
             )}
 
-            {/* Standard array animation player (always shown when result exists) */}
+            {/* Standard array animation when no code present */}
             {state.animationResult && !state.code && (
               <CollapsibleSection title="Animation Player" icon="📊" defaultOpen={true}>
                 <AnimationPlayer result={state.animationResult} />
               </CollapsibleSection>
             )}
 
-            {/* Fallback: show standard player if no code but result exists */}
+            {/* Array visualization (collapsed by default when code view is shown) */}
             {state.animationResult && state.code && (
               <CollapsibleSection title="Array Visualization" icon="📊" defaultOpen={false}>
                 <AnimationPlayer result={state.animationResult} />
@@ -170,14 +171,16 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Left sidebar navigation */}
+      {/* Left sidebar with theme toggle */}
       <Sidebar
         activeSection={state.activeSection}
         language={state.language}
         difficulty={state.difficulty}
+        theme={theme}
         onSectionChange={state.setActiveSection}
         onLanguageChange={state.setLanguage}
         onDifficultyChange={state.setDifficulty}
+        onThemeToggle={toggleTheme}
       />
 
       {/* Main content area */}

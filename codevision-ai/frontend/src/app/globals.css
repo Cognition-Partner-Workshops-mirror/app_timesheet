@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Light theme — milk white background with clean colors */
+/* Light theme (default) — milk white background */
 :root {
   --background: #faf9f6;
   --foreground: #1e293b;
@@ -13,6 +13,23 @@
   --surface: #ffffff;
   --surface-light: #f1f5f9;
   --border: #e2e8f0;
+  --bar-default: #cbd5e1;
+}
+
+/* Dark theme — toggled via data-theme="dark" on <html> */
+html[data-theme="dark"] {
+  --background: #0f0f23;
+  --foreground: #e2e8f0;
+  --primary: #6366f1;
+  --primary-light: #818cf8;
+  --secondary: #06b6d4;
+  --accent: #f59e0b;
+  --success: #10b981;
+  --danger: #ef4444;
+  --surface: #1e1e3f;
+  --surface-light: #2a2a4a;
+  --border: #334155;
+  --bar-default: #334155;
 }
 
 @theme inline {
@@ -35,6 +52,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom scrollbar styling */

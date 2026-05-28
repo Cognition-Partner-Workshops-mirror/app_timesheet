@@ -2,10 +2,11 @@
 
 /**
  * Code input component with syntax-highlighted textarea.
- * Provides action buttons for analysis, explanation, optimization,
- * animation, and storyboard generation.
+ * Includes format-aware custom input block for providing test data.
+ * Supports array, string, map, and number input formats.
  */
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import type { Language, Difficulty } from '@/types';
 
 // Sample code snippets for each language to help users get started
@@ -57,6 +58,16 @@ console.log(bubbleSort([64, 34, 25, 12, 22, 11, 90]));`,
 }`,
 };
 
+// Input type presets with format examples and placeholders
+type InputType = 'array' | 'string' | 'map' | 'number' | 'matrix';
+const INPUT_TYPES: Array<{ type: InputType; label: string; icon: string; placeholder: string; example: string }> = [
+  { type: 'array', label: 'Array', icon: '[ ]', placeholder: '[64, 34, 25, 12, 22, 11, 90]', example: '[64, 34, 25, 12, 22, 11, 90]' },
+  { type: 'string', label: 'String', icon: '" "', placeholder: '"hello world"', example: '"hello world"' },
+  { type: 'map', label: 'Map', icon: '{ }', placeholder: '{"a": 1, "b": 2, "c": 3}', example: '{"a": 1, "b": 2, "c": 3}' },
+  { type: 'number', label: 'Number', icon: '#', placeholder: '42', example: '42' },
+  { type: 'matrix', label: 'Matrix', icon: '[[]]', placeholder: '[[1, 2], [3, 4], [5, 6]]', example: '[[1, 2], [3, 4], [5, 6]]' },
+];
+
 interface CodeInputProps {
   code: string;
   language: Language;
@@ -74,6 +85,13 @@ export default function CodeInput({
   code, language, loading,
   onCodeChange, onAnalyze, onExplain, onOptimize, onAnimate, onStoryboard,
 }: CodeInputProps) {
+  // Custom input state — format-aware with type selector
+  const [inputType, setInputType] = useState<InputType>('array');
+  const [customInput, setCustomInput] = useState('[64, 34, 25, 12, 22, 11, 90]');
+
+  // Get current type config for hints/placeholders
+  const currentTypeConfig = INPUT_TYPES.find(t => t.type === inputType)!;
+
   // Action buttons shown below the code editor
   const actions = [
     { label: 'Analyze', icon: '🔍', onClick: onAnalyze, color: 'from-blue-500 to-blue-700' },
@@ -99,7 +117,7 @@ export default function CodeInput({
         </button>
       </div>
 
-      {/* Code textarea with line numbers */}
+      {/* Code textarea */}
       <div className="relative">
         <textarea
           value={code}
@@ -111,6 +129,49 @@ export default function CodeInput({
         <div className="absolute top-2 right-2 text-xs text-foreground/30 bg-surface px-2 py-1 rounded">
           {language.toUpperCase()}
         </div>
+      </div>
+
+      {/* Format-aware custom input block */}
+      <div className="bg-surface border border-border rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
+            Custom Input
+          </label>
+          <span className="text-[10px] text-foreground/40">Used as input data for animation</span>
+        </div>
+
+        {/* Input type selector — tabs */}
+        <div className="flex gap-1 mb-3">
+          {INPUT_TYPES.map((t) => (
+            <button
+              key={t.type}
+              onClick={() => {
+                setInputType(t.type);
+                setCustomInput(t.example);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                inputType === t.type
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-surface-light text-foreground/60 hover:bg-surface-light/80 hover:text-foreground'
+              }`}
+            >
+              <span className="font-mono text-[10px]">{t.icon}</span>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Input field with format-specific placeholder */}
+        <textarea
+          value={customInput}
+          onChange={(e) => setCustomInput(e.target.value)}
+          className="w-full bg-surface-light border border-border rounded-lg px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-foreground/30 resize-none"
+          placeholder={currentTypeConfig.placeholder}
+          rows={inputType === 'matrix' ? 3 : 1}
+        />
+        <p className="mt-1 text-[10px] text-foreground/40">
+          Format: <span className="font-mono text-foreground/50">{currentTypeConfig.placeholder}</span>
+        </p>
       </div>
 
       {/* Action buttons */}
