@@ -32,7 +32,7 @@ const ALGORITHM_CATEGORIES = [
     algorithms: [
       { type: 'stack_operations', label: 'Stack Operations', defaultInput: [1, 2, 3, 4, 5] },
       { type: 'queue_operations', label: 'Queue Operations', defaultInput: [1, 2, 3, 4, 5] },
-      { type: 'linked_list_traversal', label: 'Linked List Traversal', defaultInput: [1, 2, 3, 4, 5] },
+      { type: 'linked_list_reversal', label: 'Linked List Reversal', defaultInput: [1, 2, 3, 4, 5] },
     ],
   },
   {

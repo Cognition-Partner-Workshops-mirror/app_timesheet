@@ -843,6 +843,195 @@ function preorderTraversal(inputArray) {
   return { steps, resultArray: result };
 }
 
+/**
+ * Linked list reversal animation — combined visualization showing:
+ *   1. Linked List: nodes with arrows showing next pointers
+ *   2. Pointers: curr, prev, temp pointer positions
+ *   3. Result: the reversed list building up
+ *
+ * Animates the classic iterative reversal algorithm:
+ *   prev = null, curr = head
+ *   while (curr != null): temp = curr.next; curr.next = prev; prev = curr; curr = temp
+ */
+function linkedListReversal(inputArray) {
+  const arr = [...inputArray];
+  const steps = [];
+  let stepNum = 1;
+
+  // Build a linked list from the input array
+  // Each node: { val, nextIdx } — nextIdx is the index of the next node (-1 for null)
+  const nodes = arr.map((val, idx) => ({
+    val,
+    nextIdx: idx < arr.length - 1 ? idx + 1 : -1,
+  }));
+
+  // Helper: snapshot the linked list as array of { val, nextIdx } for the frontend
+  const listSnapshot = () => nodes.map(n => ({ val: n.val, nextIdx: n.nextIdx }));
+
+  // Helper: follow the linked list from a given index and return the values in order
+  const listFromIdx = (startIdx) => {
+    const result = [];
+    let idx = startIdx;
+    const visited = new Set();
+    while (idx !== -1 && !visited.has(idx)) {
+      visited.add(idx);
+      result.push(nodes[idx].val);
+      idx = nodes[idx].nextIdx;
+    }
+    return result;
+  };
+
+  // Initial state: head → 1 → 2 → 3 → 4 → 5 → null
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    codeLineHighlight: null,
+    description: `Starting Linked List Reversal. List: ${arr.join(' → ')} → null. Set curr = head (${arr[0]}), prev = null.`,
+    state: { elements: [...arr], variables: { curr: arr[0], prev: 'null', temp: 'null' } },
+    dataStructures: {
+      linkedList: { nodes: listSnapshot(), highlighted: [0], pointers: { curr: 0, prev: -1, temp: -1 }, label: 'Linked List' },
+      pointerState: { curr: arr[0], prev: 'null', temp: 'null', label: 'Pointers' },
+      resultList: { elements: [], highlighted: [], label: 'Reversed List' },
+    },
+    highlightIndices: [0],
+    activeElements: [],
+  });
+
+  // Simulate: prev = null, curr = head (index 0)
+  let currIdx = 0;
+  let prevIdx = -1;
+
+  while (currIdx !== -1) {
+    const currVal = nodes[currIdx].val;
+    const tempIdx = nodes[currIdx].nextIdx;
+    const tempVal = tempIdx !== -1 ? nodes[tempIdx].val : 'null';
+
+    // Step: temp = curr.next
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'assign',
+      codeLineHighlight: null,
+      description: `temp = curr.next → temp points to ${tempVal}. Saving reference to next node before we break the link.`,
+      state: {
+        elements: [...arr],
+        variables: { curr: currVal, prev: prevIdx !== -1 ? nodes[prevIdx].val : 'null', temp: tempVal },
+      },
+      dataStructures: {
+        linkedList: {
+          nodes: listSnapshot(),
+          highlighted: tempIdx !== -1 ? [currIdx, tempIdx] : [currIdx],
+          pointers: { curr: currIdx, prev: prevIdx, temp: tempIdx },
+          label: 'Linked List',
+        },
+        pointerState: { curr: currVal, prev: prevIdx !== -1 ? nodes[prevIdx].val : 'null', temp: tempVal, label: 'Pointers' },
+        resultList: { elements: listFromIdx(prevIdx !== -1 ? prevIdx : -1).reverse().reverse(), highlighted: [], label: 'Reversed Portion' },
+      },
+      highlightIndices: tempIdx !== -1 ? [currIdx, tempIdx] : [currIdx],
+      activeElements: [],
+    });
+
+    // Step: curr.next = prev (reverse the link)
+    nodes[currIdx].nextIdx = prevIdx;
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'reverse_link',
+      codeLineHighlight: null,
+      description: `curr.next = prev → Node ${currVal} now points to ${prevIdx !== -1 ? nodes[prevIdx].val : 'null'}. Link reversed!`,
+      state: {
+        elements: [...arr],
+        variables: { curr: currVal, prev: prevIdx !== -1 ? nodes[prevIdx].val : 'null', temp: tempVal },
+      },
+      dataStructures: {
+        linkedList: {
+          nodes: listSnapshot(),
+          highlighted: [currIdx],
+          pointers: { curr: currIdx, prev: prevIdx, temp: tempIdx },
+          label: 'Linked List',
+        },
+        pointerState: { curr: currVal, prev: prevIdx !== -1 ? nodes[prevIdx].val : 'null', temp: tempVal, label: 'Pointers' },
+        resultList: { elements: listFromIdx(currIdx), highlighted: [0], label: 'Reversed Portion' },
+      },
+      highlightIndices: [currIdx],
+      activeElements: [currIdx],
+    });
+
+    // Step: prev = curr
+    prevIdx = currIdx;
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'move_prev',
+      codeLineHighlight: null,
+      description: `prev = curr → prev now points to node ${currVal}. Moving prev forward.`,
+      state: {
+        elements: [...arr],
+        variables: { curr: currVal, prev: currVal, temp: tempVal },
+      },
+      dataStructures: {
+        linkedList: {
+          nodes: listSnapshot(),
+          highlighted: [prevIdx],
+          pointers: { curr: currIdx, prev: prevIdx, temp: tempIdx },
+          label: 'Linked List',
+        },
+        pointerState: { curr: currVal, prev: currVal, temp: tempVal, label: 'Pointers' },
+        resultList: { elements: listFromIdx(prevIdx), highlighted: [], label: 'Reversed Portion' },
+      },
+      highlightIndices: [prevIdx],
+      activeElements: [],
+    });
+
+    // Step: curr = temp
+    currIdx = tempIdx;
+    const newCurrVal = currIdx !== -1 ? nodes[currIdx].val : 'null';
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'move_curr',
+      codeLineHighlight: null,
+      description: `curr = temp → curr now points to ${newCurrVal}. Moving to the next unprocessed node.`,
+      state: {
+        elements: [...arr],
+        variables: { curr: newCurrVal, prev: nodes[prevIdx].val, temp: tempVal },
+      },
+      dataStructures: {
+        linkedList: {
+          nodes: listSnapshot(),
+          highlighted: currIdx !== -1 ? [currIdx, prevIdx] : [prevIdx],
+          pointers: { curr: currIdx, prev: prevIdx, temp: -1 },
+          label: 'Linked List',
+        },
+        pointerState: { curr: newCurrVal, prev: nodes[prevIdx].val, temp: tempVal, label: 'Pointers' },
+        resultList: { elements: listFromIdx(prevIdx), highlighted: [], label: 'Reversed Portion' },
+      },
+      highlightIndices: currIdx !== -1 ? [currIdx] : [],
+      activeElements: [],
+    });
+  }
+
+  // Final step — reversal complete
+  const reversedList = listFromIdx(prevIdx);
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'complete',
+    codeLineHighlight: null,
+    description: `Linked List Reversal complete! curr is null, so loop ends. Return prev. Reversed list: ${reversedList.join(' → ')} → null`,
+    state: { elements: reversedList, variables: {} },
+    dataStructures: {
+      linkedList: {
+        nodes: listSnapshot(),
+        highlighted: Array.from({ length: arr.length }, (_, i) => i),
+        pointers: { curr: -1, prev: prevIdx, temp: -1 },
+        label: 'Linked List (Reversed)',
+      },
+      pointerState: { curr: 'null', prev: nodes[prevIdx].val, temp: 'null', label: 'Pointers' },
+      resultList: { elements: reversedList, highlighted: reversedList.map((_, i) => i), label: 'Reversed List' },
+    },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps, resultArray: reversedList };
+}
+
 // Default sample arrays for different algorithms
 const DEFAULT_ARRAYS = {
   sorting: [64, 34, 25, 12, 22, 11, 90],
@@ -851,6 +1040,7 @@ const DEFAULT_ARRAYS = {
   queue: [10, 20, 30, 40, 50],
   fibonacci: [0, 1, 1, 2, 3, 5, 8, 13],
   tree: [1, 2, 3, 4, 5, 6, 7],
+  linkedList: [1, 2, 3, 4, 5],
 };
 
 // Map algorithm type to generator function
@@ -866,6 +1056,7 @@ const ALGORITHM_MAP = {
   queue_operations: { fn: queueOperations, type: 'queue', name: 'Queue Operations', complexity: { time: 'O(1) per op', space: 'O(n)' } },
   inorder_traversal: { fn: inorderTraversal, type: 'tree', name: 'Inorder Traversal', complexity: { time: 'O(n)', space: 'O(h)' }, combined: true },
   preorder_traversal: { fn: preorderTraversal, type: 'tree', name: 'Preorder Traversal', complexity: { time: 'O(n)', space: 'O(h)' }, combined: true },
+  linked_list_reversal: { fn: linkedListReversal, type: 'linkedList', name: 'Linked List Reversal', complexity: { time: 'O(n)', space: 'O(1)' }, combined: true },
 };
 
 /**

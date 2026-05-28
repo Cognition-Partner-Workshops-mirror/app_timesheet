@@ -23,12 +23,19 @@ const SPEED_OPTIONS = [
   { label: '2x', ms: 500 },
 ];
 
-// Extended step type with dataStructures field
+// Extended step type with dataStructures field — supports tree, stack, linked list, etc.
 interface CombinedStep extends AnimationStep {
   dataStructures?: {
     tree?: { nodes: number[]; highlighted: number[]; label: string };
     stack?: { elements: number[]; highlighted: number[]; label: string };
-    resultList?: { elements: number[]; highlighted: number[]; label: string };
+    resultList?: { elements: (number | string)[]; highlighted: number[]; label: string };
+    linkedList?: {
+      nodes: Array<{ val: number; nextIdx: number }>;
+      highlighted: number[];
+      pointers: { curr: number; prev: number; temp: number };
+      label: string;
+    };
+    pointerState?: { curr: number | string; prev: number | string; temp: number | string; label: string };
   };
 }
 
@@ -84,6 +91,8 @@ export default function CombinedAnimationPlayer({ result, code }: CombinedAnimat
   const treeData = ds?.tree;
   const stackData = ds?.stack;
   const resultData = ds?.resultList;
+  const linkedListData = ds?.linkedList;
+  const pointerData = ds?.pointerState;
 
   return (
     <motion.div
@@ -134,7 +143,118 @@ export default function CombinedAnimationPlayer({ result, code }: CombinedAnimat
         </div>
       </div>
 
-      {/* Three data structures side by side */}
+      {/* Linked list visualization (full width, shown for linked list algorithms) */}
+      {linkedListData && (
+        <div className="bg-surface border border-border rounded-xl overflow-hidden">
+          <div className="bg-blue-500/10 px-4 py-2 border-b border-border">
+            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase">
+              🔗 {linkedListData.label}
+            </span>
+          </div>
+          <div className="p-4 min-h-[120px] overflow-x-auto">
+            <LinkedListVisualization
+              nodes={linkedListData.nodes}
+              highlighted={linkedListData.highlighted}
+              pointers={linkedListData.pointers}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Pointer state + result side by side (for linked list algorithms) */}
+      {(pointerData || (linkedListData && resultData)) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Pointer variables panel */}
+          {pointerData && (
+            <div className="bg-surface border border-border rounded-xl overflow-hidden">
+              <div className="bg-violet-500/10 px-3 py-2 border-b border-border">
+                <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 uppercase">
+                  🎯 {pointerData.label}
+                </span>
+              </div>
+              <div className="p-3 min-h-[80px] flex flex-wrap gap-3 items-center justify-center">
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col items-center gap-1 px-4 py-2 bg-blue-500/10 rounded-lg border border-blue-500/20"
+                >
+                  <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase">curr</span>
+                  <span className="text-lg font-mono font-bold text-blue-600 dark:text-blue-400">
+                    {String(pointerData.curr)}
+                  </span>
+                </motion.div>
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 0.3, delay: 0.05 }}
+                  className="flex flex-col items-center gap-1 px-4 py-2 bg-red-500/10 rounded-lg border border-red-500/20"
+                >
+                  <span className="text-[10px] font-semibold text-red-600 dark:text-red-400 uppercase">prev</span>
+                  <span className="text-lg font-mono font-bold text-red-600 dark:text-red-400">
+                    {String(pointerData.prev)}
+                  </span>
+                </motion.div>
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                  className="flex flex-col items-center gap-1 px-4 py-2 bg-amber-500/10 rounded-lg border border-amber-500/20"
+                >
+                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase">temp</span>
+                  <span className="text-lg font-mono font-bold text-amber-600 dark:text-amber-400">
+                    {String(pointerData.temp)}
+                  </span>
+                </motion.div>
+              </div>
+            </div>
+          )}
+
+          {/* Result list (reversed portion) for linked list algorithms */}
+          {linkedListData && resultData && (
+            <div className="bg-surface border border-border rounded-xl overflow-hidden">
+              <div className="bg-emerald-500/10 px-3 py-2 border-b border-border">
+                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">
+                  📋 {resultData.label}
+                </span>
+              </div>
+              <div className="p-3 min-h-[80px]">
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  <AnimatePresence mode="popLayout">
+                    {resultData.elements.length === 0 ? (
+                      <span className="text-xs text-foreground/30 italic">Empty</span>
+                    ) : (
+                      resultData.elements.map((el, idx) => {
+                        const isHighlighted = resultData.highlighted?.includes(idx);
+                        return (
+                          <motion.div
+                            key={`ll-result-${idx}`}
+                            initial={{ opacity: 0, scale: 0.5, y: 10 }}
+                            animate={{
+                              opacity: 1, scale: 1, y: 0,
+                              backgroundColor: isHighlighted ? '#10b981' : 'var(--surface-light)',
+                            }}
+                            transition={{ duration: 0.3 }}
+                            className="px-3 py-2 rounded-lg border border-border text-sm font-mono font-bold"
+                            style={{ color: isHighlighted ? '#ffffff' : 'var(--foreground)' }}
+                          >
+                            {String(el)}
+                            {idx < resultData.elements.length - 1 && (
+                              <span className="text-foreground/30 ml-1">→</span>
+                            )}
+                          </motion.div>
+                        );
+                      })
+                    )}
+                    {resultData.elements.length > 0 && (
+                      <span className="text-xs text-foreground/30 font-mono">→ null</span>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Three data structures side by side (for tree traversals) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Tree visualization */}
         {treeData && (
@@ -193,8 +313,8 @@ export default function CombinedAnimationPlayer({ result, code }: CombinedAnimat
           </div>
         )}
 
-        {/* Result ArrayList visualization */}
-        {resultData && (
+        {/* Result ArrayList visualization (only for tree traversals, not linked list) */}
+        {resultData && !linkedListData && (
           <div className="bg-surface border border-border rounded-xl overflow-hidden">
             <div className="bg-emerald-500/10 px-3 py-2 border-b border-border">
               <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">
@@ -247,6 +367,10 @@ export default function CombinedAnimationPlayer({ result, code }: CombinedAnimat
               step.operation === 'pop' ? 'bg-red-500/10 text-red-600' :
               step.operation === 'add_result' ? 'bg-emerald-500/10 text-emerald-600' :
               step.operation === 'visit' ? 'bg-indigo-500/10 text-indigo-600' :
+              step.operation === 'reverse_link' ? 'bg-red-500/10 text-red-600' :
+              step.operation === 'assign' ? 'bg-amber-500/10 text-amber-600' :
+              step.operation === 'move_prev' ? 'bg-red-500/10 text-red-600' :
+              step.operation === 'move_curr' ? 'bg-blue-500/10 text-blue-600' :
               'bg-primary/10 text-primary'
             }`}>
               {step.operation}
@@ -307,6 +431,161 @@ export default function CombinedAnimationPlayer({ result, code }: CombinedAnimat
         </div>
       )}
     </motion.div>
+  );
+}
+
+/**
+ * SVG-based linked list visualization.
+ * Renders nodes in a horizontal chain with arrows showing next pointers.
+ * Pointer labels (curr, prev, temp) appear above nodes.
+ */
+function LinkedListVisualization({
+  nodes,
+  highlighted,
+  pointers,
+}: {
+  nodes: Array<{ val: number; nextIdx: number }>;
+  highlighted: number[];
+  pointers: { curr: number; prev: number; temp: number };
+}) {
+  if (!nodes || nodes.length === 0) return <span className="text-xs text-foreground/30">No list</span>;
+
+  const nodeWidth = 60;
+  const nodeHeight = 36;
+  const gap = 40;
+  const topPadding = 40;
+  const svgWidth = nodes.length * (nodeWidth + gap) + 40;
+  const svgHeight = nodeHeight + topPadding + 30;
+
+  // Pointer colors and labels
+  const pointerLabels: Array<{ idx: number; label: string; color: string }> = [];
+  if (pointers.curr >= 0) pointerLabels.push({ idx: pointers.curr, label: 'curr', color: '#3b82f6' });
+  if (pointers.prev >= 0) pointerLabels.push({ idx: pointers.prev, label: 'prev', color: '#ef4444' });
+  if (pointers.temp >= 0) pointerLabels.push({ idx: pointers.temp, label: 'temp', color: '#f59e0b' });
+
+  return (
+    <svg width="100%" height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="mx-auto">
+      {/* Pointer labels above nodes */}
+      {pointerLabels.map(({ idx, label, color }) => {
+        const x = 20 + idx * (nodeWidth + gap) + nodeWidth / 2;
+        // Stack labels if multiple pointers point to same node
+        const sameIdxLabels = pointerLabels.filter(p => p.idx === idx);
+        const yOffset = sameIdxLabels.indexOf(pointerLabels.find(p => p.label === label)!) * 14;
+        return (
+          <g key={`ptr-${label}`}>
+            <motion.text
+              x={x} y={12 + yOffset}
+              textAnchor="middle"
+              fontSize="11"
+              fontWeight="700"
+              fill={color}
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {label}
+            </motion.text>
+            <motion.line
+              x1={x} y1={15 + yOffset} x2={x} y2={topPadding - 2}
+              stroke={color} strokeWidth="1.5" strokeDasharray="3,2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+            />
+          </g>
+        );
+      })}
+
+      {/* Draw arrows between nodes based on nextIdx */}
+      {nodes.map((node, i) => {
+        const x1 = 20 + i * (nodeWidth + gap) + nodeWidth;
+        const y = topPadding + nodeHeight / 2;
+        if (node.nextIdx >= 0 && node.nextIdx < nodes.length) {
+          const x2 = 20 + node.nextIdx * (nodeWidth + gap);
+          // Arrow could go forward or backward (for reversed links)
+          const isReversed = node.nextIdx < i;
+          return (
+            <g key={`arrow-${i}`}>
+              <motion.line
+                x1={x1 + 2} y1={isReversed ? y - 5 : y}
+                x2={x2 - 2} y2={isReversed ? y - 5 : y}
+                stroke={isReversed ? '#ef4444' : 'var(--border)'}
+                strokeWidth={isReversed ? 2 : 1.5}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                markerEnd={`url(#arrowhead-${isReversed ? 'red' : 'gray'})`}
+              />
+            </g>
+          );
+        } else if (node.nextIdx === -1) {
+          // Arrow to null
+          return (
+            <g key={`arrow-null-${i}`}>
+              <line
+                x1={x1 + 2} y1={y}
+                x2={x1 + 20} y2={y}
+                stroke="var(--border)" strokeWidth="1.5"
+              />
+              <text
+                x={x1 + 25} y={y + 4}
+                fontSize="10" fill="var(--foreground)" opacity={0.4}
+                fontFamily="monospace"
+              >
+                null
+              </text>
+            </g>
+          );
+        }
+        return null;
+      })}
+
+      {/* Draw node boxes */}
+      {nodes.map((node, i) => {
+        const x = 20 + i * (nodeWidth + gap);
+        const y = topPadding;
+        const isHigh = highlighted.includes(i);
+        const isCurr = pointers.curr === i;
+        const isPrev = pointers.prev === i;
+
+        let fillColor = 'var(--surface-light)';
+        let strokeColor = 'var(--border)';
+        if (isCurr) { fillColor = '#3b82f6'; strokeColor = '#2563eb'; }
+        else if (isPrev) { fillColor = '#ef4444'; strokeColor = '#dc2626'; }
+        else if (isHigh) { fillColor = '#6366f1'; strokeColor = '#4f46e5'; }
+
+        return (
+          <g key={`node-${i}`}>
+            <motion.rect
+              x={x} y={y}
+              width={nodeWidth} height={nodeHeight}
+              rx={8} ry={8}
+              animate={{ fill: fillColor, stroke: strokeColor }}
+              transition={{ duration: 0.3 }}
+              strokeWidth="2"
+            />
+            <text
+              x={x + nodeWidth / 2} y={y + nodeHeight / 2 + 5}
+              textAnchor="middle"
+              fontSize="14" fontWeight="700"
+              fontFamily="monospace"
+              fill={isCurr || isPrev || isHigh ? '#ffffff' : 'var(--foreground)'}
+            >
+              {node.val}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* SVG arrow markers */}
+      <defs>
+        <marker id="arrowhead-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="var(--border)" />
+        </marker>
+        <marker id="arrowhead-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#ef4444" />
+        </marker>
+      </defs>
+    </svg>
   );
 }
 

@@ -38,6 +38,12 @@ function detectAlgorithmFromCode(code) {
   if (lower.includes('quick_sort') || lower.includes('quicksort') || (lower.includes('pivot') && lower.includes('partition'))) return 'quick_sort';
   if (lower.includes('binary_search') || lower.includes('binarysearch') || (lower.includes('mid') && lower.includes('left') && lower.includes('right') && !lower.includes('merge'))) return 'binary_search';
   if (lower.includes('linear_search') || lower.includes('linearsearch')) return 'linear_search';
+  // Linked list reversal — detect reverse linked list patterns
+  // Matches: ListNode prev/curr/temp pattern, reverselist, reverse linked list
+  if ((lower.includes('listnode') || lower.includes('linkedlist') || lower.includes('linked_list')) &&
+      (lower.includes('reverse') || (lower.includes('prev') && lower.includes('curr') && lower.includes('next')))) return 'linked_list_reversal';
+  // Also detect the pointer-swapping pattern: curr.next = prev with a while loop
+  if (lower.includes('listnode') && lower.includes('prev') && lower.includes('.next') && lower.includes('while')) return 'linked_list_reversal';
   // Tree traversals — detect inorder/preorder patterns
   if ((lower.includes('inorder') || lower.includes('in_order') || lower.includes('in-order')) && (lower.includes('tree') || lower.includes('treenode'))) return 'inorder_traversal';
   if ((lower.includes('preorder') || lower.includes('pre_order') || lower.includes('pre-order')) && (lower.includes('tree') || lower.includes('treenode'))) return 'preorder_traversal';
