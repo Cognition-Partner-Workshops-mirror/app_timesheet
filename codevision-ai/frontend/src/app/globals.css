@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
+/* Light theme — milk white background with clean colors */
 :root {
-  --background: #0f0f23;
-  --foreground: #e2e8f0;
+  --background: #faf9f6;
+  --foreground: #1e293b;
   --primary: #6366f1;
   --primary-light: #818cf8;
-  --secondary: #06b6d4;
-  --accent: #f59e0b;
-  --success: #10b981;
-  --danger: #ef4444;
-  --surface: #1e1e3f;
-  --surface-light: #2a2a4a;
-  --border: #334155;
+  --secondary: #0891b2;
+  --accent: #d97706;
+  --success: #059669;
+  --danger: #dc2626;
+  --surface: #ffffff;
+  --surface-light: #f1f5f9;
+  --border: #e2e8f0;
 }
 
 @theme inline {
@@ -36,14 +37,14 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Custom scrollbar styling for the dark theme */
+/* Custom scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--surface);
+  background: var(--surface-light);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -57,8 +58,8 @@ body {
 
 /* Animation keyframes for algorithm visualization elements */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.6); }
+  0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.2); }
+  50% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
 }
 
 @keyframes slide-in {
@@ -72,6 +73,12 @@ body {
 
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
+}
+
+/* Executing line highlight for code animation */
+.line-executing {
+  background: rgba(99, 102, 241, 0.15);
+  border-left: 3px solid var(--primary);
 }
 
 /* Code editor and syntax highlighting overrides */

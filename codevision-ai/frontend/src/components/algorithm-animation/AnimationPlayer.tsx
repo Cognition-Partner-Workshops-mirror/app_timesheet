@@ -103,17 +103,19 @@ export default function AnimationPlayer({ result }: AnimationPlayerProps) {
                   y: 0,
                   height,
                   backgroundColor: isActive
-                    ? '#ef4444'
+                    ? '#dc2626'
                     : isHighlighted
                       ? '#6366f1'
-                      : '#334155',
+                      : '#cbd5e1',
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                 className="relative flex flex-col items-center justify-end rounded-t-md min-w-[40px]"
                 style={{ height }}
               >
                 {/* Element value label */}
-                <span className="text-xs font-mono text-white font-bold mb-1">
+                <span className={`text-xs font-mono font-bold mb-1 ${
+                  isActive || isHighlighted ? 'text-white' : 'text-foreground/70'
+                }`}>
                   {element}
                 </span>
                 {/* Index label below the bar */}

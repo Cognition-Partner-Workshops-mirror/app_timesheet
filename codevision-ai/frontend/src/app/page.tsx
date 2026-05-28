@@ -2,17 +2,20 @@
 
 /**
  * Main application page for CodeVision AI.
- * Orchestrates all sections: code input, problem solver, explanation,
+ * Orchestrates all sections with collapsible panels.
+ * Sections: code input, problem solver, explanation,
  * optimization, animation, storyboard, playground, and logic builder.
  */
 import { useCodeVision } from '@/hooks/useCodeVision';
 import Sidebar from '@/components/ui/Sidebar';
+import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorBanner from '@/components/ui/ErrorBanner';
 import CodeInput from '@/components/code-editor/CodeInput';
 import ExplanationView from '@/components/code-editor/ExplanationView';
 import OptimizationView from '@/components/complexity/OptimizationView';
 import AnimationPlayer from '@/components/algorithm-animation/AnimationPlayer';
+import CodeAnimationPlayer from '@/components/algorithm-animation/CodeAnimationPlayer';
 import AnimationGenerator from '@/components/algorithm-animation/AnimationGenerator';
 import StoryboardPlayer from '@/components/storyboard/StoryboardPlayer';
 import ProblemInput from '@/components/problem-solver/ProblemInput';
@@ -28,38 +31,46 @@ export default function Home() {
     switch (state.activeSection) {
       case 'code-input':
         return (
-          <CodeInput
-            code={state.code}
-            language={state.language}
-            difficulty={state.difficulty}
-            loading={state.loading}
-            onCodeChange={state.setCode}
-            onAnalyze={state.analyzeCode}
-            onExplain={state.explainCode}
-            onOptimize={state.optimizeCode}
-            onAnimate={() => state.generateAnimation('auto_detect')}
-            onStoryboard={state.generateStoryboard}
-          />
+          <CollapsibleSection title="Code Input" icon="📝" defaultOpen={true}>
+            <CodeInput
+              code={state.code}
+              language={state.language}
+              difficulty={state.difficulty}
+              loading={state.loading}
+              onCodeChange={state.setCode}
+              onAnalyze={state.analyzeCode}
+              onExplain={state.explainCode}
+              onOptimize={state.optimizeCode}
+              onAnimate={() => state.generateAnimation('auto_detect', undefined)}
+              onStoryboard={state.generateStoryboard}
+            />
+          </CollapsibleSection>
         );
 
       case 'problem-input':
         return (
-          <div className="space-y-6">
-            <ProblemInput
-              problem={state.problemStatement}
-              loading={state.loading}
-              onProblemChange={state.setProblemStatement}
-              onSolve={state.solveProblem}
-            />
+          <div className="space-y-4">
+            <CollapsibleSection title="Problem Solver" icon="🧩" defaultOpen={true}>
+              <ProblemInput
+                problem={state.problemStatement}
+                loading={state.loading}
+                onProblemChange={state.setProblemStatement}
+                onSolve={state.solveProblem}
+              />
+            </CollapsibleSection>
             {state.problemResult && (
-              <ProblemResultView result={state.problemResult} language={state.language} />
+              <CollapsibleSection title="Solution" icon="💡" defaultOpen={true}>
+                <ProblemResultView result={state.problemResult} language={state.language} />
+              </CollapsibleSection>
             )}
           </div>
         );
 
       case 'explanation':
         return state.explanationResult ? (
-          <ExplanationView result={state.explanationResult} />
+          <CollapsibleSection title="Line-by-Line Explanation" icon="📖" defaultOpen={true}>
+            <ExplanationView result={state.explanationResult} />
+          </CollapsibleSection>
         ) : (
           <EmptyState
             title="No Explanation Yet"
@@ -71,11 +82,13 @@ export default function Home() {
 
       case 'optimization':
         return state.optimizationResult ? (
-          <OptimizationView
-            result={state.optimizationResult}
-            language={state.language}
-            originalCode={state.code}
-          />
+          <CollapsibleSection title="Optimization Suggestions" icon="⚡" defaultOpen={true}>
+            <OptimizationView
+              result={state.optimizationResult}
+              language={state.language}
+              originalCode={state.code}
+            />
+          </CollapsibleSection>
         ) : (
           <EmptyState
             title="No Optimization Yet"
@@ -87,20 +100,43 @@ export default function Home() {
 
       case 'animation':
         return (
-          <div className="space-y-6">
-            <AnimationGenerator
-              onGenerate={state.generateAnimation}
-              loading={state.loading}
-            />
-            {state.animationResult && (
-              <AnimationPlayer result={state.animationResult} />
+          <div className="space-y-4">
+            {/* Algorithm selector section — collapsible */}
+            <CollapsibleSection title="Select Algorithm" icon="🎬" defaultOpen={!state.animationResult}>
+              <AnimationGenerator
+                onGenerate={state.generateAnimation}
+                loading={state.loading}
+              />
+            </CollapsibleSection>
+
+            {/* Code-based animation with line highlighting */}
+            {state.animationResult && state.code && (
+              <CollapsibleSection title="Code Execution View" icon="▶" defaultOpen={true}>
+                <CodeAnimationPlayer result={state.animationResult} code={state.code} />
+              </CollapsibleSection>
+            )}
+
+            {/* Standard array animation player (always shown when result exists) */}
+            {state.animationResult && !state.code && (
+              <CollapsibleSection title="Animation Player" icon="📊" defaultOpen={true}>
+                <AnimationPlayer result={state.animationResult} />
+              </CollapsibleSection>
+            )}
+
+            {/* Fallback: show standard player if no code but result exists */}
+            {state.animationResult && state.code && (
+              <CollapsibleSection title="Array Visualization" icon="📊" defaultOpen={false}>
+                <AnimationPlayer result={state.animationResult} />
+              </CollapsibleSection>
             )}
           </div>
         );
 
       case 'storyboard':
         return state.storyboardResult ? (
-          <StoryboardPlayer result={state.storyboardResult} language={state.language} />
+          <CollapsibleSection title="Teaching Storyboard" icon="🎓" defaultOpen={true}>
+            <StoryboardPlayer result={state.storyboardResult} language={state.language} />
+          </CollapsibleSection>
         ) : (
           <EmptyState
             title="No Storyboard Yet"
@@ -112,14 +148,20 @@ export default function Home() {
 
       case 'playground':
         return (
-          <DataStructurePlayground
-            language={state.language}
-            difficulty={state.difficulty}
-          />
+          <CollapsibleSection title="Data Structure Playground" icon="🔧" defaultOpen={true}>
+            <DataStructurePlayground
+              language={state.language}
+              difficulty={state.difficulty}
+            />
+          </CollapsibleSection>
         );
 
       case 'logic-builder':
-        return <LogicBuilder language={state.language} />;
+        return (
+          <CollapsibleSection title="Logic Builder" icon="🧱" defaultOpen={true}>
+            <LogicBuilder language={state.language} />
+          </CollapsibleSection>
+        );
 
       default:
         return null;
@@ -141,7 +183,7 @@ export default function Home() {
       {/* Main content area */}
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto p-6">
-          {/* Error banner - shown at top when errors occur */}
+          {/* Error banner */}
           {state.error && (
             <div className="mb-4">
               <ErrorBanner message={state.error} onDismiss={state.clearError} />
@@ -161,7 +203,6 @@ export default function Home() {
 
 /**
  * Empty state placeholder shown when a section has no data yet.
- * Guides users to the appropriate input section.
  */
 function EmptyState({
   title,

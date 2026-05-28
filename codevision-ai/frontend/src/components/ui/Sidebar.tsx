@@ -29,9 +29,9 @@ const LANGUAGES: Array<{ value: Language; label: string }> = [
 
 // Difficulty level options
 const DIFFICULTIES: Array<{ value: Difficulty; label: string; color: string }> = [
-  { value: 'beginner', label: 'Beginner', color: 'text-green-400' },
-  { value: 'intermediate', label: 'Intermediate', color: 'text-yellow-400' },
-  { value: 'advanced', label: 'Advanced', color: 'text-red-400' },
+  { value: 'beginner', label: 'Beginner', color: 'text-green-600' },
+  { value: 'intermediate', label: 'Intermediate', color: 'text-yellow-600' },
+  { value: 'advanced', label: 'Advanced', color: 'text-red-600' },
 ];
 
 interface SidebarProps {
