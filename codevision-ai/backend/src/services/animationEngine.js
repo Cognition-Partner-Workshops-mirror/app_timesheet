@@ -1,0 +1,656 @@
+/**
+ * Local algorithm animation engine.
+ * Generates step-by-step animation data for common algorithms
+ * without requiring OpenAI API. Each algorithm produces
+ * structured steps with state snapshots for the frontend player.
+ */
+
+// Generate animation steps for bubble sort
+function bubbleSort(inputArray) {
+  const arr = [...inputArray];
+  const steps = [];
+  const n = arr.length;
+
+  steps.push({
+    stepNumber: 1,
+    operation: 'init',
+    description: `Starting Bubble Sort with array [${arr.join(', ')}]. We will compare adjacent elements and swap if needed.`,
+    state: { elements: [...arr], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  let stepNum = 2;
+  for (let i = 0; i < n - 1; i++) {
+    for (let j = 0; j < n - i - 1; j++) {
+      // Compare step
+      steps.push({
+        stepNumber: stepNum++,
+        operation: 'compare',
+        description: `Compare arr[${j}]=${arr[j]} and arr[${j + 1}]=${arr[j + 1]}`,
+        state: { elements: [...arr], variables: { i, j } },
+        highlightIndices: [j, j + 1],
+        activeElements: [j, j + 1],
+      });
+
+      if (arr[j] > arr[j + 1]) {
+        // Swap
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+        steps.push({
+          stepNumber: stepNum++,
+          operation: 'swap',
+          description: `Swap arr[${j}]=${arr[j + 1]} and arr[${j + 1}]=${arr[j]} because ${arr[j + 1]} > ${arr[j]}`,
+          state: { elements: [...arr], variables: { i, j } },
+          highlightIndices: [j, j + 1],
+          activeElements: [j, j + 1],
+        });
+      }
+    }
+    // Mark sorted element
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'sorted',
+      description: `Element at index ${n - i - 1} (value ${arr[n - i - 1]}) is now in its final sorted position.`,
+      state: { elements: [...arr], variables: { i } },
+      highlightIndices: [n - i - 1],
+      activeElements: [],
+    });
+  }
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'complete',
+    description: `Bubble Sort complete! Sorted array: [${arr.join(', ')}]`,
+    state: { elements: [...arr], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps, sortedArray: arr };
+}
+
+// Generate animation steps for selection sort
+function selectionSort(inputArray) {
+  const arr = [...inputArray];
+  const steps = [];
+  const n = arr.length;
+  let stepNum = 1;
+
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    description: `Starting Selection Sort with array [${arr.join(', ')}]. Find the minimum element and place it at the beginning.`,
+    state: { elements: [...arr], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  for (let i = 0; i < n - 1; i++) {
+    let minIdx = i;
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'select',
+      description: `Pass ${i + 1}: Looking for minimum starting from index ${i}. Current minimum: arr[${minIdx}]=${arr[minIdx]}`,
+      state: { elements: [...arr], variables: { i, minIdx } },
+      highlightIndices: [i],
+      activeElements: [minIdx],
+    });
+
+    for (let j = i + 1; j < n; j++) {
+      steps.push({
+        stepNumber: stepNum++,
+        operation: 'compare',
+        description: `Compare arr[${j}]=${arr[j]} with current min arr[${minIdx}]=${arr[minIdx]}`,
+        state: { elements: [...arr], variables: { i, j, minIdx } },
+        highlightIndices: [j, minIdx],
+        activeElements: [j],
+      });
+
+      if (arr[j] < arr[minIdx]) {
+        minIdx = j;
+        steps.push({
+          stepNumber: stepNum++,
+          operation: 'new_min',
+          description: `New minimum found: arr[${minIdx}]=${arr[minIdx]}`,
+          state: { elements: [...arr], variables: { i, j, minIdx } },
+          highlightIndices: [minIdx],
+          activeElements: [minIdx],
+        });
+      }
+    }
+
+    if (minIdx !== i) {
+      [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
+      steps.push({
+        stepNumber: stepNum++,
+        operation: 'swap',
+        description: `Swap arr[${i}] and arr[${minIdx}]. Placing ${arr[i]} at index ${i}.`,
+        state: { elements: [...arr], variables: { i, minIdx } },
+        highlightIndices: [i, minIdx],
+        activeElements: [i, minIdx],
+      });
+    }
+  }
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'complete',
+    description: `Selection Sort complete! Sorted array: [${arr.join(', ')}]`,
+    state: { elements: [...arr], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps, sortedArray: arr };
+}
+
+// Generate animation steps for insertion sort
+function insertionSort(inputArray) {
+  const arr = [...inputArray];
+  const steps = [];
+  const n = arr.length;
+  let stepNum = 1;
+
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    description: `Starting Insertion Sort with array [${arr.join(', ')}]. Build sorted portion one element at a time.`,
+    state: { elements: [...arr], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  for (let i = 1; i < n; i++) {
+    const key = arr[i];
+    let j = i - 1;
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'pick',
+      description: `Pick element arr[${i}]=${key} to insert into the sorted portion [0..${i - 1}].`,
+      state: { elements: [...arr], variables: { i, key } },
+      highlightIndices: [i],
+      activeElements: [i],
+    });
+
+    while (j >= 0 && arr[j] > key) {
+      arr[j + 1] = arr[j];
+      steps.push({
+        stepNumber: stepNum++,
+        operation: 'shift',
+        description: `Shift arr[${j}]=${arr[j]} to index ${j + 1} to make room for ${key}.`,
+        state: { elements: [...arr], variables: { i, j, key } },
+        highlightIndices: [j, j + 1],
+        activeElements: [j + 1],
+      });
+      j--;
+    }
+    arr[j + 1] = key;
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'insert',
+      description: `Insert ${key} at index ${j + 1}. Sorted portion: [${arr.slice(0, i + 1).join(', ')}]`,
+      state: { elements: [...arr], variables: { i, j: j + 1, key } },
+      highlightIndices: [j + 1],
+      activeElements: [j + 1],
+    });
+  }
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'complete',
+    description: `Insertion Sort complete! Sorted array: [${arr.join(', ')}]`,
+    state: { elements: [...arr], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps, sortedArray: arr };
+}
+
+// Generate animation steps for linear search
+function linearSearch(inputArray, target) {
+  const arr = [...inputArray];
+  const steps = [];
+  let stepNum = 1;
+  const searchTarget = target !== undefined ? target : arr[Math.floor(Math.random() * arr.length)];
+
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    description: `Linear Search: Looking for ${searchTarget} in array [${arr.join(', ')}]. Check each element one by one.`,
+    state: { elements: [...arr], variables: { target: searchTarget } },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  for (let i = 0; i < arr.length; i++) {
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'check',
+      description: `Check index ${i}: arr[${i}]=${arr[i]}. Is ${arr[i]} === ${searchTarget}? ${arr[i] === searchTarget ? 'YES!' : 'No, move to next.'}`,
+      state: { elements: [...arr], variables: { i, target: searchTarget } },
+      highlightIndices: [i],
+      activeElements: [i],
+    });
+
+    if (arr[i] === searchTarget) {
+      steps.push({
+        stepNumber: stepNum,
+        operation: 'found',
+        description: `Found ${searchTarget} at index ${i}! Search complete.`,
+        state: { elements: [...arr], variables: { i, target: searchTarget } },
+        highlightIndices: [i],
+        activeElements: [i],
+      });
+      return { steps, foundIndex: i };
+    }
+  }
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'not_found',
+    description: `${searchTarget} not found in the array after checking all elements.`,
+    state: { elements: [...arr], variables: { target: searchTarget } },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps, foundIndex: -1 };
+}
+
+// Generate animation steps for binary search
+function binarySearch(inputArray, target) {
+  const arr = [...inputArray].sort((a, b) => a - b);
+  const steps = [];
+  let stepNum = 1;
+  const searchTarget = target !== undefined ? target : arr[Math.floor(Math.random() * arr.length)];
+
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    description: `Binary Search: Looking for ${searchTarget} in sorted array [${arr.join(', ')}]. Uses divide-and-conquer.`,
+    state: { elements: [...arr], variables: { target: searchTarget } },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  let left = 0, right = arr.length - 1;
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'check_mid',
+      description: `Check middle: left=${left}, right=${right}, mid=${mid}, arr[mid]=${arr[mid]}. Target=${searchTarget}.`,
+      state: { elements: [...arr], variables: { left, right, mid, target: searchTarget } },
+      highlightIndices: [mid],
+      activeElements: Array.from({ length: right - left + 1 }, (_, i) => left + i),
+    });
+
+    if (arr[mid] === searchTarget) {
+      steps.push({
+        stepNumber: stepNum,
+        operation: 'found',
+        description: `Found ${searchTarget} at index ${mid}!`,
+        state: { elements: [...arr], variables: { left, right, mid, target: searchTarget } },
+        highlightIndices: [mid],
+        activeElements: [mid],
+      });
+      return { steps, foundIndex: mid };
+    } else if (arr[mid] < searchTarget) {
+      steps.push({
+        stepNumber: stepNum++,
+        operation: 'go_right',
+        description: `arr[mid]=${arr[mid]} < ${searchTarget}. Search right half: left=${mid + 1}, right=${right}.`,
+        state: { elements: [...arr], variables: { left: mid + 1, right, mid, target: searchTarget } },
+        highlightIndices: [mid],
+        activeElements: Array.from({ length: right - mid }, (_, i) => mid + 1 + i),
+      });
+      left = mid + 1;
+    } else {
+      steps.push({
+        stepNumber: stepNum++,
+        operation: 'go_left',
+        description: `arr[mid]=${arr[mid]} > ${searchTarget}. Search left half: left=${left}, right=${mid - 1}.`,
+        state: { elements: [...arr], variables: { left, right: mid - 1, mid, target: searchTarget } },
+        highlightIndices: [mid],
+        activeElements: Array.from({ length: mid - left }, (_, i) => left + i),
+      });
+      right = mid - 1;
+    }
+  }
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'not_found',
+    description: `${searchTarget} not found in the array.`,
+    state: { elements: [...arr], variables: { target: searchTarget } },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps, foundIndex: -1 };
+}
+
+// Generate animation steps for stack operations
+function stackOperations(inputArray) {
+  const arr = inputArray.length > 0 ? inputArray : [10, 20, 30, 40, 50];
+  const steps = [];
+  const stack = [];
+  let stepNum = 1;
+
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    description: `Stack: Last-In-First-Out (LIFO). We will push elements then pop them.`,
+    state: { elements: [], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  // Push all elements
+  for (const val of arr) {
+    stack.push(val);
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'push',
+      description: `Push ${val} onto the stack. Stack: [${stack.join(', ')}]. Top = ${val}.`,
+      state: { elements: [...stack], variables: { top: stack.length - 1 } },
+      highlightIndices: [stack.length - 1],
+      activeElements: [stack.length - 1],
+    });
+  }
+
+  // Pop half the elements
+  const popCount = Math.min(3, stack.length);
+  for (let i = 0; i < popCount; i++) {
+    const popped = stack.pop();
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'pop',
+      description: `Pop ${popped} from the stack. Stack: [${stack.join(', ')}].${stack.length > 0 ? ` New top = ${stack[stack.length - 1]}.` : ' Stack is empty.'}`,
+      state: { elements: [...stack], variables: { popped, top: stack.length - 1 } },
+      highlightIndices: stack.length > 0 ? [stack.length - 1] : [],
+      activeElements: [],
+    });
+  }
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'complete',
+    description: `Stack operations complete! Final stack: [${stack.join(', ')}]`,
+    state: { elements: [...stack], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps };
+}
+
+// Generate animation steps for queue operations
+function queueOperations(inputArray) {
+  const arr = inputArray.length > 0 ? inputArray : [10, 20, 30, 40, 50];
+  const steps = [];
+  const queue = [];
+  let stepNum = 1;
+
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    description: `Queue: First-In-First-Out (FIFO). We will enqueue elements then dequeue them.`,
+    state: { elements: [], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  for (const val of arr) {
+    queue.push(val);
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'enqueue',
+      description: `Enqueue ${val}. Queue: [${queue.join(', ')}]. Front=${queue[0]}, Rear=${val}.`,
+      state: { elements: [...queue], variables: { front: 0, rear: queue.length - 1 } },
+      highlightIndices: [queue.length - 1],
+      activeElements: [queue.length - 1],
+    });
+  }
+
+  const dequeueCount = Math.min(3, queue.length);
+  for (let i = 0; i < dequeueCount; i++) {
+    const dequeued = queue.shift();
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'dequeue',
+      description: `Dequeue ${dequeued} from front. Queue: [${queue.join(', ')}].${queue.length > 0 ? ` New front = ${queue[0]}.` : ' Queue is empty.'}`,
+      state: { elements: [...queue], variables: { dequeued, front: 0, rear: queue.length - 1 } },
+      highlightIndices: queue.length > 0 ? [0] : [],
+      activeElements: [],
+    });
+  }
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'complete',
+    description: `Queue operations complete! Final queue: [${queue.join(', ')}]`,
+    state: { elements: [...queue], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps };
+}
+
+// Quick sort with animation steps
+function quickSort(inputArray) {
+  const arr = [...inputArray];
+  const steps = [];
+  let stepNum = 1;
+
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    description: `Starting Quick Sort with array [${arr.join(', ')}]. Pick a pivot, partition, then recurse.`,
+    state: { elements: [...arr], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  function partition(low, high) {
+    const pivot = arr[high];
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'pivot',
+      description: `Choose pivot = arr[${high}] = ${pivot}. Partition range [${low}..${high}].`,
+      state: { elements: [...arr], variables: { low, high, pivot } },
+      highlightIndices: [high],
+      activeElements: Array.from({ length: high - low + 1 }, (_, i) => low + i),
+    });
+
+    let i = low - 1;
+    for (let j = low; j < high; j++) {
+      steps.push({
+        stepNumber: stepNum++,
+        operation: 'compare',
+        description: `Compare arr[${j}]=${arr[j]} with pivot ${pivot}. ${arr[j] <= pivot ? `${arr[j]} <= ${pivot}, move to left partition.` : `${arr[j]} > ${pivot}, stay in right partition.`}`,
+        state: { elements: [...arr], variables: { i, j, pivot, low, high } },
+        highlightIndices: [j, high],
+        activeElements: [j],
+      });
+
+      if (arr[j] <= pivot) {
+        i++;
+        if (i !== j) {
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+          steps.push({
+            stepNumber: stepNum++,
+            operation: 'swap',
+            description: `Swap arr[${i}] and arr[${j}].`,
+            state: { elements: [...arr], variables: { i, j, pivot } },
+            highlightIndices: [i, j],
+            activeElements: [i, j],
+          });
+        }
+      }
+    }
+    [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'place_pivot',
+      description: `Place pivot ${pivot} at index ${i + 1}. Left side < pivot, right side > pivot.`,
+      state: { elements: [...arr], variables: { pivotIndex: i + 1, pivot } },
+      highlightIndices: [i + 1],
+      activeElements: [i + 1],
+    });
+    return i + 1;
+  }
+
+  function qsHelper(low, high) {
+    if (low < high) {
+      const pi = partition(low, high);
+      qsHelper(low, pi - 1);
+      qsHelper(pi + 1, high);
+    }
+  }
+
+  qsHelper(0, arr.length - 1);
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'complete',
+    description: `Quick Sort complete! Sorted array: [${arr.join(', ')}]`,
+    state: { elements: [...arr], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps, sortedArray: arr };
+}
+
+// Merge sort with animation steps
+function mergeSort(inputArray) {
+  const arr = [...inputArray];
+  const steps = [];
+  let stepNum = 1;
+
+  steps.push({
+    stepNumber: stepNum++,
+    operation: 'init',
+    description: `Starting Merge Sort with array [${arr.join(', ')}]. Divide array in half, sort each half, then merge.`,
+    state: { elements: [...arr], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  function msHelper(start, end) {
+    if (start >= end) return;
+    const mid = Math.floor((start + end) / 2);
+
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'divide',
+      description: `Divide [${start}..${end}] into [${start}..${mid}] and [${mid + 1}..${end}].`,
+      state: { elements: [...arr], variables: { start, mid, end } },
+      highlightIndices: [mid],
+      activeElements: Array.from({ length: end - start + 1 }, (_, i) => start + i),
+    });
+
+    msHelper(start, mid);
+    msHelper(mid + 1, end);
+
+    // Merge
+    const left = arr.slice(start, mid + 1);
+    const right = arr.slice(mid + 1, end + 1);
+    let i = 0, j = 0, k = start;
+
+    while (i < left.length && j < right.length) {
+      if (left[i] <= right[j]) {
+        arr[k] = left[i];
+        i++;
+      } else {
+        arr[k] = right[j];
+        j++;
+      }
+      k++;
+    }
+    while (i < left.length) { arr[k] = left[i]; i++; k++; }
+    while (j < right.length) { arr[k] = right[j]; j++; k++; }
+
+    steps.push({
+      stepNumber: stepNum++,
+      operation: 'merge',
+      description: `Merge [${left.join(', ')}] and [${right.join(', ')}] → [${arr.slice(start, end + 1).join(', ')}]`,
+      state: { elements: [...arr], variables: { start, end } },
+      highlightIndices: Array.from({ length: end - start + 1 }, (_, i) => start + i),
+      activeElements: Array.from({ length: end - start + 1 }, (_, i) => start + i),
+    });
+  }
+
+  msHelper(0, arr.length - 1);
+
+  steps.push({
+    stepNumber: stepNum,
+    operation: 'complete',
+    description: `Merge Sort complete! Sorted array: [${arr.join(', ')}]`,
+    state: { elements: [...arr], variables: {} },
+    highlightIndices: [],
+    activeElements: [],
+  });
+
+  return { steps, sortedArray: arr };
+}
+
+// Default sample arrays for different algorithms
+const DEFAULT_ARRAYS = {
+  sorting: [64, 34, 25, 12, 22, 11, 90],
+  searching: [11, 22, 25, 34, 64, 78, 90],
+  stack: [10, 20, 30, 40, 50],
+  queue: [10, 20, 30, 40, 50],
+  fibonacci: [0, 1, 1, 2, 3, 5, 8, 13],
+};
+
+// Map algorithm type to generator function
+const ALGORITHM_MAP = {
+  bubble_sort: { fn: bubbleSort, type: 'sorting', name: 'Bubble Sort', complexity: { time: 'O(n²)', space: 'O(1)' } },
+  selection_sort: { fn: selectionSort, type: 'sorting', name: 'Selection Sort', complexity: { time: 'O(n²)', space: 'O(1)' } },
+  insertion_sort: { fn: insertionSort, type: 'sorting', name: 'Insertion Sort', complexity: { time: 'O(n²)', space: 'O(1)' } },
+  merge_sort: { fn: mergeSort, type: 'sorting', name: 'Merge Sort', complexity: { time: 'O(n log n)', space: 'O(n)' } },
+  quick_sort: { fn: quickSort, type: 'sorting', name: 'Quick Sort', complexity: { time: 'O(n log n) avg', space: 'O(log n)' } },
+  linear_search: { fn: linearSearch, type: 'searching', name: 'Linear Search', complexity: { time: 'O(n)', space: 'O(1)' } },
+  binary_search: { fn: binarySearch, type: 'searching', name: 'Binary Search', complexity: { time: 'O(log n)', space: 'O(1)' } },
+  stack_operations: { fn: stackOperations, type: 'stack', name: 'Stack Operations', complexity: { time: 'O(1) per op', space: 'O(n)' } },
+  queue_operations: { fn: queueOperations, type: 'queue', name: 'Queue Operations', complexity: { time: 'O(1) per op', space: 'O(n)' } },
+};
+
+/**
+ * Generate animation steps for a given algorithm.
+ * Returns structured data the frontend AnimationPlayer can consume.
+ */
+function generateLocalAnimation(algorithmType, inputData) {
+  const config = ALGORITHM_MAP[algorithmType];
+  if (!config) {
+    return null; // Unknown algorithm — caller can fall back to AI
+  }
+
+  // Parse input data or use defaults
+  let arr;
+  if (inputData && Array.isArray(inputData) && inputData.length > 0) {
+    arr = inputData.map(Number).filter(n => !isNaN(n));
+  } else if (typeof inputData === 'string' && inputData.trim()) {
+    arr = inputData.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
+  }
+  if (!arr || arr.length === 0) {
+    arr = DEFAULT_ARRAYS[config.type] || DEFAULT_ARRAYS.sorting;
+  }
+
+  const result = config.fn(arr);
+
+  return {
+    algorithmName: config.name,
+    algorithmType,
+    initialState: { elements: config.type === 'searching' ? [...arr].sort((a, b) => a - b) : [...(inputData && Array.isArray(inputData) && inputData.length > 0 ? inputData.map(Number) : arr)] },
+    steps: result.steps,
+    complexity: config.complexity,
+    totalSteps: result.steps.length,
+  };
+}
+
+module.exports = { generateLocalAnimation, ALGORITHM_MAP };
