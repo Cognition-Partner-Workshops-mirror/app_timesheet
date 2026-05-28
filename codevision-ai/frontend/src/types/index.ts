@@ -19,7 +19,31 @@ export type ActiveSection =
   | 'animation'
   | 'storyboard'
   | 'playground'
-  | 'problem-solver';
+  | 'problem-solver'
+  | 'interview';
+
+// Interview question answer from AI
+export interface InterviewAnswer {
+  answer: string;
+  keyPoints: string[];
+  example: string;
+  howToAchieve: string;
+  commonMistakes: string[];
+  followUpQuestions: string[];
+  interviewTip: string;
+}
+
+// Interview topic with questions list
+export interface InterviewTopic {
+  label: string;
+  questions: string[];
+}
+
+// Interview category with grouped topics
+export interface InterviewCategory {
+  label: string;
+  topics: Record<string, InterviewTopic>;
+}
 
 // Line-by-line explanation structure from AI
 export interface LineExplanation {

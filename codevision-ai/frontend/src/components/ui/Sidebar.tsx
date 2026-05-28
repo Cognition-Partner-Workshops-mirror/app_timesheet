@@ -17,6 +17,7 @@ const NAV_ITEMS: Array<{ id: ActiveSection; label: string; icon: string }> = [
   { id: 'optimization', label: 'Optimization', icon: '⚡' },
   { id: 'animation', label: 'Animation', icon: '🎬' },
   { id: 'storyboard', label: 'Storyboard', icon: '🎓' },
+  { id: 'interview', label: 'Interview Prep', icon: '🎯' },
   { id: 'playground', label: 'Playground', icon: '🔧' },
   { id: 'logic-builder', label: 'Logic Builder', icon: '🧱' },
 ];

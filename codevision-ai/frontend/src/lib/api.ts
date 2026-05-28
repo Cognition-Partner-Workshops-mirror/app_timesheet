@@ -15,6 +15,8 @@ import type {
   PlaygroundOperation,
   Session,
   LogicBlock,
+  InterviewAnswer,
+  InterviewCategory,
 } from '@/types';
 
 // Backend API base URL - configurable via environment variable
@@ -117,4 +119,18 @@ export async function getSession(id: string): Promise<Session> {
 // Delete a session
 export async function deleteSession(id: string): Promise<void> {
   await api.delete(`/session/${id}`);
+}
+
+// Fetch all interview questions organized by category
+export async function getInterviewQuestions(): Promise<Record<string, InterviewCategory>> {
+  const { data } = await api.get('/interview/questions');
+  return data;
+}
+
+// Get AI-powered answer for an interview question
+export async function answerInterviewQuestion(
+  category: string, topic: string, question: string, difficulty: Difficulty
+): Promise<InterviewAnswer> {
+  const { data } = await api.post('/interview/answer', { category, topic, question, difficulty });
+  return data;
 }

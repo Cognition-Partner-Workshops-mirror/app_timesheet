@@ -17,12 +17,12 @@ import ErrorBanner from '@/components/ui/ErrorBanner';
 import CodeInput from '@/components/code-editor/CodeInput';
 import ExplanationView from '@/components/code-editor/ExplanationView';
 import OptimizationView from '@/components/complexity/OptimizationView';
-import AnimationPlayer from '@/components/algorithm-animation/AnimationPlayer';
 import CodeAnimationPlayer from '@/components/algorithm-animation/CodeAnimationPlayer';
 import AnimationGenerator from '@/components/algorithm-animation/AnimationGenerator';
 import StoryboardPlayer from '@/components/storyboard/StoryboardPlayer';
 import ProblemInput from '@/components/problem-solver/ProblemInput';
 import ProblemResultView from '@/components/problem-solver/ProblemResultView';
+import InterviewPrep from '@/components/interview/InterviewPrep';
 import DataStructurePlayground from '@/components/data-structures/DataStructurePlayground';
 import LogicBuilder from '@/components/logic-builder/LogicBuilder';
 import type { ActiveSection } from '@/types';
@@ -78,7 +78,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Loading indicator (non-blocking — shown inline, doesn't hide sections) */}
+          {/* Loading indicator (non-blocking — shown inline) */}
           {state.loading && <LoadingSpinner />}
 
           {/* ===== CODE INPUT — always visible at the top ===== */}
@@ -107,56 +107,20 @@ export default function Home() {
           </div>
 
           {/* ===== ANIMATION — shown below code when results exist ===== */}
-          {state.animationResult && (
-            <>
-              {/* Code-based animation with line highlighting */}
-              {state.code && (
-                <div ref={setSectionRef('animation')}>
-                  <CollapsibleSection
-                    title="Code Execution View"
-                    icon="▶"
-                    defaultOpen={true}
-                    sectionId="animation"
-                    maximizedSection={maximizedSection}
-                    onMaximizeToggle={setMaximizedSection}
-                  >
-                    <CodeAnimationPlayer result={state.animationResult} code={state.code} />
-                  </CollapsibleSection>
-                </div>
-              )}
-
-              {/* Array visualization */}
-              <div>
-                <CollapsibleSection
-                  title="Array Visualization"
-                  icon="📊"
-                  defaultOpen={!state.code}
-                  sectionId="array-viz"
-                  maximizedSection={maximizedSection}
-                  onMaximizeToggle={setMaximizedSection}
-                >
-                  <AnimationPlayer result={state.animationResult} />
-                </CollapsibleSection>
-              </div>
-            </>
+          {state.animationResult && state.code && (
+            <div ref={setSectionRef('animation')}>
+              <CollapsibleSection
+                title="Code Execution View"
+                icon="▶"
+                defaultOpen={true}
+                sectionId="animation"
+                maximizedSection={maximizedSection}
+                onMaximizeToggle={setMaximizedSection}
+              >
+                <CodeAnimationPlayer result={state.animationResult} code={state.code} />
+              </CollapsibleSection>
+            </div>
           )}
-
-          {/* ===== ALGORITHM SELECTOR — for direct algorithm picking ===== */}
-          <div ref={setSectionRef('algorithm-selector')}>
-            <CollapsibleSection
-              title="Select Algorithm"
-              icon="🎬"
-              defaultOpen={!state.animationResult}
-              sectionId="algorithm-selector"
-              maximizedSection={maximizedSection}
-              onMaximizeToggle={setMaximizedSection}
-            >
-              <AnimationGenerator
-                onGenerate={state.generateAnimation}
-                loading={state.loading}
-              />
-            </CollapsibleSection>
-          </div>
 
           {/* ===== EXPLANATION — shown when results exist ===== */}
           {state.explanationResult && (
@@ -194,7 +158,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* ===== PROBLEM SOLVER ===== */}
+          {/* ===== PROBLEM SOLVER — moved above algorithm selector ===== */}
           <div ref={setSectionRef('problem-input')}>
             <CollapsibleSection
               title="Problem Solver"
@@ -229,6 +193,23 @@ export default function Home() {
             </div>
           )}
 
+          {/* ===== ALGORITHM SELECTOR — now below problem solver ===== */}
+          <div ref={setSectionRef('algorithm-selector')}>
+            <CollapsibleSection
+              title="Select Algorithm"
+              icon="🎬"
+              defaultOpen={!state.animationResult}
+              sectionId="algorithm-selector"
+              maximizedSection={maximizedSection}
+              onMaximizeToggle={setMaximizedSection}
+            >
+              <AnimationGenerator
+                onGenerate={state.generateAnimation}
+                loading={state.loading}
+              />
+            </CollapsibleSection>
+          </div>
+
           {/* ===== STORYBOARD — shown when results exist ===== */}
           {state.storyboardResult && (
             <div ref={setSectionRef('storyboard')}>
@@ -244,6 +225,20 @@ export default function Home() {
               </CollapsibleSection>
             </div>
           )}
+
+          {/* ===== INTERVIEW PREP — DSA, System Design, Production ===== */}
+          <div ref={setSectionRef('interview')}>
+            <CollapsibleSection
+              title="Interview Prep"
+              icon="🎯"
+              defaultOpen={false}
+              sectionId="interview"
+              maximizedSection={maximizedSection}
+              onMaximizeToggle={setMaximizedSection}
+            >
+              <InterviewPrep difficulty={state.difficulty} />
+            </CollapsibleSection>
+          </div>
 
           {/* ===== DATA STRUCTURE PLAYGROUND ===== */}
           <div ref={setSectionRef('playground')}>

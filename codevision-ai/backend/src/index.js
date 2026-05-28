@@ -20,6 +20,7 @@ const animationRoutes = require('./routes/animation');
 const problemRoutes = require('./routes/problem');
 const sessionRoutes = require('./routes/session');
 const playgroundRoutes = require('./routes/playground');
+const interviewRoutes = require('./routes/interview');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -47,6 +48,7 @@ app.use('/api/animation', animationRoutes);
 app.use('/api/problem', problemRoutes);
 app.use('/api/session', sessionRoutes);
 app.use('/api/playground', playgroundRoutes);
+app.use('/api/interview', interviewRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
