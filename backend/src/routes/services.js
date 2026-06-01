@@ -56,7 +56,7 @@ router.get('/', async (req, res) => {
 
     let sql = `
       SELECT s.*, sc.name as category_name, sc.icon as category_icon,
-             u.name as business_owner_name, u.business_name,
+             u.name as business_owner_name, u.business_name, u.phone as business_phone,
              COALESCE(AVG(r.rating), 0) as avg_rating,
              COUNT(r.id) as review_count
       FROM services s

@@ -84,15 +84,18 @@ const SCHEMA_STATEMENTS = [
 ];
 
 // Seed default service categories for the event services marketplace
+// Categories match common Indian event service types (Mandapalu, Function Halls, etc.)
 const SEED_CATEGORIES = [
-  { id: 'cat-decorator', name: 'Function Decorator', description: 'Event decoration services including floral, lighting, and theme setup', icon: '🎨' },
-  { id: 'cat-caterer', name: 'Catering', description: 'Food and beverage services for events', icon: '🍽️' },
-  { id: 'cat-function-hall', name: 'Function Hall', description: 'Venues and halls for events, weddings, and parties', icon: '🏛️' },
-  { id: 'cat-photography', name: 'Photography', description: 'Professional photography and videography services', icon: '📸' },
-  { id: 'cat-music', name: 'Music & DJ', description: 'Live bands, DJs, and music entertainment', icon: '🎵' },
-  { id: 'cat-planner', name: 'Event Planner', description: 'Full-service event planning and coordination', icon: '📋' },
-  { id: 'cat-transport', name: 'Transport', description: 'Event transportation and logistics', icon: '🚗' },
-  { id: 'cat-rental', name: 'Equipment Rental', description: 'Tables, chairs, tents, and equipment rental', icon: '🪑' }
+  { id: 'cat-mandapam', name: 'Mandapalu (Wedding Halls)', description: 'Traditional wedding mandapams and kalyana mandapams for ceremonies', icon: '🛕' },
+  { id: 'cat-function-hall', name: 'Function Halls', description: 'Banquet halls, party halls, and conference venues', icon: '🏛️' },
+  { id: 'cat-decorator', name: 'Stage Decorations', description: 'Stage setup, floral decoration, lighting, and themed event decor', icon: '🎨' },
+  { id: 'cat-caterer', name: 'Catering', description: 'Multi-cuisine catering, food stalls, and beverage services', icon: '🍽️' },
+  { id: 'cat-photography', name: 'Photography & Video', description: 'Professional photography, videography, and drone coverage', icon: '📸' },
+  { id: 'cat-music', name: 'Music & DJ', description: 'Live bands, DJs, sound systems, and music entertainment', icon: '🎵' },
+  { id: 'cat-planner', name: 'Event Planners', description: 'End-to-end event planning, coordination, and management', icon: '📋' },
+  { id: 'cat-transport', name: 'Transport', description: 'Wedding cars, guest transport, and logistics', icon: '🚗' },
+  { id: 'cat-rental', name: 'Equipment & Tent Rental', description: 'Shamiana, pandal, chairs, tables, tents, and equipment', icon: '🪑' },
+  { id: 'cat-mehendi', name: 'Mehendi & Makeup', description: 'Bridal mehendi artists and professional makeup services', icon: '💅' }
 ];
 
 module.exports = { SCHEMA_STATEMENTS, SEED_CATEGORIES };

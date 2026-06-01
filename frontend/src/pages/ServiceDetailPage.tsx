@@ -1,6 +1,7 @@
 /**
  * Service detail page - shows full service info, reviews, and booking form.
  * Customers can book the service; other roles see read-only details.
+ * Prices displayed in region-based currency format.
  */
 
 import { useState, useEffect } from 'react';
@@ -13,8 +14,10 @@ import {
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PhoneIcon from '@mui/icons-material/Phone';
 import PersonIcon from '@mui/icons-material/Person';
+import BusinessIcon from '@mui/icons-material/Business';
 import apiClient from '../api/client';
 import { useAuth } from '../hooks/useAuth';
+import { formatPriceRange } from '../utils/currency';
 import type { Service, Review } from '../types/api';
 
 export default function ServiceDetailPage() {
@@ -107,9 +110,9 @@ export default function ServiceDetailPage() {
             <Chip label={service.category_name} color="primary" size="small" sx={{ mt: 1 }} />
           </Box>
           <Box textAlign="right">
+            {/* Region-based currency pricing */}
             <Typography variant="h4" color="primary" fontWeight="bold">
-              ${service.price_min.toLocaleString()}
-              {service.price_max ? ` - $${service.price_max.toLocaleString()}` : '+'}
+              {formatPriceRange(service.price_min, service.price_max)}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end' }}>
               <Rating value={service.avg_rating || 0} readOnly precision={0.5} />
@@ -125,13 +128,13 @@ export default function ServiceDetailPage() {
           {service.description || 'No description provided.'}
         </Typography>
 
-        {/* Service details grid */}
+        {/* Service details grid - company info, organizer, phone, location */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
-          {service.city && (
+          {service.business_name && (
             <Grid size={{ xs: 12, sm: 6 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LocationOnIcon color="action" />
-                <Typography>{service.location ? `${service.location}, ` : ''}{service.city}</Typography>
+                <BusinessIcon color="primary" />
+                <Typography fontWeight="bold" color="primary">{service.business_name}</Typography>
               </Box>
             </Grid>
           )}
@@ -139,7 +142,7 @@ export default function ServiceDetailPage() {
             <Grid size={{ xs: 12, sm: 6 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PersonIcon color="action" />
-                <Typography>{service.business_name || service.business_owner_name}</Typography>
+                <Typography>{service.business_owner_name}</Typography>
               </Box>
             </Grid>
           )}
@@ -148,6 +151,14 @@ export default function ServiceDetailPage() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PhoneIcon color="action" />
                 <Typography>{service.business_phone}</Typography>
+              </Box>
+            </Grid>
+          )}
+          {service.city && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LocationOnIcon color="error" />
+                <Typography>{service.location ? `${service.location}` : service.city}</Typography>
               </Box>
             </Grid>
           )}
