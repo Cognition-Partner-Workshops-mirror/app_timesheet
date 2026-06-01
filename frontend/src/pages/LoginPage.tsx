@@ -1,96 +1,80 @@
-import React, { useState } from 'react';
+/**
+ * Login page for the Event Services Marketplace.
+ * Email + password form with link to registration page.
+ */
+
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import {
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Box,
-  Alert,
-  CircularProgress,
+  Container, Paper, TextField, Button, Typography, Alert, Box
 } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 
-const LoginPage: React.FC = () => {
+export default function LoginPage() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
-
+    setLoading(true);
     try {
-      await login(email);
-      navigate('/dashboard');
+      await login(email, password);
+      navigate('/');
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || 'Login failed. Please try again.');
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      setError(axiosErr.response?.data?.error || 'Login failed');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <Container component="main" maxWidth="sm">
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        px: 2,
-      }}
-    >
-      <Paper elevation={3} sx={{ padding: 3, width: '100%', maxWidth: 500 }}>
-        <Typography component="h1" variant="h4" align="center" gutterBottom>
-          Time Tracker
+    <Container maxWidth="sm" sx={{ mt: 8 }}>
+      <Paper sx={{ p: 4 }}>
+        <Typography variant="h4" textAlign="center" gutterBottom fontWeight="bold" color="primary">
+          EventMarket
         </Typography>
-        <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 2 }}>
-          Enter your email to log in
+        <Typography variant="body1" textAlign="center" color="text.secondary" mb={3}>
+          Sign in to your account
         </Typography>
-        <Alert severity="info" sx={{ mb: 2 }}>
-          This app intentionally does not have a password field.
-        </Alert>
-        
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={isLoading}
+            fullWidth label="Email" type="email" margin="normal"
+            value={email} onChange={(e) => setEmail(e.target.value)} required
+          />
+          <TextField
+            fullWidth label="Password" type="password" margin="normal"
+            value={password} onChange={(e) => setPassword(e.target.value)} required
           />
           <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 2, mb: 1 }}
-            disabled={isLoading || !email}
+            fullWidth variant="contained" type="submit" size="large"
+            sx={{ mt: 2 }} disabled={loading}
           >
-            {isLoading ? <CircularProgress size={24} /> : 'Log In'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </Button>
         </Box>
+
+        <Typography textAlign="center" mt={2}>
+          Don&apos;t have an account?{' '}
+          <Link to="/register" style={{ color: '#1976d2' }}>Register here</Link>
+        </Typography>
+
+        {/* Demo credentials info for all roles */}
+        <Alert severity="info" sx={{ mt: 2 }}>
+          <Typography variant="body2" fontWeight="bold" gutterBottom>Demo Accounts:</Typography>
+          <Typography variant="body2"><strong>Admin:</strong> admin@eventmarket.com / admin123</Typography>
+          <Typography variant="body2"><strong>Customer:</strong> rahul@example.com / password123</Typography>
+          <Typography variant="body2"><strong>Business:</strong> royal@eventmarket.com / password123</Typography>
+        </Alert>
       </Paper>
-    </Box>
     </Container>
   );
-};
-
-export default LoginPage;
+}

@@ -1,7 +1,24 @@
-import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+/**
+ * API client for Event Services Marketplace.
+ * Uses Axios with JWT auth interceptor. Automatically attaches Bearer token
+ * from localStorage and redirects to login on 401 responses.
+ */
 
-// Use empty string to make requests relative to the current origin
-// Vite proxy will forward /api requests to the backend
+import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+import type {
+  AuthResponse,
+  RegisterData,
+  Service,
+  ServiceCategory,
+  ServiceFormData,
+  Booking,
+  BookingFormData,
+  Review,
+  User,
+  DashboardStats,
+} from '../types/api';
+
+// Empty base URL means requests go through Vite proxy to backend
 const API_BASE_URL = '';
 
 class ApiClient {
@@ -16,27 +33,25 @@ class ApiClient {
       },
     });
 
-    // Request interceptor to add email header
+    // Attach JWT token from localStorage to every request
     this.client.interceptors.request.use(
       (config) => {
-        const userEmail = localStorage.getItem('userEmail');
-        if (userEmail) {
-          config.headers['x-user-email'] = userEmail;
+        const token = localStorage.getItem('token');
+        if (token) {
+          config.headers['Authorization'] = `Bearer ${token}`;
         }
         return config;
       },
-      (error) => {
-        return Promise.reject(error);
-      }
+      (error) => Promise.reject(error)
     );
 
-    // Response interceptor for error handling
+    // Redirect to login on 401 unauthorized responses
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Clear stored email on auth error
-          localStorage.removeItem('userEmail');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
           window.location.href = '/login';
         }
         return Promise.reject(error);
@@ -44,92 +59,123 @@ class ApiClient {
     );
   }
 
-  // Auth endpoints
-  async login(email: string) {
-    const response = await this.client.post('/api/auth/login', { email });
+  // ── Auth ──────────────────────────────────────────────────────────────
+  async register(data: RegisterData): Promise<AuthResponse> {
+    const response = await this.client.post('/api/auth/register', data);
     return response.data;
   }
 
-  async getCurrentUser() {
+  async login(email: string, password: string): Promise<AuthResponse> {
+    const response = await this.client.post('/api/auth/login', { email, password });
+    return response.data;
+  }
+
+  async getMe(): Promise<{ user: User }> {
     const response = await this.client.get('/api/auth/me');
     return response.data;
   }
 
-  // Client endpoints
-  async getClients() {
-    const response = await this.client.get('/api/clients');
+  async updateProfile(data: Partial<User>): Promise<{ message: string }> {
+    const response = await this.client.put('/api/auth/profile', data);
     return response.data;
   }
 
-  async getClient(id: number) {
-    const response = await this.client.get(`/api/clients/${id}`);
+  // ── Services ──────────────────────────────────────────────────────────
+  async getServices(params?: Record<string, string>): Promise<{ services: Service[] }> {
+    const response = await this.client.get('/api/services', { params });
     return response.data;
   }
 
-  async createClient(clientData: { name: string; description?: string; department?: string; email?: string }) {
-    const response = await this.client.post('/api/clients', clientData);
+  async getServiceCategories(): Promise<{ categories: ServiceCategory[] }> {
+    const response = await this.client.get('/api/services/categories');
     return response.data;
   }
 
-  async updateClient(id: number, clientData: { name?: string; description?: string; department?: string; email?: string }) {
-    const response = await this.client.put(`/api/clients/${id}`, clientData);
+  async getMyServices(): Promise<{ services: Service[] }> {
+    const response = await this.client.get('/api/services/my');
     return response.data;
   }
 
-  async deleteClient(id: number) {
-    const response = await this.client.delete(`/api/clients/${id}`);
+  async getService(id: string): Promise<{ service: Service; reviews: Review[] }> {
+    const response = await this.client.get(`/api/services/${id}`);
     return response.data;
   }
 
-  async deleteAllClients() {
-    const response = await this.client.delete('/api/clients');
+  async createService(data: ServiceFormData): Promise<{ message: string; id: string }> {
+    const response = await this.client.post('/api/services', data);
     return response.data;
   }
 
-  // Work entry endpoints
-  async getWorkEntries(clientId?: number) {
-    const params = clientId ? { clientId } : {};
-    const response = await this.client.get('/api/work-entries', { params });
+  async updateService(id: string, data: ServiceFormData): Promise<{ message: string }> {
+    const response = await this.client.put(`/api/services/${id}`, data);
     return response.data;
   }
 
-  async getWorkEntry(id: number) {
-    const response = await this.client.get(`/api/work-entries/${id}`);
+  async deleteService(id: string): Promise<{ message: string }> {
+    const response = await this.client.delete(`/api/services/${id}`);
     return response.data;
   }
 
-  async createWorkEntry(entryData: { clientId: number; hours: number; description?: string; date: string }) {
-    const response = await this.client.post('/api/work-entries', entryData);
+  // ── Bookings ──────────────────────────────────────────────────────────
+  async getBookings(): Promise<{ bookings: Booking[] }> {
+    const response = await this.client.get('/api/bookings');
     return response.data;
   }
 
-  async updateWorkEntry(id: number, entryData: { clientId?: number; hours?: number; description?: string; date?: string }) {
-    const response = await this.client.put(`/api/work-entries/${id}`, entryData);
+  async getBooking(id: string): Promise<{ booking: Booking }> {
+    const response = await this.client.get(`/api/bookings/${id}`);
     return response.data;
   }
 
-  async deleteWorkEntry(id: number) {
-    const response = await this.client.delete(`/api/work-entries/${id}`);
+  async createBooking(data: BookingFormData): Promise<{ message: string; id: string }> {
+    const response = await this.client.post('/api/bookings', data);
     return response.data;
   }
 
-  // Report endpoints
-  async getClientReport(clientId: number) {
-    const response = await this.client.get(`/api/reports/client/${clientId}`);
+  async updateBookingStatus(id: string, status: string): Promise<{ message: string }> {
+    const response = await this.client.put(`/api/bookings/${id}/status`, { status });
     return response.data;
   }
 
-  async exportClientReportCsv(clientId: number) {
-    const response = await this.client.get(`/api/reports/export/csv/${clientId}`, {
-      responseType: 'blob',
-    });
+  // ── Reviews ───────────────────────────────────────────────────────────
+  async createReview(data: { booking_id: string; rating: number; comment: string }): Promise<{ message: string; id: string }> {
+    const response = await this.client.post('/api/reviews', data);
     return response.data;
   }
 
-  async exportClientReportPdf(clientId: number) {
-    const response = await this.client.get(`/api/reports/export/pdf/${clientId}`, {
-      responseType: 'blob',
-    });
+  async getServiceReviews(serviceId: string): Promise<{ reviews: Review[]; avg_rating: number; total: number }> {
+    const response = await this.client.get(`/api/reviews/service/${serviceId}`);
+    return response.data;
+  }
+
+  // ── Admin ─────────────────────────────────────────────────────────────
+  async getAdminDashboard(): Promise<{ stats: DashboardStats; recent_bookings: Booking[] }> {
+    const response = await this.client.get('/api/admin/dashboard');
+    return response.data;
+  }
+
+  async getAdminUsers(params?: Record<string, string>): Promise<{ users: User[] }> {
+    const response = await this.client.get('/api/admin/users', { params });
+    return response.data;
+  }
+
+  async approveUser(id: string, approved: boolean): Promise<{ message: string }> {
+    const response = await this.client.put(`/api/admin/users/${id}/approve`, { approved });
+    return response.data;
+  }
+
+  async changeUserRole(id: string, role: string): Promise<{ message: string }> {
+    const response = await this.client.put(`/api/admin/users/${id}/role`, { role });
+    return response.data;
+  }
+
+  async deleteUser(id: string): Promise<{ message: string }> {
+    const response = await this.client.delete(`/api/admin/users/${id}`);
+    return response.data;
+  }
+
+  async getAdminServices(): Promise<{ services: Service[] }> {
+    const response = await this.client.get('/api/admin/services');
     return response.data;
   }
 
