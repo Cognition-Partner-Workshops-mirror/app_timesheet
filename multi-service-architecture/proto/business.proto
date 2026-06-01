@@ -1,0 +1,130 @@
+// business.proto - Defines the gRPC service for core business logic operations.
+// The Java Spring Boot microservice implements this for transaction processing,
+// user management, and account operations.
+
+syntax = "proto3";
+
+package business;
+
+option go_package = "github.com/multi-service-arch/logging-service/proto/business";
+option java_package = "com.multiservice.proto.business";
+
+// User represents a system user
+message User {
+  string user_id = 1;
+  string email = 2;
+  string name = 3;
+  string role = 4;              // USER, ADMIN, ANALYST
+  string created_at = 5;
+  string status = 6;           // ACTIVE, SUSPENDED, CLOSED
+}
+
+// Account represents a financial account
+message Account {
+  string account_id = 1;
+  string user_id = 2;
+  string account_type = 3;     // CHECKING, SAVINGS, CREDIT
+  double balance = 4;
+  string currency = 5;
+  string status = 6;           // ACTIVE, FROZEN, CLOSED
+  string created_at = 7;
+}
+
+// TransactionRequest for processing a new transaction
+message TransactionRequest {
+  string from_account_id = 1;
+  string to_account_id = 2;
+  double amount = 3;
+  string currency = 4;
+  string description = 5;
+  string initiated_by = 6;     // User ID of the initiator
+}
+
+// TransactionResponse after processing
+message TransactionResponse {
+  string transaction_id = 1;
+  string status = 2;           // COMPLETED, PENDING, FAILED, BLOCKED
+  string message = 3;
+  double new_balance = 4;
+  string processed_at = 5;
+}
+
+// GetUserRequest for retrieving user details
+message GetUserRequest {
+  string user_id = 1;
+}
+
+// GetAccountRequest for retrieving account details
+message GetAccountRequest {
+  string account_id = 1;
+}
+
+// ListAccountsRequest for retrieving all accounts of a user
+message ListAccountsRequest {
+  string user_id = 1;
+}
+
+// ListAccountsResponse returns all accounts for a user
+message ListAccountsResponse {
+  repeated Account accounts = 1;
+}
+
+// TransactionHistoryRequest for retrieving transaction history
+message TransactionHistoryRequest {
+  string account_id = 1;
+  string start_date = 2;
+  string end_date = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+// TransactionRecord represents a historical transaction
+message TransactionRecord {
+  string transaction_id = 1;
+  string from_account_id = 2;
+  string to_account_id = 3;
+  double amount = 4;
+  string currency = 5;
+  string description = 6;
+  string status = 7;
+  string created_at = 8;
+}
+
+// TransactionHistoryResponse returns transaction history
+message TransactionHistoryResponse {
+  repeated TransactionRecord transactions = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// HealthCheckRequest for service health check
+message HealthCheckRequest {}
+
+// HealthCheckResponse for service health status
+message HealthCheckResponse {
+  string status = 1;          // SERVING, NOT_SERVING
+  string version = 2;
+  int64 uptime_seconds = 3;
+}
+
+// BusinessService provides core business logic operations
+service BusinessService {
+  // ProcessTransaction handles a financial transaction with fraud check integration
+  rpc ProcessTransaction(TransactionRequest) returns (TransactionResponse);
+
+  // GetUser retrieves user details
+  rpc GetUser(GetUserRequest) returns (User);
+
+  // GetAccount retrieves account details
+  rpc GetAccount(GetAccountRequest) returns (Account);
+
+  // ListAccounts retrieves all accounts for a user
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
+
+  // GetTransactionHistory retrieves paginated transaction history
+  rpc GetTransactionHistory(TransactionHistoryRequest) returns (TransactionHistoryResponse);
+
+  // HealthCheck returns the health status of the service
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}

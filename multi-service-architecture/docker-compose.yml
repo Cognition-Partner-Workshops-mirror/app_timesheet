@@ -1,0 +1,124 @@
+# Docker Compose configuration for the multi-service architecture.
+# Orchestrates all 5 services with proper networking and dependency ordering.
+#
+# Architecture:
+#   Frontend (React/Nginx:80) -> API Gateway (Node.js:4000)
+#     -> Business Logic (Java:8080/gRPC:50053)
+#     -> Fraud Detection (Python:gRPC:50052)
+#     -> Logging Service (Go:gRPC:50051)
+
+version: '3.8'
+
+services:
+  # Go high-performance logging and metrics service (gRPC)
+  # All other services send structured logs and metrics here
+  logging-service:
+    build:
+      context: .
+      dockerfile: services/logging-service/Dockerfile
+    ports:
+      - "50051:50051"
+    environment:
+      - LOGGING_SERVICE_PORT=50051
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "50051"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Python ML fraud detection service (gRPC)
+  # Analyzes transactions using a trained Random Forest model
+  fraud-detection:
+    build:
+      context: .
+      dockerfile: services/fraud-detection/Dockerfile
+    ports:
+      - "50052:50052"
+    environment:
+      - FRAUD_SERVICE_PORT=50052
+      - LOGGING_SERVICE_HOST=logging-service
+      - LOGGING_SERVICE_PORT=50051
+    depends_on:
+      - logging-service
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import grpc; print('healthy')"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+
+  # Java Spring Boot business logic service (REST + gRPC)
+  # Handles transactions, accounts, and user management
+  business-logic:
+    build:
+      context: .
+      dockerfile: services/business-logic/Dockerfile
+    ports:
+      - "8080:8080"
+      - "50053:50053"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - GRPC_SERVER_PORT=50053
+      - FRAUD_SERVICE_HOST=fraud-detection
+      - FRAUD_SERVICE_PORT=50052
+      - LOGGING_SERVICE_HOST=logging-service
+      - LOGGING_SERVICE_PORT=50051
+    depends_on:
+      - fraud-detection
+      - logging-service
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # Node.js API Gateway (REST + GraphQL, gRPC client)
+  # Single entry point for frontend, routes to backend services via gRPC
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - API_GATEWAY_PORT=4000
+      - BUSINESS_SERVICE_HOST=business-logic
+      - BUSINESS_SERVICE_PORT=50053
+      - FRAUD_SERVICE_HOST=fraud-detection
+      - FRAUD_SERVICE_PORT=50052
+      - LOGGING_SERVICE_HOST=logging-service
+      - LOGGING_SERVICE_PORT=50051
+    depends_on:
+      - business-logic
+      - fraud-detection
+      - logging-service
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # React frontend served by Nginx
+  # Proxies API/GraphQL requests to the API Gateway
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - microservices-net
+
+# Internal network for inter-service communication
+networks:
+  microservices-net:
+    driver: bridge

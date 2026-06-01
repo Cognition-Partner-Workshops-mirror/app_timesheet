@@ -1,0 +1,87 @@
+// logging.proto - Defines the gRPC service for high-performance logging and metrics collection.
+// Used by all services to send structured log entries and metrics to the Go logging service.
+
+syntax = "proto3";
+
+package logging;
+
+option go_package = "github.com/multi-service-arch/logging-service/proto";
+option java_package = "com.multiservice.proto.logging";
+
+// LogEntry represents a single structured log message
+message LogEntry {
+  string service_name = 1;    // Name of the service emitting the log
+  string level = 2;           // Log level: DEBUG, INFO, WARN, ERROR
+  string message = 3;         // Log message content
+  string timestamp = 4;       // ISO 8601 timestamp
+  map<string, string> metadata = 5; // Additional key-value metadata
+  string trace_id = 6;        // Distributed tracing correlation ID
+}
+
+// MetricEntry represents a single metric data point
+message MetricEntry {
+  string service_name = 1;    // Name of the service emitting the metric
+  string metric_name = 2;     // Name of the metric (e.g., "request_duration_ms")
+  double value = 3;           // Metric value
+  string metric_type = 4;     // Type: COUNTER, GAUGE, HISTOGRAM
+  string timestamp = 5;       // ISO 8601 timestamp
+  map<string, string> labels = 6; // Metric labels for filtering/grouping
+}
+
+// LogResponse acknowledges receipt of log entries
+message LogResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// MetricResponse acknowledges receipt of metric entries
+message MetricResponse {
+  bool success = 1;
+  int32 metrics_received = 2;
+}
+
+// BatchLogRequest allows sending multiple log entries at once
+message BatchLogRequest {
+  repeated LogEntry entries = 1;
+}
+
+// BatchMetricRequest allows sending multiple metric entries at once
+message BatchMetricRequest {
+  repeated MetricEntry entries = 1;
+}
+
+// QueryLogsRequest for retrieving historical logs
+message QueryLogsRequest {
+  string service_name = 1;    // Filter by service name (optional)
+  string level = 2;           // Filter by log level (optional)
+  string start_time = 3;      // Start of time range (ISO 8601)
+  string end_time = 4;        // End of time range (ISO 8601)
+  int32 limit = 5;            // Max number of entries to return
+}
+
+// QueryLogsResponse returns matching log entries
+message QueryLogsResponse {
+  repeated LogEntry entries = 1;
+  int32 total_count = 2;
+}
+
+// LoggingService provides high-performance structured logging and metrics collection
+service LoggingService {
+  // SendLog sends a single log entry
+  rpc SendLog(LogEntry) returns (LogResponse);
+
+  // SendBatchLogs sends multiple log entries in one call for efficiency
+  rpc SendBatchLogs(BatchLogRequest) returns (LogResponse);
+
+  // SendMetric sends a single metric data point
+  rpc SendMetric(MetricEntry) returns (MetricResponse);
+
+  // SendBatchMetrics sends multiple metrics in one call for efficiency
+  rpc SendBatchMetrics(BatchMetricRequest) returns (MetricResponse);
+
+  // StreamLogs allows real-time streaming of log entries from client to server
+  rpc StreamLogs(stream LogEntry) returns (LogResponse);
+
+  // QueryLogs retrieves historical log entries based on filters
+  rpc QueryLogs(QueryLogsRequest) returns (QueryLogsResponse);
+}

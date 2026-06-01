@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+target/
+.gradle/
+
+# Build outputs
+dist/
+build/
+*.jar
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go binaries
+/services/logging-service/logging-service

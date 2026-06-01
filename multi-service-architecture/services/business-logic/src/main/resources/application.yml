@@ -1,0 +1,40 @@
+# Spring Boot configuration for the business logic microservice
+spring:
+  application:
+    name: business-logic-service
+  datasource:
+    # H2 in-memory database for local development
+    url: jdbc:h2:mem:businessdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  h2:
+    console:
+      enabled: true
+
+# Application server configuration
+server:
+  port: 8080
+
+# gRPC server configuration
+grpc:
+  server:
+    port: 50053
+  # Client connections to other services
+  client:
+    fraud-detection:
+      host: fraud-detection
+      port: 50052
+    logging-service:
+      host: logging-service
+      port: 50051
+
+# Logging configuration
+logging:
+  level:
+    com.multiservice: INFO
+    org.springframework: WARN
