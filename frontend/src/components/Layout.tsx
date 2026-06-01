@@ -19,6 +19,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import BookOnlineIcon from '@mui/icons-material/BookOnline';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuth } from '../hooks/useAuth';
 
 const DRAWER_WIDTH = 240;
@@ -128,8 +129,15 @@ export default function Layout() {
       </List>
 
       <Divider />
-      {/* Logout button at bottom */}
+      {/* Profile and Logout buttons at bottom */}
       <List>
+        <ListItemButton
+          selected={location.pathname === '/profile'}
+          onClick={() => { navigate('/profile'); setMobileOpen(false); }}
+        >
+          <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+          <ListItemText primary="My Profile" />
+        </ListItemButton>
         <ListItemButton onClick={handleLogout}>
           <ListItemIcon><LogoutIcon /></ListItemIcon>
           <ListItemText primary="Logout" />

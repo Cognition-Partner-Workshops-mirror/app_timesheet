@@ -67,9 +67,12 @@ export default function LoginPage() {
           <Link to="/register" style={{ color: '#1976d2' }}>Register here</Link>
         </Typography>
 
-        {/* Demo credentials info */}
+        {/* Demo credentials info for all roles */}
         <Alert severity="info" sx={{ mt: 2 }}>
+          <Typography variant="body2" fontWeight="bold" gutterBottom>Demo Accounts:</Typography>
           <Typography variant="body2"><strong>Admin:</strong> admin@eventmarket.com / admin123</Typography>
+          <Typography variant="body2"><strong>Customer:</strong> rahul@example.com / password123</Typography>
+          <Typography variant="body2"><strong>Business:</strong> royal@eventmarket.com / password123</Typography>
         </Alert>
       </Paper>
     </Container>

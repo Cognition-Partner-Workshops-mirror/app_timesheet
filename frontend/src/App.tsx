@@ -25,6 +25,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminServicesPage from './pages/AdminServicesPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
+import ProfilePage from './pages/ProfilePage';
 
 import type { UserRole } from './types/api';
 
@@ -87,6 +88,9 @@ function App() {
               <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 {/* Home redirects to role-appropriate page */}
                 <Route path="/" element={<HomeRedirect />} />
+
+                {/* Profile - all authenticated users */}
+                <Route path="/profile" element={<ProfilePage />} />
 
                 {/* Service browsing - all authenticated users */}
                 <Route path="/services" element={<BrowseServicesPage />} />
