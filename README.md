@@ -1,297 +1,93 @@
-# Employee Time Tracking Application
+# Event Services Marketplace
 
-A full-stack web application for tracking and reporting employee hourly work across different clients.
-
-## ⚠️ Important Notes
-
-### Data Persistence
-**This application uses SQLite in-memory database as specified in requirements.**
-- ⚠️ **All data is lost when the backend server restarts**
-- Suitable for development and testing
-- For production use, modify `backend/src/database/init.js` to use file-based SQLite instead of `:memory:`
-
-### Authentication
-- Email-only authentication with JWT tokens
-- No password required - assumes trusted internal network
-- Anyone with a valid email can create an account and log in
-- Consider integrating with company SSO for production use
+A full-stack web application where event service providers (function decorators, caterers, function hall owners, photographers, etc.) can list and manage their services, and customers can browse and book them.
 
 ## Features
 
-- ✅ User authentication (email-based with JWT tokens)
-- ✅ Add, edit, and delete clients
-- ✅ Add, edit, and delete hourly work entries for each client
-- ✅ View hourly reports for each client
-- ✅ Export hourly reports to CSV or PDF
+### Role-Based Access Control
+- **Admin** — Full platform control: manage users, approve business accounts, view all bookings/services, platform analytics
+- **Business** — Service providers: create/manage service listings, handle booking requests, view customer details
+- **Customer** — Browse services, make bookings, leave reviews after completed events
+
+### Core Functionality
+- **Service Listings** — Browse services by category (Decorator, Catering, Function Hall, Photography, Music & DJ, Event Planner, Transport, Equipment Rental), city, search, and price range
+- **Booking System** — Customers book services with event date, guest count, and special requests. Business owners confirm/complete/cancel bookings
+- **Review System** — Customers can rate and review services after completed bookings
+- **Business Approval** — Admin must approve new business accounts before they can list services
+- **Dashboard Analytics** — Role-specific dashboards with key metrics
 
 ## Tech Stack
-
-### Frontend
-- **React** with TypeScript
-- **Vite** for build tooling
-- **Material UI** for components
-- **React Query** for server state management
-- **React Router** for navigation
-- **Axios** for API calls
-
-### Backend
-- **Node.js** with Express
-- **SQLite** in-memory database
-- **JWT** for authentication
-- **Joi** for validation
-- **PDFKit** for PDF generation
-- **csv-writer** for CSV export
-
-## Project Structure
-
-```
-.
-├── backend/
-│   ├── src/
-│   │   ├── database/
-│   │   │   └── init.js           # Database initialization
-│   │   ├── middleware/
-│   │   │   ├── auth.js           # JWT authentication
-│   │   │   └── errorHandler.js  # Error handling
-│   │   ├── routes/
-│   │   │   ├── auth.js           # Authentication endpoints
-│   │   │   ├── clients.js        # Client CRUD
-│   │   │   ├── workEntries.js    # Work entry CRUD
-│   │   │   └── reports.js        # Reporting & export
-│   │   ├── validation/
-│   │   │   └── schemas.js        # Joi validation schemas
-│   │   └── server.js             # Express server
-│   ├── package.json
-│   └── DEPLOYMENT.md             # Production deployment guide
-│
-└── frontend/
-    ├── src/
-    │   ├── api/
-    │   │   └── client.ts         # API client with JWT
-    │   ├── components/
-    │   │   └── Layout.tsx        # Main layout
-    │   ├── contexts/
-    │   │   └── AuthContext.tsx   # Auth state management
-    │   ├── pages/
-    │   │   ├── LoginPage.tsx     # Login page
-    │   │   ├── DashboardPage.tsx # Dashboard
-    │   │   ├── ClientsPage.tsx   # Client management
-    │   │   ├── WorkEntriesPage.tsx # Work entry management
-    │   │   └── ReportsPage.tsx   # Reports & exports
-    │   ├── types/
-    │   │   └── api.ts            # TypeScript interfaces
-    │   └── App.tsx               # Main app component
-    └── package.json
-```
+- **Frontend**: React 19, Vite, TypeScript, Material UI (MUI), React Router, TanStack Query, Axios
+- **Backend**: Node.js, Express, SQLite3 (in-memory), JWT authentication, bcryptjs, Joi validation
+- **Security**: Helmet, CORS, rate limiting, password hashing
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+ installed
-- npm or yarn package manager
+- Node.js 18+
+- npm
 
-### Backend Setup
+### Installation
 
-1. Navigate to backend directory:
 ```bash
-cd backend
+# Install backend dependencies
+cd backend && npm install
+
+# Install frontend dependencies
+cd ../frontend && npm install
 ```
 
-2. Install dependencies:
+### Running the Application
+
 ```bash
-npm install
+# Start backend (port 3001)
+cd backend && npm run dev
+
+# Start frontend (port 5173)
+cd frontend && npm run dev
 ```
 
-3. Create environment file:
-```bash
-cp .env.example .env
-```
-
-4. Update `.env` with your configuration:
-```bash
-PORT=3001
-NODE_ENV=development
-FRONTEND_URL=http://localhost:5173
-JWT_SECRET=your-secure-secret-key-change-this
-```
-
-5. Start the development server:
-```bash
-npm run dev
-```
-
-Backend will be running at `http://localhost:3001`
-
-### Frontend Setup
-
-1. Navigate to frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create environment file:
-```bash
-cp .env.example .env
-```
-
-4. Update `.env`:
-```bash
-VITE_API_URL=http://localhost:3001
-```
-
-5. Start the development server:
-```bash
-npm run dev
-```
-
-Frontend will be running at `http://localhost:5173`
-
-## Usage
-
-1. Open `http://localhost:5173` in your browser
-2. Enter any email address to log in (no password required)
-3. Start adding clients and tracking work hours
-4. View reports and export data as CSV or PDF
+### Default Admin Account
+- **Email**: admin@eventmarket.com
+- **Password**: admin123
 
 ## API Endpoints
 
-### Authentication
-- `POST /api/auth/login` - Login with email, returns JWT token
-- `GET /api/auth/me` - Get current user info (requires auth)
+### Auth
+- `POST /api/auth/register` — Register (customer or business)
+- `POST /api/auth/login` — Login (returns JWT)
+- `GET /api/auth/me` — Get current user profile
+- `PUT /api/auth/profile` — Update profile
 
-### Clients
-- `GET /api/clients` - Get all clients
-- `POST /api/clients` - Create new client
-- `GET /api/clients/:id` - Get specific client
-- `PUT /api/clients/:id` - Update client
-- `DELETE /api/clients/:id` - Delete client
+### Services
+- `GET /api/services` — Browse services (with filters: category, city, search, price)
+- `GET /api/services/categories` — List service categories
+- `GET /api/services/my` — Business: list own services
+- `GET /api/services/:id` — Service detail with reviews
+- `POST /api/services` — Business: create service
+- `PUT /api/services/:id` — Business: update service
+- `DELETE /api/services/:id` — Business/Admin: delete service
 
-### Work Entries
-- `GET /api/work-entries` - Get all work entries (optional ?clientId filter)
-- `POST /api/work-entries` - Create new work entry
-- `GET /api/work-entries/:id` - Get specific work entry
-- `PUT /api/work-entries/:id` - Update work entry
-- `DELETE /api/work-entries/:id` - Delete work entry
+### Bookings
+- `POST /api/bookings` — Customer: create booking
+- `GET /api/bookings` — List bookings (role-filtered)
+- `GET /api/bookings/:id` — Booking detail
+- `PUT /api/bookings/:id/status` — Update status (confirm/complete/cancel)
 
-### Reports
-- `GET /api/reports/client/:clientId` - Get hourly report for client
-- `GET /api/reports/export/csv/:clientId` - Export report as CSV
-- `GET /api/reports/export/pdf/:clientId` - Export report as PDF
+### Reviews
+- `POST /api/reviews` — Customer: review completed booking
+- `GET /api/reviews/service/:id` — Get reviews for a service
 
-All authenticated endpoints require `Authorization: Bearer <token>` header.
+### Admin
+- `GET /api/admin/dashboard` — Platform statistics
+- `GET /api/admin/users` — List all users
+- `PUT /api/admin/users/:id/approve` — Approve/reject business
+- `PUT /api/admin/users/:id/role` — Change user role
+- `DELETE /api/admin/users/:id` — Delete user
+- `GET /api/admin/services` — List all services
 
-## Security Features
-
-- JWT-based authentication with 24-hour token expiration
-- Rate limiting on authentication endpoints (5 attempts per 15 minutes)
-- CORS protection
-- Helmet security headers
-- Input validation with Joi schemas
-- SQL injection protection with parameterized queries
-
-## Development
-
-### Backend Development
-```bash
-cd backend
-npm run dev  # Starts with nodemon for auto-reload
-```
-
-### Frontend Development
-```bash
-cd frontend
-npm run dev  # Starts Vite dev server with HMR
-```
-
-### Running Tests
-
-**Backend:**
-```bash
-cd backend
-npm test                    # Run all tests
-npm run test:coverage       # Run tests with coverage report
-npm run test:watch          # Run tests in watch mode
-```
-
-### Test Coverage
-
-The backend has comprehensive test coverage with **161 tests** across 8 test suites:
-
-| File | Statements | Branches | Functions | Lines |
-|------|------------|----------|-----------|-------|
-| **Overall** | **90.16%** | **93.82%** | **92.18%** | **90.35%** |
-| database/init.js | 100% | 100% | 100% | 100% |
-| middleware/auth.js | 100% | 100% | 100% | 100% |
-| middleware/errorHandler.js | 100% | 100% | 100% | 100% |
-| routes/auth.js | 100% | 100% | 100% | 100% |
-| routes/clients.js | 97.89% | 100% | 100% | 97.89% |
-| routes/workEntries.js | 98.41% | 100% | 100% | 98.41% |
-| routes/reports.js | 64.15% | 69.44% | 68.75% | 64.42% |
-| validation/schemas.js | 100% | 100% | 100% | 100% |
-
-Coverage thresholds are configured in `jest.config.js`:
-- Statements: 60%
-- Branches: 60%
-- Functions: 65%
-- Lines: 60%
-
-### Building for Production
-
-**Backend:**
-```bash
-cd backend
-npm start  # Production mode
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm run build  # Creates optimized production build in dist/
-npm run preview  # Preview production build
-```
-
-## Production Deployment
-
-See `backend/DEPLOYMENT.md` for detailed production deployment instructions.
-
-### Quick Production Checklist
-- [ ] Set strong `JWT_SECRET` in environment variables
-- [ ] Configure proper `FRONTEND_URL` for CORS
-- [ ] Consider switching to file-based SQLite for data persistence
-- [ ] Set up HTTPS/SSL certificates
-- [ ] Configure proper logging and monitoring
-- [ ] Set up automated backups (if using persistent storage)
-- [ ] Review and adjust rate limiting settings
-- [ ] Consider integrating with company SSO
-
-## Known Limitations
-
-1. **In-memory database** - All data is lost on server restart
-2. **Email-only auth** - No password protection, assumes trusted network
-3. **No user roles** - All users have equal access to all data
-4. **Single-server architecture** - Not designed for horizontal scaling
-5. **No real-time updates** - Changes require page refresh
-
-## Future Enhancements
-
-- Persistent database storage
-- User roles and permissions
-- Multi-tenancy support
-- Real-time updates with WebSockets
-- Advanced reporting and analytics
-- Email notifications
-- Mobile app
-- Integration with calendar systems
-
-## License
-
-MIT
-
-## Support
-
-For issues or questions, please contact your system administrator.
+## Data Persistence
+**This application uses SQLite in-memory database.**
+- All data is lost when the backend server restarts
+- Default categories and admin user are re-seeded on startup
+- Suitable for development and demo purposes

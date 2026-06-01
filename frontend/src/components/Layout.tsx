@@ -1,159 +1,196 @@
-import React, { type ReactNode } from 'react';
+/**
+ * Main layout component with role-based navigation sidebar.
+ * Shows different menu items based on user role (admin/business/customer).
+ * Includes top app bar with user info and logout.
+ */
+
+import { useState } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
-  AppBar,
-  Box,
-  CssBaseline,
-  Drawer,
-  IconButton,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-  Typography,
-  Button,
-  Avatar,
+  AppBar, Toolbar, Typography, Drawer, List, ListItemButton,
+  ListItemIcon, ListItemText, Box, IconButton, Divider, Chip, Avatar
 } from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Dashboard as DashboardIcon,
-  Business as BusinessIcon,
-  Assignment as AssignmentIcon,
-  Assessment as AssessmentIcon,
-  Logout as LogoutIcon,
-} from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import MenuIcon from '@mui/icons-material/Menu';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import EventIcon from '@mui/icons-material/Event';
+import PeopleIcon from '@mui/icons-material/People';
+import SearchIcon from '@mui/icons-material/Search';
+import LogoutIcon from '@mui/icons-material/Logout';
+import AddBusinessIcon from '@mui/icons-material/AddBusiness';
+import BookOnlineIcon from '@mui/icons-material/BookOnline';
 import { useAuth } from '../hooks/useAuth';
 
-const drawerWidth = 240;
+const DRAWER_WIDTH = 240;
 
-interface LayoutProps {
-  children: ReactNode;
-}
+// Role-specific color chips for visual identification
+const roleColors: Record<string, 'error' | 'warning' | 'success'> = {
+  admin: 'error',
+  business: 'warning',
+  customer: 'success',
+};
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+export default function Layout() {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  // Navigation items differ by role
+  const getNavItems = () => {
+    if (!user) return [];
+
+    const common = [
+      { text: 'Browse Services', icon: <SearchIcon />, path: '/services' },
+    ];
+
+    switch (user.role) {
+      case 'admin':
+        return [
+          { text: 'Dashboard', icon: <DashboardIcon />, path: '/admin/dashboard' },
+          { text: 'Manage Users', icon: <PeopleIcon />, path: '/admin/users' },
+          { text: 'All Services', icon: <StorefrontIcon />, path: '/admin/services' },
+          { text: 'All Bookings', icon: <EventIcon />, path: '/admin/bookings' },
+          ...common,
+        ];
+      case 'business':
+        return [
+          { text: 'Dashboard', icon: <DashboardIcon />, path: '/business/dashboard' },
+          { text: 'My Services', icon: <StorefrontIcon />, path: '/business/services' },
+          { text: 'Add Service', icon: <AddBusinessIcon />, path: '/business/services/new' },
+          { text: 'Bookings', icon: <BookOnlineIcon />, path: '/business/bookings' },
+          ...common,
+        ];
+      case 'customer':
+        return [
+          ...common,
+          { text: 'My Bookings', icon: <BookOnlineIcon />, path: '/customer/bookings' },
+        ];
+      default:
+        return common;
+    }
   };
 
-  const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Clients', icon: <BusinessIcon />, path: '/clients' },
-    { text: 'Work Entries', icon: <AssignmentIcon />, path: '/work-entries' },
-    { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
-  ];
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
-  const drawer = (
-    <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          Time Tracker
+  const drawerContent = (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Brand header */}
+      <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Typography variant="h6" fontWeight="bold" color="primary">
+          EventMarket
         </Typography>
-      </Toolbar>
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => navigate(item.path)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
+        <Typography variant="caption" color="text.secondary">
+          Services Marketplace
+        </Typography>
+      </Box>
+      <Divider />
+
+      {/* User info section */}
+      {user && (
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+            {user.name.charAt(0).toUpperCase()}
+          </Avatar>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" noWrap fontWeight="bold">
+              {user.name}
+            </Typography>
+            <Chip
+              label={user.role}
+              size="small"
+              color={roleColors[user.role] || 'default'}
+              sx={{ height: 20, fontSize: '0.7rem' }}
+            />
+          </Box>
+        </Box>
+      )}
+      <Divider />
+
+      {/* Role-based navigation links */}
+      <List sx={{ flex: 1 }}>
+        {getNavItems().map((item) => (
+          <ListItemButton
+            key={item.path}
+            selected={location.pathname === item.path}
+            onClick={() => {
+              navigate(item.path);
+              setMobileOpen(false);
+            }}
+          >
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+          </ListItemButton>
         ))}
       </List>
-    </div>
+
+      <Divider />
+      {/* Logout button at bottom */}
+      <List>
+        <ListItemButton onClick={handleLogout}>
+          <ListItemIcon><LogoutIcon /></ListItemIcon>
+          <ListItemText primary="Logout" />
+        </ListItemButton>
+      </List>
+    </Box>
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      {/* Top app bar (mobile) */}
       <AppBar
         position="fixed"
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          display: { md: 'none' },
+          zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
+          <IconButton color="inherit" edge="start" onClick={() => setMobileOpen(!mobileOpen)}>
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {menuItems.find(item => item.path === location.pathname)?.text || 'Time Tracker'}
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="body2">{user?.email}</Typography>
-            <Avatar sx={{ width: 32, height: 32 }}>
-              {user?.email?.charAt(0).toUpperCase()}
-            </Avatar>
-            <Button
-              color="inherit"
-              startIcon={<LogoutIcon />}
-              onClick={logout}
-              size="small"
-            >
-              Logout
-            </Button>
-          </Box>
+          <Typography variant="h6" noWrap>EventMarket</Typography>
         </Toolbar>
       </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="mailbox folders"
-      >
+
+      {/* Sidebar drawer */}
+      <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
+        {/* Mobile drawer */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
+          onClose={() => setMobileOpen(false)}
+          sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
         >
-          {drawer}
+          {drawerContent}
         </Drawer>
+        {/* Desktop drawer */}
         <Drawer
           variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
+          sx={{ display: { xs: 'none', md: 'block' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
           open
         >
-          {drawer}
+          {drawerContent}
         </Drawer>
       </Box>
+
+      {/* Main content area */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          mt: { xs: '64px', md: 0 },
+          bgcolor: 'grey.50',
+          minHeight: '100vh',
         }}
       >
-        <Toolbar />
-        {children}
+        <Outlet />
       </Box>
     </Box>
   );
-};
-
-export default Layout;
+}

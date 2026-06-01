@@ -1,16 +1,23 @@
+/**
+ * Database initialization module for Event Services Marketplace.
+ * Uses SQLite in-memory database. Creates schema tables and seeds
+ * default categories + admin user on startup.
+ */
+
 const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const bcrypt = require('bcryptjs');
+const { v4: uuidv4 } = require('uuid');
+const { SCHEMA_STATEMENTS, SEED_CATEGORIES } = require('./schema');
 
 let db = null;
 let isClosing = false;
 let isClosed = false;
 
+// Returns singleton database connection
 function getDatabase() {
   if (!db) {
-    // Reset state when creating a new database connection
     isClosing = false;
     isClosed = false;
-    // Use in-memory database as specified in requirements
     db = new sqlite3.Database(':memory:', (err) => {
       if (err) {
         console.error('Error opening database:', err);
@@ -22,72 +29,74 @@ function getDatabase() {
   return db;
 }
 
-async function initializeDatabase() {
-  const database = getDatabase();
-  
+// Wraps db.run in a promise for async/await usage
+function runAsync(database, sql, params = []) {
   return new Promise((resolve, reject) => {
-    database.serialize(() => {
-      // Create users table
-      database.run(`
-        CREATE TABLE IF NOT EXISTS users (
-          email TEXT PRIMARY KEY,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
-      // Create clients table
-      database.run(`
-        CREATE TABLE IF NOT EXISTS clients (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          description TEXT,
-          department TEXT,
-          email TEXT,
-          user_email TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_email) REFERENCES users (email) ON DELETE CASCADE
-        )
-      `);
-
-      // Create work_entries table
-      database.run(`
-        CREATE TABLE IF NOT EXISTS work_entries (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          client_id INTEGER NOT NULL,
-          user_email TEXT NOT NULL,
-          hours DECIMAL(5,2) NOT NULL,
-          description TEXT,
-          date DATE NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE CASCADE,
-          FOREIGN KEY (user_email) REFERENCES users (email) ON DELETE CASCADE
-        )
-      `);
-
-      // Create indexes for better performance
-      database.run(`CREATE INDEX IF NOT EXISTS idx_clients_user_email ON clients (user_email)`);
-      database.run(`CREATE INDEX IF NOT EXISTS idx_work_entries_client_id ON work_entries (client_id)`);
-      database.run(`CREATE INDEX IF NOT EXISTS idx_work_entries_user_email ON work_entries (user_email)`);
-      database.run(`CREATE INDEX IF NOT EXISTS idx_work_entries_date ON work_entries (date)`);
-
-      console.log('Database tables created successfully');
-      resolve();
+    database.run(sql, params, function (err) {
+      if (err) reject(err);
+      else resolve(this);
     });
   });
 }
 
+// Initialize all schema tables, seed categories, and create default admin
+async function initializeDatabase() {
+  const database = getDatabase();
+
+  return new Promise((resolve, reject) => {
+    database.serialize(async () => {
+      try {
+        // Enable foreign keys
+        database.run('PRAGMA foreign_keys = ON');
+
+        // Create all schema tables
+        for (const stmt of SCHEMA_STATEMENTS) {
+          database.run(stmt);
+        }
+
+        // Seed default service categories
+        const catStmt = database.prepare(
+          'INSERT OR IGNORE INTO service_categories (id, name, description, icon) VALUES (?, ?, ?, ?)'
+        );
+        for (const cat of SEED_CATEGORIES) {
+          catStmt.run(cat.id, cat.name, cat.description, cat.icon);
+        }
+        catStmt.finalize();
+
+        // Create default admin user (admin@eventmarket.com / admin123)
+        const adminId = 'admin-default';
+        const adminHash = bcrypt.hashSync('admin123', 10);
+        database.run(
+          `INSERT OR IGNORE INTO users (id, email, password_hash, name, role, is_approved)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [adminId, 'admin@eventmarket.com', adminHash, 'Platform Admin', 'admin', 1]
+        );
+
+        // Create indexes for query performance
+        database.run('CREATE INDEX IF NOT EXISTS idx_services_business ON services(business_user_id)');
+        database.run('CREATE INDEX IF NOT EXISTS idx_services_category ON services(category_id)');
+        database.run('CREATE INDEX IF NOT EXISTS idx_services_city ON services(city)');
+        database.run('CREATE INDEX IF NOT EXISTS idx_bookings_service ON bookings(service_id)');
+        database.run('CREATE INDEX IF NOT EXISTS idx_bookings_customer ON bookings(customer_user_id)');
+        database.run('CREATE INDEX IF NOT EXISTS idx_reviews_service ON reviews(service_id)');
+
+        console.log('Database tables and seed data created successfully');
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
+
+// Gracefully close database connection
 function closeDatabase() {
   return new Promise((resolve, reject) => {
     if (isClosed) {
-      // Already closed, resolve immediately
       resolve();
       return;
     }
-    
     if (isClosing) {
-      // Currently closing, wait for it to complete
       const checkClosed = setInterval(() => {
         if (isClosed) {
           clearInterval(checkClosed);
@@ -96,13 +105,11 @@ function closeDatabase() {
       }, 10);
       return;
     }
-    
     if (!db) {
-      // No database connection, resolve immediately
       resolve();
       return;
     }
-    
+
     isClosing = true;
     db.close((err) => {
       isClosed = true;
