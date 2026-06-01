@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container, Grid, Card, CardContent, CardActions, Typography,
+  Grid, Card, CardContent, CardActions, Typography,
   TextField, MenuItem, Button, Box, Chip, Rating, InputAdornment,
   CircularProgress, Alert
 } from '@mui/material';
@@ -55,7 +55,7 @@ export default function BrowseServicesPage() {
   }, [search, categoryFilter, cityFilter]);
 
   return (
-    <Container maxWidth="lg">
+    <Box>
       <Typography variant="h4" gutterBottom fontWeight="bold">
         Browse Event Services
       </Typography>
@@ -166,6 +166,6 @@ export default function BrowseServicesPage() {
           ))}
         </Grid>
       )}
-    </Container>
+    </Box>
   );
 }

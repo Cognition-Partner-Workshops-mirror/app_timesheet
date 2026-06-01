@@ -10,6 +10,7 @@ import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import Layout from './components/Layout';
+import PublicLayout from './components/PublicLayout';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -53,12 +54,12 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
   return <>{children}</>;
 }
 
-// Redirect authenticated users to their role-specific home page
+// Redirect authenticated users to their role-specific home page, guests to browse
 function HomeRedirect() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) return null;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/services" replace />;
 
   switch (user.role) {
     case 'admin':
@@ -84,6 +85,12 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
 
+              {/* Public routes - accessible without login */}
+              <Route element={<PublicLayout />}>
+                <Route path="/services" element={<BrowseServicesPage />} />
+                <Route path="/services/:id" element={<ServiceDetailPage />} />
+              </Route>
+
               {/* Protected routes inside layout */}
               <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 {/* Home redirects to role-appropriate page */}
@@ -91,10 +98,6 @@ function App() {
 
                 {/* Profile - all authenticated users */}
                 <Route path="/profile" element={<ProfilePage />} />
-
-                {/* Service browsing - all authenticated users */}
-                <Route path="/services" element={<BrowseServicesPage />} />
-                <Route path="/services/:id" element={<ServiceDetailPage />} />
 
                 {/* Customer routes */}
                 <Route path="/customer/bookings" element={

@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Container, Paper, Typography, Box, Rating, Chip, Button,
+  Paper, Typography, Box, Rating, Chip, Button,
   TextField, Dialog, DialogTitle, DialogContent, DialogActions,
   Alert, CircularProgress, Divider, Grid
 } from '@mui/material';
@@ -82,7 +82,7 @@ export default function ServiceDetailPage() {
   }
 
   return (
-    <Container maxWidth="md">
+    <Box>
       {bookingSuccess && <Alert severity="success" sx={{ mb: 2 }}>{bookingSuccess}</Alert>}
 
       <Paper sx={{ p: 3, mb: 3 }}>
@@ -160,12 +160,16 @@ export default function ServiceDetailPage() {
           )}
         </Grid>
 
-        {/* Book now button - only for customers */}
-        {user?.role === 'customer' && (
+        {/* Book now button - customers can book, guests are prompted to login */}
+        {user?.role === 'customer' ? (
           <Button variant="contained" size="large" fullWidth onClick={() => setBookingOpen(true)}>
             Book This Service
           </Button>
-        )}
+        ) : !user ? (
+          <Button variant="contained" size="large" fullWidth onClick={() => navigate('/login')}>
+            Sign In to Book This Service
+          </Button>
+        ) : null}
       </Paper>
 
       {/* Reviews section */}
@@ -224,6 +228,6 @@ export default function ServiceDetailPage() {
           <Button variant="contained" onClick={handleBooking}>Confirm Booking</Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </Box>
   );
 }
