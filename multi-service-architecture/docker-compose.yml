@@ -14,8 +14,8 @@ services:
   # All other services send structured logs and metrics here
   logging-service:
     build:
-      context: ./services/logging-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/logging-service/Dockerfile
     ports:
       - "50051:50051"
     environment:
@@ -32,8 +32,8 @@ services:
   # Analyzes transactions using a trained Random Forest model
   fraud-detection:
     build:
-      context: ./services/fraud-detection
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/fraud-detection/Dockerfile
     ports:
       - "50052:50052"
     environment:
@@ -54,8 +54,8 @@ services:
   # Handles transactions, accounts, and user management
   business-logic:
     build:
-      context: ./services/business-logic
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/business-logic/Dockerfile
     ports:
       - "8080:8080"
       - "50053:50053"
