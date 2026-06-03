@@ -50,3 +50,7 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# Uploaded files (keep directory structure via .gitkeep)
+uploads/*
+!uploads/.gitkeep

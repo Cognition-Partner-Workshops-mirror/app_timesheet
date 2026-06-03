@@ -77,3 +77,22 @@ export interface ApiResponse<T> {
   error?: string;
   message?: string;
 }
+
+// Document Library types
+export interface FileItem {
+  id: number;
+  original_name: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  category: string | null;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdateFileRequest {
+  category?: string;
+  description?: string;
+  original_name?: string;
+}
