@@ -21,7 +21,7 @@ import {
   ListItemText,
   ListItemSecondaryAction,
 } from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -169,12 +169,12 @@ const UploadPage: React.FC = () => {
           },
         }}
       >
-        <CloudUploadIcon sx={{ fontSize: 64, color: isDragOver ? 'primary.main' : 'grey.400', mb: 2 }} />
+        <FileUploadIcon sx={{ fontSize: 64, color: isDragOver ? 'primary.main' : 'grey.400', mb: 2 }} />
         <Typography variant="h6" color={isDragOver ? 'primary' : 'text.secondary'}>
           {isDragOver ? 'Drop files here' : 'Drag & drop files here'}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          or click to browse · Max 50MB per file · Images, PDFs, eBooks, Documents
+          or click to browse · Saved to your local library · Max 50MB per file
         </Typography>
         <input
           ref={fileInputRef}

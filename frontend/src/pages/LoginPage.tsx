@@ -99,7 +99,7 @@ const LoginPage: React.FC = () => {
               Digital Library
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Your personal file organizer
+              Your personal local library
             </Typography>
           </Box>
 

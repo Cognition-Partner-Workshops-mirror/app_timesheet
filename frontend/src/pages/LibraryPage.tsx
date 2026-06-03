@@ -13,10 +13,6 @@ import {
   InputLabel,
   Chip,
   IconButton,
-  Card,
-  CardContent,
-  CardMedia,
-  CardActions,
   Grid,
   Skeleton,
   Pagination,
@@ -48,41 +44,47 @@ import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import apiClient from '../api/client';
 import type { FileQueryParams, LibraryFile, FileType } from '../types/api';
 
-// Maps file types to their display icons
+/* Large book-cover icons per file type */
 const fileTypeIcons: Record<string, React.ReactElement> = {
-  pdf: <PictureAsPdfIcon sx={{ fontSize: 48, color: '#e53935' }} />,
-  image: <ImageIcon sx={{ fontSize: 48, color: '#43a047' }} />,
-  document: <DescriptionIcon sx={{ fontSize: 48, color: '#1e88e5' }} />,
-  ebook: <MenuBookIcon sx={{ fontSize: 48, color: '#8e24aa' }} />,
+  pdf: <PictureAsPdfIcon sx={{ fontSize: 56, color: '#fff', opacity: 0.9 }} />,
+  image: <ImageIcon sx={{ fontSize: 56, color: '#fff', opacity: 0.9 }} />,
+  document: <DescriptionIcon sx={{ fontSize: 56, color: '#fff', opacity: 0.9 }} />,
+  ebook: <MenuBookIcon sx={{ fontSize: 56, color: '#fff', opacity: 0.9 }} />,
 };
 
-// Book-spine colors per file type for the rack view
-const bookSpineColors: Record<string, string> = {
-  pdf: '#e53935',
-  image: '#43a047',
-  document: '#1e88e5',
-  ebook: '#8e24aa',
+/* Gradient covers per file type — gives each book a unique color */
+const bookCoverGradients: Record<string, string> = {
+  pdf: 'linear-gradient(145deg, #e53935 0%, #b71c1c 100%)',
+  image: 'linear-gradient(145deg, #43a047 0%, #1b5e20 100%)',
+  document: 'linear-gradient(145deg, #1e88e5 0%, #0d47a1 100%)',
+  ebook: 'linear-gradient(145deg, #8e24aa 0%, #4a148c 100%)',
 };
 
-/** Human-readable file size */
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+/* Spine colors per type for the left-side accent */
+const spineColors: Record<string, string> = {
+  pdf: '#c62828',
+  image: '#2e7d32',
+  document: '#1565c0',
+  ebook: '#6a1b9a',
+};
+
+/**
+ * Strips the file extension from a file name for a cleaner display.
+ */
+function stripExtension(name: string): string {
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? name.substring(0, dot) : name;
 }
 
 /**
- * Main library page – displays all files with search, sort, filter, and grid/list toggle.
- * Grid view shows files as books on a wooden bookshelf rack with page-flip animations.
+ * Main library page — clean bookshelf view with book-cover cards.
+ * Shows only the file name (no metadata). All files stored locally on device.
  */
 const LibraryPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const queryClient = useQueryClient();
 
-  // View and filter state
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<FileQueryParams['sort_by']>('date');
@@ -97,7 +99,6 @@ const LibraryPage: React.FC = () => {
     severity: 'success',
   });
 
-  // Build query params from current filter state
   const queryParams: FileQueryParams = {
     sort_by: sortBy,
     sort_order: sortOrder,
@@ -108,21 +109,16 @@ const LibraryPage: React.FC = () => {
     limit: 20,
   };
 
-  // Fetch files with current filters
   const { data, isLoading } = useQuery({
     queryKey: ['files', queryParams],
     queryFn: () => apiClient.getFiles(queryParams),
   });
 
-  // Toggle favorite mutation
   const favoriteMutation = useMutation({
     mutationFn: (id: number) => apiClient.toggleFavorite(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['files'] }); },
   });
 
-  // Delete file mutation
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiClient.deleteFile(id),
     onSuccess: () => {
@@ -148,7 +144,7 @@ const LibraryPage: React.FC = () => {
     link.click();
   };
 
-  // Split files into shelf rows (4 per shelf on desktop, 2 on mobile)
+  /* Split files into shelf rows (4 per row desktop, 2 mobile) */
   const booksPerShelf = isMobile ? 2 : 4;
   const shelves: LibraryFile[][] = [];
   if (data?.files) {
@@ -159,48 +155,47 @@ const LibraryPage: React.FC = () => {
 
   return (
     <Box>
-      {/* Search and filter toolbar */}
+      {/* ── Compact toolbar ── */}
       <Box
         className="animate-slide-up"
         sx={{
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
-          gap: 2,
+          gap: 1.5,
           mb: 3,
           alignItems: isMobile ? 'stretch' : 'center',
           flexWrap: 'wrap',
         }}
       >
-        {/* Search input */}
+        {/* Search */}
         <TextField
-          placeholder="Search files…"
+          placeholder="Search your library…"
           value={search}
           onChange={handleSearchChange}
           size="small"
-          sx={{ flex: 1, minWidth: 200 }}
+          sx={{
+            flex: 1,
+            minWidth: 180,
+            '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: '#fff' },
+          }}
           slotProps={{
             input: {
               startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
+                <InputAdornment position="start"><SearchIcon /></InputAdornment>
               ),
             },
           }}
         />
 
-        {/* Sort controls */}
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        {/* Sort */}
+        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
           <SortIcon fontSize="small" color="action" />
-          <FormControl size="small" sx={{ minWidth: 100 }}>
+          <FormControl size="small" sx={{ minWidth: 90 }}>
             <InputLabel>Sort</InputLabel>
             <Select
               value={sortBy}
               label="Sort"
-              onChange={(e) => {
-                setSortBy(e.target.value as FileQueryParams['sort_by']);
-                setPage(1);
-              }}
+              onChange={(e) => { setSortBy(e.target.value as FileQueryParams['sort_by']); setPage(1); }}
             >
               <MenuItem value="date">Date</MenuItem>
               <MenuItem value="name">Name</MenuItem>
@@ -208,18 +203,13 @@ const LibraryPage: React.FC = () => {
               <MenuItem value="type">Type</MenuItem>
             </Select>
           </FormControl>
-          <ToggleButtonGroup
-            size="small"
-            value={sortOrder}
-            exclusive
-            onChange={(_, v) => { if (v) { setSortOrder(v); setPage(1); } }}
-          >
+          <ToggleButtonGroup size="small" value={sortOrder} exclusive onChange={(_, v) => { if (v) { setSortOrder(v); setPage(1); } }}>
             <ToggleButton value="desc">↓</ToggleButton>
             <ToggleButton value="asc">↑</ToggleButton>
           </ToggleButtonGroup>
         </Box>
 
-        {/* File type filter chips */}
+        {/* Type filter */}
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
           <FilterListIcon fontSize="small" color="action" />
           {(['all', 'image', 'pdf', 'document', 'ebook'] as const).map((type) => (
@@ -234,8 +224,8 @@ const LibraryPage: React.FC = () => {
           ))}
         </Box>
 
-        {/* Favorites filter and view mode toggle */}
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        {/* Favorites + view toggle */}
+        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
           <Chip
             icon={favoritesOnly ? <FavoriteIcon /> : <FavoriteBorderIcon />}
             label="Favorites"
@@ -244,12 +234,7 @@ const LibraryPage: React.FC = () => {
             color={favoritesOnly ? 'error' : 'default'}
             onClick={() => { setFavoritesOnly(!favoritesOnly); setPage(1); }}
           />
-          <ToggleButtonGroup
-            size="small"
-            value={viewMode}
-            exclusive
-            onChange={(_, v) => { if (v) setViewMode(v); }}
-          >
+          <ToggleButtonGroup size="small" value={viewMode} exclusive onChange={(_, v) => { if (v) setViewMode(v); }}>
             <ToggleButton value="grid"><ViewModuleIcon /></ToggleButton>
             <ToggleButton value="list"><ViewListIcon /></ToggleButton>
           </ToggleButtonGroup>
@@ -261,26 +246,26 @@ const LibraryPage: React.FC = () => {
         <Grid container spacing={2}>
           {Array.from({ length: 8 }).map((_, i) => (
             <Grid size={{ xs: 6, sm: 4, md: 3 }} key={i}>
-              <Skeleton variant="rounded" height={200} sx={{ borderRadius: 3 }} />
+              <Skeleton variant="rounded" height={220} sx={{ borderRadius: 3 }} />
             </Grid>
           ))}
         </Grid>
       )}
 
-      {/* Empty state with animated book icon */}
+      {/* Empty state */}
       {!isLoading && data?.files.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 10, color: 'text.secondary' }}>
           <Box className="animate-pulse-glow" sx={{ display: 'inline-block' }}>
-            <AutoStoriesIcon sx={{ fontSize: 100, opacity: 0.4, mb: 2, color: '#667eea' }} />
+            <AutoStoriesIcon sx={{ fontSize: 100, opacity: 0.35, mb: 2, color: '#667eea' }} />
           </Box>
           <Typography variant="h6">No files found</Typography>
           <Typography variant="body2">
-            {search ? 'Try a different search term' : 'Upload some files to get started!'}
+            {search ? 'Try a different search term' : 'Add some files to your local library!'}
           </Typography>
         </Box>
       )}
 
-      {/* ── Grid view: bookshelf racks with page-flip animated cards ── */}
+      {/* ── GRID VIEW: book-cover cards on wooden shelves ── */}
       {!isLoading && data && data.files.length > 0 && viewMode === 'grid' && (
         <Box>
           {shelves.map((shelf, shelfIdx) => (
@@ -288,57 +273,51 @@ const LibraryPage: React.FC = () => {
               <Grid container spacing={2}>
                 {shelf.map((file) => (
                   <Grid size={{ xs: 6, sm: 4, md: 3, lg: 2.4 }} key={file.id} className="animate-page-flip">
-                    <Card
+                    <Box
                       className="book-card"
                       sx={{
                         borderRadius: 3,
-                        height: '100%',
+                        overflow: 'hidden',
+                        position: 'relative',
+                        cursor: 'default',
+                        /* Book-spine accent on the left edge */
+                        borderLeft: `6px solid ${spineColors[file.file_type] || '#757575'}`,
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.10), -3px 4px 8px rgba(0,0,0,0.07)',
+                        bgcolor: '#fff',
                         display: 'flex',
                         flexDirection: 'column',
-                        position: 'relative',
-                        overflow: 'visible',
-                        /* Book spine accent on the left side */
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          left: 0,
-                          top: 8,
-                          bottom: 8,
-                          width: 5,
-                          borderRadius: '3px 0 0 3px',
-                          background: bookSpineColors[file.file_type] || '#9e9e9e',
-                        },
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.08), -3px 3px 6px rgba(0,0,0,0.06)',
+                        height: '100%',
                       }}
                     >
-                      {/* File thumbnail or type icon */}
+                      {/* Book cover area — gradient or image thumbnail */}
                       {file.file_type === 'image' ? (
-                        <CardMedia
+                        <Box
                           component="img"
-                          height={140}
-                          image={apiClient.getPreviewUrl(file.id)}
+                          src={apiClient.getPreviewUrl(file.id)}
                           alt={file.original_name}
-                          sx={{ objectFit: 'cover', borderRadius: '12px 12px 0 0' }}
+                          sx={{ width: '100%', height: 160, objectFit: 'cover' }}
                         />
                       ) : (
                         <Box
                           sx={{
-                            height: 140,
+                            height: 160,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            bgcolor: 'grey.50',
-                            borderRadius: '12px 12px 0 0',
-                            /* Subtle page-like texture */
-                            backgroundImage:
-                              'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(0,0,0,0.03) 19px, rgba(0,0,0,0.03) 20px)',
+                            background: bookCoverGradients[file.file_type] || 'linear-gradient(145deg, #757575, #424242)',
+                            /* Subtle page texture overlay */
+                            backgroundImage: `
+                              ${bookCoverGradients[file.file_type] || 'linear-gradient(145deg, #757575, #424242)'},
+                              repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(255,255,255,0.04) 23px, rgba(255,255,255,0.04) 24px)
+                            `,
                           }}
                         >
-                          {fileTypeIcons[file.file_type] || <DescriptionIcon sx={{ fontSize: 48, color: '#9e9e9e' }} />}
+                          {fileTypeIcons[file.file_type] || <DescriptionIcon sx={{ fontSize: 56, color: '#fff', opacity: 0.9 }} />}
                         </Box>
                       )}
 
-                      <CardContent sx={{ flexGrow: 1, pb: 0.5 }}>
+                      {/* Book title — just the name, no metadata */}
+                      <Box sx={{ px: 1.5, py: 1.5, flexGrow: 1, display: 'flex', alignItems: 'center' }}>
                         <Tooltip title={file.original_name}>
                           <Typography
                             variant="body2"
@@ -346,48 +325,46 @@ const LibraryPage: React.FC = () => {
                             sx={{
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              lineHeight: 1.35,
+                              fontSize: '0.82rem',
+                              color: '#1a1a2e',
                             }}
                           >
-                            {file.original_name}
+                            {stripExtension(file.original_name)}
                           </Typography>
                         </Tooltip>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatFileSize(file.size)} · {new Date(file.created_at).toLocaleDateString()}
-                        </Typography>
-                        {file.collection_name && (
-                          <Chip
-                            label={file.collection_name}
-                            size="small"
-                            sx={{
-                              mt: 0.5,
-                              height: 20,
-                              fontSize: '0.65rem',
-                              bgcolor: file.collection_color || '#6366f1',
-                              color: '#fff',
-                            }}
-                          />
-                        )}
-                      </CardContent>
+                      </Box>
 
-                      <CardActions sx={{ justifyContent: 'space-between', px: 1, pb: 1 }}>
+                      {/* Minimal action row — favorite heart only (download/delete on hover) */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          px: 0.5,
+                          pb: 0.5,
+                        }}
+                      >
                         <IconButton
                           size="small"
                           onClick={() => favoriteMutation.mutate(file.id)}
                           color={file.is_favorite ? 'error' : 'default'}
                         >
-                          {file.is_favorite ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+                          {file.is_favorite ? <FavoriteIcon sx={{ fontSize: 18 }} /> : <FavoriteBorderIcon sx={{ fontSize: 18 }} />}
                         </IconButton>
-                        <Box>
+                        <Box sx={{ opacity: 0.5, '&:hover': { opacity: 1 }, transition: 'opacity 0.2s' }}>
                           <IconButton size="small" onClick={() => handleDownload(file)}>
-                            <DownloadIcon fontSize="small" />
+                            <DownloadIcon sx={{ fontSize: 16 }} />
                           </IconButton>
                           <IconButton size="small" onClick={() => setDeleteDialogFile(file)} color="error">
-                            <DeleteIcon fontSize="small" />
+                            <DeleteIcon sx={{ fontSize: 16 }} />
                           </IconButton>
                         </Box>
-                      </CardActions>
-                    </Card>
+                      </Box>
+                    </Box>
                   </Grid>
                 ))}
               </Grid>
@@ -396,80 +373,65 @@ const LibraryPage: React.FC = () => {
         </Box>
       )}
 
-      {/* ── List view ── */}
+      {/* ── LIST VIEW: simple rows with book name only ── */}
       {!isLoading && data && data.files.length > 0 && viewMode === 'list' && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
           {data.files.map((file, idx) => (
-            <Card
+            <Box
               key={file.id}
               className="animate-slide-up"
               sx={{
-                borderRadius: 2,
                 display: 'flex',
                 alignItems: 'center',
-                p: 1.5,
-                gap: 2,
-                transition: 'box-shadow 0.2s',
-                '&:hover': { boxShadow: 4 },
-                animationDelay: `${idx * 0.04}s`,
-                /* Book spine accent on left */
-                borderLeft: `4px solid ${bookSpineColors[file.file_type] || '#9e9e9e'}`,
+                gap: 1.5,
+                py: 1,
+                px: 2,
+                bgcolor: '#fff',
+                borderRadius: 2.5,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                borderLeft: `5px solid ${spineColors[file.file_type] || '#757575'}`,
+                transition: 'box-shadow 0.2s, transform 0.15s',
+                '&:hover': { boxShadow: '0 3px 10px rgba(0,0,0,0.1)', transform: 'translateX(2px)' },
+                animationDelay: `${idx * 0.03}s`,
               }}
             >
-              {/* File type icon */}
-              <Box sx={{ flexShrink: 0, width: 48, display: 'flex', justifyContent: 'center' }}>
-                {file.file_type === 'image' ? (
-                  <Box
-                    component="img"
-                    src={apiClient.getPreviewUrl(file.id)}
-                    alt={file.original_name}
-                    sx={{ width: 48, height: 48, borderRadius: 1, objectFit: 'cover' }}
-                  />
-                ) : (
-                  fileTypeIcons[file.file_type] || <DescriptionIcon sx={{ fontSize: 36 }} />
-                )}
+              {/* Type icon */}
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 2,
+                  background: bookCoverGradients[file.file_type] || 'linear-gradient(145deg, #757575, #424242)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {file.file_type === 'pdf' && <PictureAsPdfIcon sx={{ fontSize: 20, color: '#fff' }} />}
+                {file.file_type === 'image' && <ImageIcon sx={{ fontSize: 20, color: '#fff' }} />}
+                {file.file_type === 'document' && <DescriptionIcon sx={{ fontSize: 20, color: '#fff' }} />}
+                {file.file_type === 'ebook' && <MenuBookIcon sx={{ fontSize: 20, color: '#fff' }} />}
               </Box>
 
-              {/* File info */}
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="body2" fontWeight={600} noWrap>
-                  {file.original_name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatFileSize(file.size)} · {file.file_type} · {new Date(file.created_at).toLocaleDateString()}
-                </Typography>
-              </Box>
-
-              {/* Collection badge */}
-              {file.collection_name && (
-                <Chip
-                  label={file.collection_name}
-                  size="small"
-                  sx={{
-                    bgcolor: file.collection_color || '#6366f1',
-                    color: '#fff',
-                    display: { xs: 'none', sm: 'inline-flex' },
-                  }}
-                />
-              )}
+              {/* Just the name */}
+              <Typography variant="body2" fontWeight={600} noWrap sx={{ flex: 1, minWidth: 0, color: '#1a1a2e' }}>
+                {stripExtension(file.original_name)}
+              </Typography>
 
               {/* Actions */}
-              <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-                <IconButton
-                  size="small"
-                  onClick={() => favoriteMutation.mutate(file.id)}
-                  color={file.is_favorite ? 'error' : 'default'}
-                >
-                  {file.is_favorite ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+              <Box sx={{ display: 'flex', gap: 0.25, flexShrink: 0 }}>
+                <IconButton size="small" onClick={() => favoriteMutation.mutate(file.id)} color={file.is_favorite ? 'error' : 'default'}>
+                  {file.is_favorite ? <FavoriteIcon sx={{ fontSize: 18 }} /> : <FavoriteBorderIcon sx={{ fontSize: 18 }} />}
                 </IconButton>
                 <IconButton size="small" onClick={() => handleDownload(file)}>
-                  <DownloadIcon fontSize="small" />
+                  <DownloadIcon sx={{ fontSize: 16 }} />
                 </IconButton>
                 <IconButton size="small" onClick={() => setDeleteDialogFile(file)} color="error">
-                  <DeleteIcon fontSize="small" />
+                  <DeleteIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               </Box>
-            </Card>
+            </Box>
           ))}
         </Box>
       )}
@@ -477,17 +439,11 @@ const LibraryPage: React.FC = () => {
       {/* Pagination */}
       {data && data.pagination.totalPages > 1 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Pagination
-            count={data.pagination.totalPages}
-            page={page}
-            onChange={(_, p) => setPage(p)}
-            color="primary"
-            shape="rounded"
-          />
+          <Pagination count={data.pagination.totalPages} page={page} onChange={(_, p) => setPage(p)} color="primary" shape="rounded" />
         </Box>
       )}
 
-      {/* Delete confirmation dialog */}
+      {/* Delete confirmation */}
       <Dialog open={!!deleteDialogFile} onClose={() => setDeleteDialogFile(null)}>
         <DialogTitle>Delete File</DialogTitle>
         <DialogContent>
@@ -497,22 +453,14 @@ const LibraryPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogFile(null)}>Cancel</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => deleteDialogFile && deleteMutation.mutate(deleteDialogFile.id)}
-          >
+          <Button color="error" variant="contained" onClick={() => deleteDialogFile && deleteMutation.mutate(deleteDialogFile.id)}>
             Delete
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
+      {/* Snackbar */}
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
           {snackbar.message}
         </Alert>

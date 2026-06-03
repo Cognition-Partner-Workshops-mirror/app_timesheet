@@ -23,7 +23,7 @@ import {
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import FolderIcon from '@mui/icons-material/Folder';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -37,7 +37,7 @@ interface LayoutProps {
 const navItems = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { label: 'Library', icon: <LibraryBooksIcon />, path: '/library' },
-  { label: 'Upload', icon: <CloudUploadIcon />, path: '/upload' },
+  { label: 'Upload', icon: <FileUploadIcon />, path: '/upload' },
   { label: 'Collections', icon: <FolderIcon />, path: '/collections' },
 ];
 

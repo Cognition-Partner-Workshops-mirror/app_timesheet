@@ -16,7 +16,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import StorageIcon from '@mui/icons-material/Storage';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import apiClient from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 
@@ -180,12 +180,12 @@ const DashboardPage: React.FC = () => {
       {!isLoading && stats?.total_files === 0 && (
         <Box className="animate-slide-up" sx={{ textAlign: 'center', mt: 6 }}>
           <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-            Your library is empty. Start by uploading some files!
+            Your library is empty. Add some files to get started!
           </Typography>
           <Button
             variant="contained"
             size="large"
-            startIcon={<CloudUploadIcon />}
+            startIcon={<FileUploadIcon />}
             onClick={() => navigate('/upload')}
             sx={{
               px: 4,
