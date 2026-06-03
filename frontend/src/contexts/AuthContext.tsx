@@ -7,18 +7,23 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+/**
+ * Provides authentication state and login/logout actions
+ * to all child components via React context.
+ */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
       const storedEmail = localStorage.getItem('userEmail');
-      
+
       if (storedEmail) {
         try {
-          const response = await apiClient.getCurrentUser();
-          setUser(response.user);
+          const userData = await apiClient.getCurrentUser();
+          setUser(userData);
         } catch (error) {
           console.error('Auth check failed:', error);
           localStorage.removeItem('userEmail');
@@ -30,9 +35,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = async (email: string) => {
+  // Log in with email and optional display name
+  const login = async (email: string, displayName?: string) => {
     try {
-      const response = await apiClient.login(email);
+      const response = await apiClient.login(email, displayName);
       setUser(response.user);
       localStorage.setItem('userEmail', email);
     } catch (error) {

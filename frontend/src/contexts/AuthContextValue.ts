@@ -1,9 +1,10 @@
 import { createContext } from 'react';
 import { type User } from '../types/api';
 
+// Shape of the authentication context value
 export interface AuthContextType {
   user: User | null;
-  login: (email: string) => Promise<void>;
+  login: (email: string, displayName?: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;

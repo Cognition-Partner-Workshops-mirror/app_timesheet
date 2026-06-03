@@ -8,18 +8,28 @@ import { useAuth } from './hooks/useAuth';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import ClientsPage from './pages/ClientsPage';
-import WorkEntriesPage from './pages/WorkEntriesPage';
-import ReportsPage from './pages/ReportsPage';
+import LibraryPage from './pages/LibraryPage';
+import UploadPage from './pages/UploadPage';
+import CollectionsPage from './pages/CollectionsPage';
 
+// Custom MUI theme with library-inspired purple/indigo palette
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#667eea',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#764ba2',
     },
+    background: {
+      default: '#f8f9fc',
+    },
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+  },
+  shape: {
+    borderRadius: 12,
   },
 });
 
@@ -32,13 +42,17 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Inner component that reads auth state and routes accordingly.
+ * Unauthenticated users are redirected to the login page.
+ */
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
-    return <div>Loading...</div>;
+    return null;
   }
-  
+
   return (
     <Router>
       <Routes>
@@ -50,9 +64,9 @@ const AppContent: React.FC = () => {
               <Layout>
                 <Routes>
                   <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/clients" element={<ClientsPage />} />
-                  <Route path="/work-entries" element={<WorkEntriesPage />} />
-                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route path="/library" element={<LibraryPage />} />
+                  <Route path="/upload" element={<UploadPage />} />
+                  <Route path="/collections" element={<CollectionsPage />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>

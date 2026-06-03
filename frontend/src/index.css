@@ -1,66 +1,152 @@
+/* Global styles for the Digital Library app */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  color: #1a1a2e;
+  background-color: #f8f9fc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  margin: 0;
-  min-width: 320px;
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Smooth scrolling on all scrollable areas */
+html {
+  scroll-behavior: smooth;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
+/* ── Book animations ── */
+
+/* Floating book animation for login page */
+@keyframes floatBook {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-12px) rotate(2deg); }
+  50% { transform: translateY(-6px) rotate(0deg); }
+  75% { transform: translateY(-14px) rotate(-2deg); }
+}
+
+.animate-float-book {
+  animation: floatBook 4s ease-in-out infinite;
+}
+
+/* Page-flip animation for file cards appearing */
+@keyframes pageFlipIn {
+  0% {
+    opacity: 0;
+    transform: perspective(800px) rotateY(-60deg) scale(0.85);
   }
-  a:hover {
-    color: #747bff;
+  60% {
+    opacity: 1;
+    transform: perspective(800px) rotateY(8deg) scale(1.02);
   }
-  button {
-    background-color: #f9f9f9;
+  100% {
+    opacity: 1;
+    transform: perspective(800px) rotateY(0deg) scale(1);
   }
+}
+
+.animate-page-flip {
+  animation: pageFlipIn 0.5s ease-out both;
+}
+
+/* Staggered entrance — each child card delays slightly */
+.animate-page-flip:nth-child(1) { animation-delay: 0.00s; }
+.animate-page-flip:nth-child(2) { animation-delay: 0.06s; }
+.animate-page-flip:nth-child(3) { animation-delay: 0.12s; }
+.animate-page-flip:nth-child(4) { animation-delay: 0.18s; }
+.animate-page-flip:nth-child(5) { animation-delay: 0.24s; }
+.animate-page-flip:nth-child(6) { animation-delay: 0.30s; }
+.animate-page-flip:nth-child(7) { animation-delay: 0.36s; }
+.animate-page-flip:nth-child(8) { animation-delay: 0.42s; }
+.animate-page-flip:nth-child(9) { animation-delay: 0.48s; }
+.animate-page-flip:nth-child(10) { animation-delay: 0.54s; }
+.animate-page-flip:nth-child(11) { animation-delay: 0.60s; }
+.animate-page-flip:nth-child(12) { animation-delay: 0.66s; }
+
+/* Slide-up entrance for sections */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out both;
+}
+
+/* Bookshelf rack – the wooden shelf line under a row of books */
+.bookshelf-rack {
+  position: relative;
+}
+
+.bookshelf-rack::after {
+  content: '';
+  display: block;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 0 0 6px 6px;
+  background: linear-gradient(180deg, #c9a96e 0%, #a67c52 50%, #8b5e3c 100%);
+  box-shadow:
+    0 2px 6px rgba(139, 94, 60, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Subtle book-spine shadow on hover */
+@keyframes bookPull {
+  0%   { transform: translateY(0) scale(1); }
+  50%  { transform: translateY(-8px) scale(1.03); }
+  100% { transform: translateY(-4px) scale(1.02); }
+}
+
+.book-card:hover {
+  animation: bookPull 0.3s ease-out forwards;
+}
+
+/* Pulsing glow for the empty-state book icon */
+@keyframes pulseGlow {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(102, 126, 234, 0)); }
+  50%      { filter: drop-shadow(0 0 12px rgba(102, 126, 234, 0.5)); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+/* Floating particles decoration on login */
+@keyframes drift {
+  0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.7; }
+  50%  { transform: translateY(-40px) translateX(15px) rotate(180deg); opacity: 0.3; }
+  100% { transform: translateY(-80px) translateX(-10px) rotate(360deg); opacity: 0; }
+}
+
+.animate-drift {
+  animation: drift 6s ease-in-out infinite;
 }

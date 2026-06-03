@@ -1,22 +1,35 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+import type {
+  FilesResponse,
+  FileQueryParams,
+  LibraryFile,
+  LibraryStats,
+  Collection,
+  CreateCollectionRequest,
+  UpdateCollectionRequest,
+  UpdateFileRequest,
+} from '../types/api';
 
-// Use empty string to make requests relative to the current origin
-// Vite proxy will forward /api requests to the backend
+// Empty base URL so Vite proxy handles /api routing to backend
 const API_BASE_URL = '';
 
+/**
+ * API client for the Digital Library backend.
+ * Handles auth headers, file uploads, and all CRUD operations.
+ */
 class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 10000,
+      timeout: 30000, // Longer timeout for file uploads
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    // Request interceptor to add email header
+    // Inject user email header on every request
     this.client.interceptors.request.use(
       (config) => {
         const userEmail = localStorage.getItem('userEmail');
@@ -25,17 +38,14 @@ class ApiClient {
         }
         return config;
       },
-      (error) => {
-        return Promise.reject(error);
-      }
+      (error) => Promise.reject(error)
     );
 
-    // Response interceptor for error handling
+    // Redirect to login on 401
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Clear stored email on auth error
           localStorage.removeItem('userEmail');
           window.location.href = '/login';
         }
@@ -44,9 +54,10 @@ class ApiClient {
     );
   }
 
-  // Auth endpoints
-  async login(email: string) {
-    const response = await this.client.post('/api/auth/login', { email });
+  // --- Auth endpoints ---
+
+  async login(email: string, displayName?: string) {
+    const response = await this.client.post('/api/auth/login', { email, display_name: displayName });
     return response.data;
   }
 
@@ -55,85 +66,107 @@ class ApiClient {
     return response.data;
   }
 
-  // Client endpoints
-  async getClients() {
-    const response = await this.client.get('/api/clients');
+  // --- File endpoints ---
+
+  /** Fetch paginated, filtered, sorted file list */
+  async getFiles(params: FileQueryParams = {}): Promise<FilesResponse> {
+    const response = await this.client.get('/api/files', { params });
     return response.data;
   }
 
-  async getClient(id: number) {
-    const response = await this.client.get(`/api/clients/${id}`);
+  /** Get single file details with tags */
+  async getFile(id: number): Promise<LibraryFile> {
+    const response = await this.client.get(`/api/files/${id}`);
     return response.data;
   }
 
-  async createClient(clientData: { name: string; description?: string; department?: string; email?: string }) {
-    const response = await this.client.post('/api/clients', clientData);
+  /** Get library statistics (counts, total size) */
+  async getStats(): Promise<LibraryStats> {
+    const response = await this.client.get('/api/files/stats');
     return response.data;
   }
 
-  async updateClient(id: number, clientData: { name?: string; description?: string; department?: string; email?: string }) {
-    const response = await this.client.put(`/api/clients/${id}`, clientData);
-    return response.data;
-  }
+  /** Upload files via multipart form data */
+  async uploadFiles(
+    files: File[],
+    collectionId?: number | null,
+    tags?: string[],
+    onProgress?: (percent: number) => void
+  ) {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    if (collectionId) formData.append('collection_id', String(collectionId));
+    if (tags && tags.length > 0) formData.append('tags', JSON.stringify(tags));
 
-  async deleteClient(id: number) {
-    const response = await this.client.delete(`/api/clients/${id}`);
-    return response.data;
-  }
-
-  async deleteAllClients() {
-    const response = await this.client.delete('/api/clients');
-    return response.data;
-  }
-
-  // Work entry endpoints
-  async getWorkEntries(clientId?: number) {
-    const params = clientId ? { clientId } : {};
-    const response = await this.client.get('/api/work-entries', { params });
-    return response.data;
-  }
-
-  async getWorkEntry(id: number) {
-    const response = await this.client.get(`/api/work-entries/${id}`);
-    return response.data;
-  }
-
-  async createWorkEntry(entryData: { clientId: number; hours: number; description?: string; date: string }) {
-    const response = await this.client.post('/api/work-entries', entryData);
-    return response.data;
-  }
-
-  async updateWorkEntry(id: number, entryData: { clientId?: number; hours?: number; description?: string; date?: string }) {
-    const response = await this.client.put(`/api/work-entries/${id}`, entryData);
-    return response.data;
-  }
-
-  async deleteWorkEntry(id: number) {
-    const response = await this.client.delete(`/api/work-entries/${id}`);
-    return response.data;
-  }
-
-  // Report endpoints
-  async getClientReport(clientId: number) {
-    const response = await this.client.get(`/api/reports/client/${clientId}`);
-    return response.data;
-  }
-
-  async exportClientReportCsv(clientId: number) {
-    const response = await this.client.get(`/api/reports/export/csv/${clientId}`, {
-      responseType: 'blob',
+    const response = await this.client.post('/api/files/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(percent);
+        }
+      },
     });
     return response.data;
   }
 
-  async exportClientReportPdf(clientId: number) {
-    const response = await this.client.get(`/api/reports/export/pdf/${clientId}`, {
-      responseType: 'blob',
-    });
+  /** Update file metadata */
+  async updateFile(id: number, data: UpdateFileRequest) {
+    const response = await this.client.put(`/api/files/${id}`, data);
     return response.data;
   }
 
-  // Health check
+  /** Delete a file */
+  async deleteFile(id: number) {
+    const response = await this.client.delete(`/api/files/${id}`);
+    return response.data;
+  }
+
+  /** Toggle favorite status */
+  async toggleFavorite(id: number) {
+    const response = await this.client.post(`/api/files/${id}/favorite`);
+    return response.data;
+  }
+
+  /** Build the preview URL for a file */
+  getPreviewUrl(id: number): string {
+    return `/api/files/${id}/preview`;
+  }
+
+  /** Build the download URL for a file */
+  getDownloadUrl(id: number): string {
+    return `/api/files/${id}/download`;
+  }
+
+  // --- Collection endpoints ---
+
+  async getCollections(): Promise<Collection[]> {
+    const response = await this.client.get('/api/collections');
+    return response.data;
+  }
+
+  async getCollection(id: number): Promise<Collection> {
+    const response = await this.client.get(`/api/collections/${id}`);
+    return response.data;
+  }
+
+  async createCollection(data: CreateCollectionRequest): Promise<Collection> {
+    const response = await this.client.post('/api/collections', data);
+    return response.data;
+  }
+
+  async updateCollection(id: number, data: UpdateCollectionRequest) {
+    const response = await this.client.put(`/api/collections/${id}`, data);
+    return response.data;
+  }
+
+  async deleteCollection(id: number) {
+    const response = await this.client.delete(`/api/collections/${id}`);
+    return response.data;
+  }
+
+  // --- Health ---
+
   async healthCheck() {
     const response = await this.client.get('/health');
     return response.data;

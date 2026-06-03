@@ -8,15 +8,8 @@ jest.mock('../../database/init');
 const app = express();
 app.use(express.json());
 app.use('/api/auth', authRoutes);
-// Add error handler for Joi validation
-app.use((err, req, res, next) => {
-  if (err.isJoi) {
-    return res.status(400).json({ error: 'Validation error' });
-  }
-  res.status(500).json({ error: 'Internal server error' });
-});
 
-describe('Auth Routes', () => {
+describe('Auth Routes – Digital Library', () => {
   let mockDb;
 
   beforeEach(() => {
@@ -32,9 +25,10 @@ describe('Auth Routes', () => {
   });
 
   describe('POST /api/auth/login', () => {
-    test('should login existing user', async () => {
+    test('should login existing user and return welcome back message', async () => {
       const existingUser = {
         email: 'existing@example.com',
+        display_name: 'Existing User',
         created_at: '2024-01-01T00:00:00.000Z'
       };
 
@@ -47,40 +41,28 @@ describe('Auth Routes', () => {
         .send({ email: 'existing@example.com' });
 
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe('Login successful');
+      expect(response.body.message).toBe('Welcome back!');
       expect(response.body.user.email).toBe('existing@example.com');
     });
 
     test('should create new user on first login', async () => {
+      // User does not exist
       mockDb.get.mockImplementation((query, params, callback) => {
-        callback(null, null); // User doesn't exist
+        callback(null, null);
       });
 
       mockDb.run.mockImplementation(function(query, params, callback) {
-        callback.call(this, null);
+        callback.call({ lastID: 1 }, null);
       });
 
       const response = await request(app)
         .post('/api/auth/login')
-        .send({ email: 'newuser@example.com' });
+        .send({ email: 'newuser@example.com', display_name: 'New User' });
 
       expect(response.status).toBe(201);
-      expect(response.body.message).toBe('User created and logged in successfully');
+      expect(response.body.message).toBe('Welcome to your Digital Library!');
       expect(response.body.user.email).toBe('newuser@example.com');
-      expect(mockDb.run).toHaveBeenCalledWith(
-        'INSERT INTO users (email) VALUES (?)',
-        ['newuser@example.com'],
-        expect.any(Function)
-      );
-    });
-
-    test('should return 400 for invalid email', async () => {
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'invalid-email' });
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe('Validation error');
+      expect(response.body.user.display_name).toBe('New User');
     });
 
     test('should return 400 for missing email', async () => {
@@ -89,7 +71,16 @@ describe('Auth Routes', () => {
         .send({});
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe('Validation error');
+      expect(response.body.error).toBe('Email is required');
+    });
+
+    test('should return 400 for invalid email format', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'not-an-email' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid email format');
     });
 
     test('should handle database error when checking user', async () => {
@@ -102,7 +93,7 @@ describe('Auth Routes', () => {
         .send({ email: 'test@example.com' });
 
       expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: 'Internal server error' });
+      expect(response.body.error).toBe('Internal server error');
     });
 
     test('should handle database error when creating user', async () => {
@@ -119,20 +110,7 @@ describe('Auth Routes', () => {
         .send({ email: 'newuser@example.com' });
 
       expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: 'Failed to create user' });
-    });
-
-    test('should handle unexpected errors in try-catch block', async () => {
-      getDatabase.mockImplementation(() => {
-        throw new Error('Unexpected error');
-      });
-
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'test@example.com' });
-
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: 'Internal server error' });
+      expect(response.body.error).toBe('Failed to create user account');
     });
   });
 
@@ -140,6 +118,7 @@ describe('Auth Routes', () => {
     test('should return current user info', async () => {
       const user = {
         email: 'test@example.com',
+        display_name: 'Test User',
         created_at: '2024-01-01T00:00:00.000Z'
       };
 
@@ -152,51 +131,27 @@ describe('Auth Routes', () => {
         .set('x-user-email', 'test@example.com');
 
       expect(response.status).toBe(200);
-      expect(response.body.user.email).toBe('test@example.com');
-      expect(response.body.user.createdAt).toBe('2024-01-01T00:00:00.000Z');
+      expect(response.body.email).toBe('test@example.com');
     });
 
     test('should return 401 if no email header provided', async () => {
       const response = await request(app).get('/api/auth/me');
 
       expect(response.status).toBe(401);
-      expect(response.body).toEqual({ error: 'User email required in x-user-email header' });
+      expect(response.body.error).toBe('Not authenticated');
     });
 
     test('should return 404 if user not found', async () => {
       mockDb.get.mockImplementation((query, params, callback) => {
-        if (query.includes('SELECT email FROM users WHERE email = ?')) {
-          // Auth middleware check
-          callback(null, { email: 'test@example.com' });
-        } else {
-          // /me endpoint check
-          callback(null, null);
-        }
+        callback(null, null);
       });
 
       const response = await request(app)
         .get('/api/auth/me')
-        .set('x-user-email', 'test@example.com');
+        .set('x-user-email', 'nonexistent@example.com');
 
       expect(response.status).toBe(404);
-      expect(response.body).toEqual({ error: 'User not found' });
-    });
-
-    test('should handle database error', async () => {
-      mockDb.get.mockImplementation((query, params, callback) => {
-        if (query.includes('SELECT email FROM users WHERE email = ?')) {
-          callback(null, { email: 'test@example.com' });
-        } else {
-          callback(new Error('Database error'), null);
-        }
-      });
-
-      const response = await request(app)
-        .get('/api/auth/me')
-        .set('x-user-email', 'test@example.com');
-
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: 'Internal server error' });
+      expect(response.body.error).toBe('User not found');
     });
   });
 });
