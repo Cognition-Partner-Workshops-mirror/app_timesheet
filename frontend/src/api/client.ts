@@ -133,6 +133,66 @@ class ApiClient {
     return response.data;
   }
 
+  // Document Library endpoints
+
+  // Get all files with optional search, category, and sort filters
+  async getFiles(params?: { search?: string; category?: string; sort?: string }) {
+    const response = await this.client.get('/api/files', { params });
+    return response.data;
+  }
+
+  // Get file categories for filtering
+  async getFileCategories() {
+    const response = await this.client.get('/api/files/categories');
+    return response.data;
+  }
+
+  // Get a specific file's metadata
+  async getFile(id: number) {
+    const response = await this.client.get(`/api/files/${id}`);
+    return response.data;
+  }
+
+  // Upload a file with optional category and description
+  async uploadFile(file: File, category?: string, description?: string) {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (category) formData.append('category', category);
+    if (description) formData.append('description', description);
+
+    const response = await this.client.post('/api/files', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000, // 2 min timeout for large uploads
+    });
+    return response.data;
+  }
+
+  // Update file metadata (rename, category, description)
+  async updateFile(id: number, data: { category?: string; description?: string; original_name?: string }) {
+    const response = await this.client.put(`/api/files/${id}`, data);
+    return response.data;
+  }
+
+  // Download a file as blob
+  async downloadFile(id: number) {
+    const response = await this.client.get(`/api/files/${id}/download`, {
+      responseType: 'blob',
+    });
+    return response;
+  }
+
+  // Delete a single file
+  async deleteFile(id: number) {
+    const response = await this.client.delete(`/api/files/${id}`);
+    return response.data;
+  }
+
+  // Delete all files for the user
+  async deleteAllFiles() {
+    const response = await this.client.delete('/api/files');
+    return response.data;
+  }
+
   // Health check
   async healthCheck() {
     const response = await this.client.get('/health');
