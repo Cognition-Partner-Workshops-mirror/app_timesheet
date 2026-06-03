@@ -1,328 +1,118 @@
 const {
-  clientSchema,
-  workEntrySchema,
-  updateWorkEntrySchema,
-  updateClientSchema,
-  emailSchema
+  createCollectionSchema,
+  updateCollectionSchema,
+  updateFileSchema,
+  fileQuerySchema
 } = require('../../validation/schemas');
 
-describe('Validation Schemas', () => {
-  describe('clientSchema', () => {
-    test('should validate valid client data', () => {
-      const validClient = {
-        name: 'Test Client',
-        description: 'A test client'
-      };
-
-      const { error } = clientSchema.validate(validClient);
+describe('Validation Schemas – Digital Library', () => {
+  describe('createCollectionSchema', () => {
+    test('should validate a valid collection', () => {
+      const { error, value } = createCollectionSchema.validate({
+        name: 'My Collection',
+        description: 'Test description',
+        color: '#ef4444'
+      });
       expect(error).toBeUndefined();
+      expect(value.name).toBe('My Collection');
+      expect(value.color).toBe('#ef4444');
     });
 
-    test('should allow empty description', () => {
-      const client = {
-        name: 'Test Client',
-        description: ''
-      };
-
-      const { error } = clientSchema.validate(client);
-      expect(error).toBeUndefined();
-    });
-
-    test('should allow missing description', () => {
-      const client = {
-        name: 'Test Client'
-      };
-
-      const { error } = clientSchema.validate(client);
-      expect(error).toBeUndefined();
-    });
-
-    test('should reject missing name', () => {
-      const client = {
+    test('should require a name', () => {
+      const { error } = createCollectionSchema.validate({
         description: 'No name'
-      };
-
-      const { error } = clientSchema.validate(client);
+      });
       expect(error).toBeDefined();
     });
 
-    test('should reject empty name', () => {
-      const client = {
-        name: '',
-        description: 'Empty name'
-      };
-
-      const { error } = clientSchema.validate(client);
-      expect(error).toBeDefined();
-    });
-
-    test('should reject name longer than 255 characters', () => {
-      const client = {
-        name: 'a'.repeat(256)
-      };
-
-      const { error } = clientSchema.validate(client);
-      expect(error).toBeDefined();
-    });
-
-    test('should reject description longer than 1000 characters', () => {
-      const client = {
+    test('should reject invalid hex color', () => {
+      const { error } = createCollectionSchema.validate({
         name: 'Test',
-        description: 'a'.repeat(1001)
-      };
-
-      const { error } = clientSchema.validate(client);
+        color: 'invalid'
+      });
       expect(error).toBeDefined();
     });
 
-    test('should trim whitespace from name', () => {
-      const client = {
-        name: '  Test Client  '
-      };
-
-      const { value } = clientSchema.validate(client);
-      expect(value.name).toBe('Test Client');
+    test('should use default color when not provided', () => {
+      const { value } = createCollectionSchema.validate({ name: 'Test' });
+      expect(value.color).toBe('#6366f1');
     });
   });
 
-  describe('workEntrySchema', () => {
-    test('should validate valid work entry', () => {
-      const validEntry = {
-        clientId: 1,
-        hours: 5.5,
-        description: 'Development work',
-        date: '2024-01-15'
-      };
-
-      const { error } = workEntrySchema.validate(validEntry);
-      expect(error).toBeUndefined();
-    });
-
-    test('should allow empty description', () => {
-      const entry = {
-        clientId: 1,
-        hours: 5,
-        description: '',
-        date: '2024-01-15'
-      };
-
-      const { error } = workEntrySchema.validate(entry);
-      expect(error).toBeUndefined();
-    });
-
-    test('should reject missing clientId', () => {
-      const entry = {
-        hours: 5,
-        date: '2024-01-15'
-      };
-
-      const { error } = workEntrySchema.validate(entry);
-      expect(error).toBeDefined();
-    });
-
-    test('should reject negative clientId', () => {
-      const entry = {
-        clientId: -1,
-        hours: 5,
-        date: '2024-01-15'
-      };
-
-      const { error } = workEntrySchema.validate(entry);
-      expect(error).toBeDefined();
-    });
-
-    test('should reject zero clientId', () => {
-      const entry = {
-        clientId: 0,
-        hours: 5,
-        date: '2024-01-15'
-      };
-
-      const { error } = workEntrySchema.validate(entry);
-      expect(error).toBeDefined();
-    });
-
-    test('should reject missing hours', () => {
-      const entry = {
-        clientId: 1,
-        date: '2024-01-15'
-      };
-
-      const { error } = workEntrySchema.validate(entry);
-      expect(error).toBeDefined();
-    });
-
-    test('should reject negative hours', () => {
-      const entry = {
-        clientId: 1,
-        hours: -5,
-        date: '2024-01-15'
-      };
-
-      const { error } = workEntrySchema.validate(entry);
-      expect(error).toBeDefined();
-    });
-
-    test('should reject hours greater than 24', () => {
-      const entry = {
-        clientId: 1,
-        hours: 25,
-        date: '2024-01-15'
-      };
-
-      const { error } = workEntrySchema.validate(entry);
-      expect(error).toBeDefined();
-    });
-
-    test('should accept decimal hours', () => {
-      const entry = {
-        clientId: 1,
-        hours: 7.75,
-        date: '2024-01-15'
-      };
-
-      const { error } = workEntrySchema.validate(entry);
-      expect(error).toBeUndefined();
-    });
-
-    test('should reject missing date', () => {
-      const entry = {
-        clientId: 1,
-        hours: 5
-      };
-
-      const { error } = workEntrySchema.validate(entry);
-      expect(error).toBeDefined();
-    });
-
-    test('should reject invalid date format', () => {
-      const entry = {
-        clientId: 1,
-        hours: 5,
-        date: '01/15/2024'
-      };
-
-      const { error } = workEntrySchema.validate(entry);
-      expect(error).toBeDefined();
-    });
-  });
-
-  describe('updateWorkEntrySchema', () => {
-    test('should validate partial update', () => {
-      const update = {
-        hours: 8
-      };
-
-      const { error } = updateWorkEntrySchema.validate(update);
-      expect(error).toBeUndefined();
-    });
-
-    test('should validate multiple field update', () => {
-      const update = {
-        hours: 8,
-        description: 'Updated description'
-      };
-
-      const { error } = updateWorkEntrySchema.validate(update);
-      expect(error).toBeUndefined();
-    });
-
-    test('should reject empty update', () => {
-      const update = {};
-
-      const { error } = updateWorkEntrySchema.validate(update);
-      expect(error).toBeDefined();
-    });
-
-    test('should validate clientId update', () => {
-      const update = {
-        clientId: 2
-      };
-
-      const { error } = updateWorkEntrySchema.validate(update);
-      expect(error).toBeUndefined();
-    });
-
-    test('should validate date update', () => {
-      const update = {
-        date: '2024-02-01'
-      };
-
-      const { error } = updateWorkEntrySchema.validate(update);
-      expect(error).toBeUndefined();
-    });
-  });
-
-  describe('updateClientSchema', () => {
-    test('should validate name update', () => {
-      const update = {
+  describe('updateCollectionSchema', () => {
+    test('should validate partial updates', () => {
+      const { error, value } = updateCollectionSchema.validate({
         name: 'Updated Name'
-      };
-
-      const { error } = updateClientSchema.validate(update);
+      });
       expect(error).toBeUndefined();
+      expect(value.name).toBe('Updated Name');
     });
 
-    test('should validate description update', () => {
-      const update = {
-        description: 'Updated description'
-      };
-
-      const { error } = updateClientSchema.validate(update);
-      expect(error).toBeUndefined();
-    });
-
-    test('should reject empty update', () => {
-      const update = {};
-
-      const { error } = updateClientSchema.validate(update);
+    test('should require at least one field', () => {
+      const { error } = updateCollectionSchema.validate({});
       expect(error).toBeDefined();
-    });
-
-    test('should validate both fields update', () => {
-      const update = {
-        name: 'New Name',
-        description: 'New Description'
-      };
-
-      const { error } = updateClientSchema.validate(update);
-      expect(error).toBeUndefined();
     });
   });
 
-  describe('emailSchema', () => {
-    test('should validate valid email', () => {
-      const data = {
-        email: 'test@example.com'
-      };
-
-      const { error } = emailSchema.validate(data);
+  describe('updateFileSchema', () => {
+    test('should validate file update with tags', () => {
+      const { error, value } = updateFileSchema.validate({
+        original_name: 'renamed.pdf',
+        tags: ['important', 'work'],
+        is_favorite: true
+      });
       expect(error).toBeUndefined();
+      expect(value.tags).toHaveLength(2);
     });
 
-    test('should reject invalid email', () => {
-      const data = {
-        email: 'not-an-email'
-      };
-
-      const { error } = emailSchema.validate(data);
+    test('should reject too many tags', () => {
+      const { error } = updateFileSchema.validate({
+        tags: Array(21).fill('tag')
+      });
       expect(error).toBeDefined();
     });
 
-    test('should reject missing email', () => {
-      const data = {};
+    test('should allow null collection_id', () => {
+      const { error, value } = updateFileSchema.validate({
+        collection_id: null
+      });
+      expect(error).toBeUndefined();
+      expect(value.collection_id).toBeNull();
+    });
+  });
 
-      const { error } = emailSchema.validate(data);
+  describe('fileQuerySchema', () => {
+    test('should use defaults when no params provided', () => {
+      const { value } = fileQuerySchema.validate({});
+      expect(value.sort_by).toBe('date');
+      expect(value.sort_order).toBe('desc');
+      expect(value.file_type).toBe('all');
+      expect(value.page).toBe(1);
+      expect(value.limit).toBe(20);
+    });
+
+    test('should validate sort options', () => {
+      const { error, value } = fileQuerySchema.validate({
+        sort_by: 'name',
+        sort_order: 'asc'
+      });
+      expect(error).toBeUndefined();
+      expect(value.sort_by).toBe('name');
+    });
+
+    test('should reject invalid sort_by values', () => {
+      const { error } = fileQuerySchema.validate({
+        sort_by: 'invalid'
+      });
       expect(error).toBeDefined();
     });
 
-    test('should accept email with subdomain', () => {
-      const data = {
-        email: 'user@mail.example.com'
-      };
-
-      const { error } = emailSchema.validate(data);
+    test('should validate file type filter', () => {
+      const { error, value } = fileQuerySchema.validate({
+        file_type: 'pdf'
+      });
       expect(error).toBeUndefined();
+      expect(value.file_type).toBe('pdf');
     });
   });
 });

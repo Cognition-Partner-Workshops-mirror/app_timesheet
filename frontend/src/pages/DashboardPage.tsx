@@ -1,184 +1,207 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
-  Grid,
+  Box,
+  Typography,
   Card,
   CardContent,
-  Typography,
-  Box,
+  Grid,
+  Skeleton,
   Button,
-  Paper,
 } from '@mui/material';
-import {
-  Business as BusinessIcon,
-  Assignment as AssignmentIcon,
-  Assessment as AssessmentIcon,
-  Add as AddIcon,
-} from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ImageIcon from '@mui/icons-material/Image';
+import DescriptionIcon from '@mui/icons-material/Description';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import StorageIcon from '@mui/icons-material/Storage';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import apiClient from '../api/client';
+import { useAuth } from '../hooks/useAuth';
 
+/** Human-readable file size */
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+// Stat card configuration
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  icon: React.ReactElement;
+  color: string;
+  bgColor: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color, bgColor }) => (
+  <Card
+    sx={{
+      borderRadius: 3,
+      transition: 'transform 0.2s',
+      '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
+    }}
+  >
+    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box
+        sx={{
+          width: 56,
+          height: 56,
+          borderRadius: 3,
+          bgcolor: bgColor,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: color,
+        }}
+      >
+        {icon}
+      </Box>
+      <Box>
+        <Typography variant="h5" fontWeight={700}>
+          {value}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
+      </Box>
+    </CardContent>
+  </Card>
+);
+
+/**
+ * Dashboard page showing library statistics at a glance.
+ * Displays file counts by type, total storage, and favorites.
+ */
 const DashboardPage: React.FC = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const { data: clientsData } = useQuery({
-    queryKey: ['clients'],
-    queryFn: () => apiClient.getClients(),
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['stats'],
+    queryFn: () => apiClient.getStats(),
   });
-
-  const { data: workEntriesData } = useQuery({
-    queryKey: ['workEntries'],
-    queryFn: () => apiClient.getWorkEntries(),
-  });
-
-  const clients = clientsData?.clients || [];
-  const workEntries = workEntriesData?.workEntries || [];
-
-  const totalHours = workEntries.reduce((sum: number, entry: { hours: number }) => sum + entry.hours, 0);
-  const recentEntries = workEntries.slice(0, 5);
-
-  const statsCards = [
-    {
-      title: 'Total Clients',
-      value: clients.length,
-      icon: <BusinessIcon />,
-      color: '#1976d2',
-      action: () => navigate('/clients'),
-    },
-    {
-      title: 'Total Work Entries',
-      value: workEntries.length,
-      icon: <AssignmentIcon />,
-      color: '#388e3c',
-      action: () => navigate('/work-entries'),
-    },
-    {
-      title: 'Total Hours',
-      value: totalHours.toFixed(2),
-      icon: <AssessmentIcon />,
-      color: '#f57c00',
-      action: () => navigate('/reports'),
-    },
-  ];
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Dashboard
-      </Typography>
+      {/* Welcome header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700} sx={{ color: '#1a1a2e' }}>
+          Welcome{user?.display_name ? `, ${user.display_name}` : ''}!
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+          Here&apos;s your library overview
+        </Typography>
+      </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {statsCards.map((stat, index) => (
-          // @ts-expect-error - MUI Grid item prop type issue
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card
-              sx={{
-                cursor: 'pointer',
-                transition: 'transform 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                },
-              }}
-              onClick={stat.action}
-            >
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between" gap={3}>
-                  <Box>
-                    <Typography color="textSecondary" gutterBottom variant="h6">
-                      {stat.title}
-                    </Typography>
-                    <Typography variant="h4" component="div">
-                      {stat.value}
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      backgroundColor: stat.color,
-                      borderRadius: 1,
-                      p: 1,
-                      color: 'white',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {stat.icon}
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+      {/* Stats grid */}
+      {isLoading ? (
+        <Grid container spacing={2}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Grid size={{ xs: 6, sm: 4, md: 4 }} key={i}>
+              <Skeleton variant="rounded" height={100} sx={{ borderRadius: 3 }} />
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
+            <StatCard
+              label="Total Files"
+              value={stats?.total_files ?? 0}
+              icon={<StorageIcon />}
+              color="#667eea"
+              bgColor="#eef2ff"
+            />
           </Grid>
-        ))}
-      </Grid>
-
-      <Grid container spacing={3}>
-        {/* @ts-expect-error - MUI Grid item prop type issue */}
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} gap={3}>
-              <Typography variant="h6">Recent Work Entries</Typography>
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                onClick={() => navigate('/work-entries')}
-                sx={{ flexShrink: 0 }}
-              >
-                Add Entry
-              </Button>
-            </Box>
-            {recentEntries.length > 0 ? (
-              recentEntries.map((entry: { id: number; client_name: string; hours: number; date: string; description?: string }) => (
-                <Box key={entry.id} sx={{ mb: 2, pb: 2, borderBottom: '1px solid #eee' }}>
-                  <Typography variant="subtitle1">{entry.client_name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {entry.hours} hours - {new Date(entry.date).toLocaleDateString()}
-                  </Typography>
-                  {entry.description && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      {entry.description}
-                    </Typography>
-                  )}
-                </Box>
-              ))
-            ) : (
-              <Typography color="text.secondary">No work entries yet</Typography>
-            )}
-          </Paper>
+          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
+            <StatCard
+              label="Storage Used"
+              value={formatFileSize(stats?.total_size ?? 0)}
+              icon={<StorageIcon />}
+              color="#8b5cf6"
+              bgColor="#f5f3ff"
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
+            <StatCard
+              label="Images"
+              value={stats?.image_count ?? 0}
+              icon={<ImageIcon />}
+              color="#22c55e"
+              bgColor="#f0fdf4"
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
+            <StatCard
+              label="PDFs"
+              value={stats?.pdf_count ?? 0}
+              icon={<PictureAsPdfIcon />}
+              color="#ef4444"
+              bgColor="#fef2f2"
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
+            <StatCard
+              label="Documents"
+              value={stats?.document_count ?? 0}
+              icon={<DescriptionIcon />}
+              color="#3b82f6"
+              bgColor="#eff6ff"
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
+            <StatCard
+              label="eBooks"
+              value={stats?.ebook_count ?? 0}
+              icon={<MenuBookIcon />}
+              color="#8b5cf6"
+              bgColor="#f5f3ff"
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
+            <StatCard
+              label="Favorites"
+              value={stats?.favorites_count ?? 0}
+              icon={<FavoriteIcon />}
+              color="#ec4899"
+              bgColor="#fdf2f8"
+            />
+          </Grid>
         </Grid>
+      )}
 
-        {/* @ts-expect-error - MUI Grid item prop type issue */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" mb={2}>
-              Quick Actions
-            </Typography>
-            <Box display="flex" flexDirection="column" gap={2}>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => navigate('/clients')}
-                fullWidth
-              >
-                Add Client
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => navigate('/work-entries')}
-                fullWidth
-              >
-                Add Work Entry
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<AssessmentIcon />}
-                onClick={() => navigate('/reports')}
-                fullWidth
-              >
-                View Reports
-              </Button>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+      {/* Quick action: upload files */}
+      {!isLoading && stats?.total_files === 0 && (
+        <Box sx={{ textAlign: 'center', mt: 6 }}>
+          <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+            Your library is empty. Start by uploading some files!
+          </Typography>
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<CloudUploadIcon />}
+            onClick={() => navigate('/upload')}
+            sx={{
+              px: 4,
+              py: 1.5,
+              borderRadius: 3,
+              textTransform: 'none',
+              fontWeight: 600,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%)',
+              },
+            }}
+          >
+            Upload Files
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 };

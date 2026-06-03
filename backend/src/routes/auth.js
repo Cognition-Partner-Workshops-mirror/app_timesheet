@@ -1,80 +1,83 @@
 const express = require('express');
-const { getDatabase } = require('../database/init');
-const { emailSchema } = require('../validation/schemas');
-const { authenticateUser } = require('../middleware/auth');
-
 const router = express.Router();
+const { getDatabase } = require('../database/init');
 
-// Login endpoint - creates user if doesn't exist
-router.post('/login', async (req, res, next) => {
-  try {
-    const { error, value } = emailSchema.validate(req.body);
-    if (error) {
-      return next(error);
-    }
+/**
+ * POST /api/auth/login
+ * Simple email-based login for the digital library.
+ * Creates a user record if one doesn't already exist.
+ */
+router.post('/login', (req, res) => {
+  const { email, display_name } = req.body;
 
-    const { email } = value;
-    const db = getDatabase();
-
-    // Check if user exists
-    db.get('SELECT email, created_at FROM users WHERE email = ?', [email], (err, row) => {
-      if (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
-
-      if (row) {
-        // User exists
-        return res.json({
-          message: 'Login successful',
-          user: {
-            email: row.email,
-            createdAt: row.created_at
-          }
-        });
-      } else {
-        // Create new user
-        db.run('INSERT INTO users (email) VALUES (?)', [email], function(err) {
-          if (err) {
-            console.error('Error creating user:', err);
-            return res.status(500).json({ error: 'Failed to create user' });
-          }
-
-          res.status(201).json({
-            message: 'User created and logged in successfully',
-            user: {
-              email: email,
-              createdAt: new Date().toISOString()
-            }
-          });
-        });
-      }
-    });
-  } catch (error) {
-    next(error);
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
   }
-});
 
-// Get current user info
-router.get('/me', authenticateUser, (req, res) => {
+  // Basic email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
   const db = getDatabase();
-  
-  db.get('SELECT email, created_at FROM users WHERE email = ?', [req.userEmail], (err, row) => {
+
+  // Check if user exists
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
     if (err) {
       console.error('Database error:', err);
       return res.status(500).json({ error: 'Internal server error' });
     }
 
-    if (!row) {
-      return res.status(404).json({ error: 'User not found' });
+    if (user) {
+      // Existing user - update display_name if provided
+      if (display_name && display_name !== user.display_name) {
+        db.run('UPDATE users SET display_name = ? WHERE email = ?', [display_name, email]);
+      }
+      return res.json({
+        message: 'Welcome back!',
+        user: { email: user.email, display_name: display_name || user.display_name, created_at: user.created_at }
+      });
     }
 
-    res.json({
-      user: {
-        email: row.email,
-        createdAt: row.created_at
+    // New user - create account
+    db.run(
+      'INSERT INTO users (email, display_name) VALUES (?, ?)',
+      [email, display_name || email.split('@')[0]],
+      function (err) {
+        if (err) {
+          console.error('Error creating user:', err);
+          return res.status(500).json({ error: 'Failed to create user account' });
+        }
+        res.status(201).json({
+          message: 'Welcome to your Digital Library!',
+          user: { email, display_name: display_name || email.split('@')[0] }
+        });
       }
-    });
+    );
+  });
+});
+
+/**
+ * GET /api/auth/me
+ * Get current user info using the x-user-email header.
+ */
+router.get('/me', (req, res) => {
+  const userEmail = req.headers['x-user-email'];
+
+  if (!userEmail) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  const db = getDatabase();
+  db.get('SELECT * FROM users WHERE email = ?', [userEmail], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user);
   });
 });
 
