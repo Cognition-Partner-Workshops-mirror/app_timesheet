@@ -40,6 +40,7 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color, bgColor }) => (
   <Card
+    className="animate-slide-up"
     sx={{
       borderRadius: 3,
       transition: 'transform 0.2s',
@@ -88,8 +89,8 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Box>
-      {/* Welcome header */}
-      <Box sx={{ mb: 4 }}>
+      {/* Welcome header with slide-up animation */}
+      <Box className="animate-slide-up" sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight={700} sx={{ color: '#1a1a2e' }}>
           Welcome{user?.display_name ? `, ${user.display_name}` : ''}!
         </Typography>
@@ -175,9 +176,9 @@ const DashboardPage: React.FC = () => {
         </Grid>
       )}
 
-      {/* Quick action: upload files */}
+      {/* Quick action: upload files with animated prompt */}
       {!isLoading && stats?.total_files === 0 && (
-        <Box sx={{ textAlign: 'center', mt: 6 }}>
+        <Box className="animate-slide-up" sx={{ textAlign: 'center', mt: 6 }}>
           <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
             Your library is empty. Start by uploading some files!
           </Typography>

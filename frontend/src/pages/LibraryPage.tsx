@@ -44,6 +44,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import SortIcon from '@mui/icons-material/Sort';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import apiClient from '../api/client';
 import type { FileQueryParams, LibraryFile, FileType } from '../types/api';
 
@@ -53,6 +54,14 @@ const fileTypeIcons: Record<string, React.ReactElement> = {
   image: <ImageIcon sx={{ fontSize: 48, color: '#43a047' }} />,
   document: <DescriptionIcon sx={{ fontSize: 48, color: '#1e88e5' }} />,
   ebook: <MenuBookIcon sx={{ fontSize: 48, color: '#8e24aa' }} />,
+};
+
+// Book-spine colors per file type for the rack view
+const bookSpineColors: Record<string, string> = {
+  pdf: '#e53935',
+  image: '#43a047',
+  document: '#1e88e5',
+  ebook: '#8e24aa',
 };
 
 /** Human-readable file size */
@@ -66,6 +75,7 @@ function formatFileSize(bytes: number): string {
 
 /**
  * Main library page – displays all files with search, sort, filter, and grid/list toggle.
+ * Grid view shows files as books on a wooden bookshelf rack with page-flip animations.
  */
 const LibraryPage: React.FC = () => {
   const theme = useTheme();
@@ -138,10 +148,20 @@ const LibraryPage: React.FC = () => {
     link.click();
   };
 
+  // Split files into shelf rows (4 per shelf on desktop, 2 on mobile)
+  const booksPerShelf = isMobile ? 2 : 4;
+  const shelves: LibraryFile[][] = [];
+  if (data?.files) {
+    for (let i = 0; i < data.files.length; i += booksPerShelf) {
+      shelves.push(data.files.slice(i, i + booksPerShelf));
+    }
+  }
+
   return (
     <Box>
       {/* Search and filter toolbar */}
       <Box
+        className="animate-slide-up"
         sx={{
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
@@ -247,10 +267,12 @@ const LibraryPage: React.FC = () => {
         </Grid>
       )}
 
-      {/* Empty state */}
+      {/* Empty state with animated book icon */}
       {!isLoading && data?.files.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 10, color: 'text.secondary' }}>
-          <MenuBookIcon sx={{ fontSize: 80, opacity: 0.3, mb: 2 }} />
+          <Box className="animate-pulse-glow" sx={{ display: 'inline-block' }}>
+            <AutoStoriesIcon sx={{ fontSize: 100, opacity: 0.4, mb: 2, color: '#667eea' }} />
+          </Box>
           <Typography variant="h6">No files found</Typography>
           <Typography variant="body2">
             {search ? 'Try a different search term' : 'Upload some files to get started!'}
@@ -258,108 +280,129 @@ const LibraryPage: React.FC = () => {
         </Box>
       )}
 
-      {/* Grid view */}
+      {/* ── Grid view: bookshelf racks with page-flip animated cards ── */}
       {!isLoading && data && data.files.length > 0 && viewMode === 'grid' && (
-        <Grid container spacing={2}>
-          {data.files.map((file) => (
-            <Grid size={{ xs: 6, sm: 4, md: 3, lg: 2.4 }} key={file.id}>
-              <Card
-                sx={{
-                  borderRadius: 3,
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 6,
-                  },
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                {/* File thumbnail or type icon */}
-                {file.file_type === 'image' ? (
-                  <CardMedia
-                    component="img"
-                    height={140}
-                    image={apiClient.getPreviewUrl(file.id)}
-                    alt={file.original_name}
-                    sx={{ objectFit: 'cover' }}
-                  />
-                ) : (
-                  <Box
-                    sx={{
-                      height: 140,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: 'grey.50',
-                    }}
-                  >
-                    {fileTypeIcons[file.file_type] || <DescriptionIcon sx={{ fontSize: 48, color: '#9e9e9e' }} />}
-                  </Box>
-                )}
-
-                <CardContent sx={{ flexGrow: 1, pb: 0.5 }}>
-                  <Tooltip title={file.original_name}>
-                    <Typography
-                      variant="body2"
-                      fontWeight={600}
+        <Box>
+          {shelves.map((shelf, shelfIdx) => (
+            <Box key={shelfIdx} className="bookshelf-rack" sx={{ mb: 3 }}>
+              <Grid container spacing={2}>
+                {shelf.map((file) => (
+                  <Grid size={{ xs: 6, sm: 4, md: 3, lg: 2.4 }} key={file.id} className="animate-page-flip">
+                    <Card
+                      className="book-card"
                       sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
+                        borderRadius: 3,
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        position: 'relative',
+                        overflow: 'visible',
+                        /* Book spine accent on the left side */
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          left: 0,
+                          top: 8,
+                          bottom: 8,
+                          width: 5,
+                          borderRadius: '3px 0 0 3px',
+                          background: bookSpineColors[file.file_type] || '#9e9e9e',
+                        },
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.08), -3px 3px 6px rgba(0,0,0,0.06)',
                       }}
                     >
-                      {file.original_name}
-                    </Typography>
-                  </Tooltip>
-                  <Typography variant="caption" color="text.secondary">
-                    {formatFileSize(file.size)} · {new Date(file.created_at).toLocaleDateString()}
-                  </Typography>
-                  {file.collection_name && (
-                    <Chip
-                      label={file.collection_name}
-                      size="small"
-                      sx={{
-                        mt: 0.5,
-                        height: 20,
-                        fontSize: '0.65rem',
-                        bgcolor: file.collection_color || '#6366f1',
-                        color: '#fff',
-                      }}
-                    />
-                  )}
-                </CardContent>
+                      {/* File thumbnail or type icon */}
+                      {file.file_type === 'image' ? (
+                        <CardMedia
+                          component="img"
+                          height={140}
+                          image={apiClient.getPreviewUrl(file.id)}
+                          alt={file.original_name}
+                          sx={{ objectFit: 'cover', borderRadius: '12px 12px 0 0' }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            height: 140,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: 'grey.50',
+                            borderRadius: '12px 12px 0 0',
+                            /* Subtle page-like texture */
+                            backgroundImage:
+                              'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(0,0,0,0.03) 19px, rgba(0,0,0,0.03) 20px)',
+                          }}
+                        >
+                          {fileTypeIcons[file.file_type] || <DescriptionIcon sx={{ fontSize: 48, color: '#9e9e9e' }} />}
+                        </Box>
+                      )}
 
-                <CardActions sx={{ justifyContent: 'space-between', px: 1, pb: 1 }}>
-                  <IconButton
-                    size="small"
-                    onClick={() => favoriteMutation.mutate(file.id)}
-                    color={file.is_favorite ? 'error' : 'default'}
-                  >
-                    {file.is_favorite ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
-                  </IconButton>
-                  <Box>
-                    <IconButton size="small" onClick={() => handleDownload(file)}>
-                      <DownloadIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => setDeleteDialogFile(file)} color="error">
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </CardActions>
-              </Card>
-            </Grid>
+                      <CardContent sx={{ flexGrow: 1, pb: 0.5 }}>
+                        <Tooltip title={file.original_name}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {file.original_name}
+                          </Typography>
+                        </Tooltip>
+                        <Typography variant="caption" color="text.secondary">
+                          {formatFileSize(file.size)} · {new Date(file.created_at).toLocaleDateString()}
+                        </Typography>
+                        {file.collection_name && (
+                          <Chip
+                            label={file.collection_name}
+                            size="small"
+                            sx={{
+                              mt: 0.5,
+                              height: 20,
+                              fontSize: '0.65rem',
+                              bgcolor: file.collection_color || '#6366f1',
+                              color: '#fff',
+                            }}
+                          />
+                        )}
+                      </CardContent>
+
+                      <CardActions sx={{ justifyContent: 'space-between', px: 1, pb: 1 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => favoriteMutation.mutate(file.id)}
+                          color={file.is_favorite ? 'error' : 'default'}
+                        >
+                          {file.is_favorite ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+                        </IconButton>
+                        <Box>
+                          <IconButton size="small" onClick={() => handleDownload(file)}>
+                            <DownloadIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton size="small" onClick={() => setDeleteDialogFile(file)} color="error">
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       )}
 
-      {/* List view */}
+      {/* ── List view ── */}
       {!isLoading && data && data.files.length > 0 && viewMode === 'list' && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {data.files.map((file) => (
+          {data.files.map((file, idx) => (
             <Card
               key={file.id}
+              className="animate-slide-up"
               sx={{
                 borderRadius: 2,
                 display: 'flex',
@@ -368,6 +411,9 @@ const LibraryPage: React.FC = () => {
                 gap: 2,
                 transition: 'box-shadow 0.2s',
                 '&:hover': { boxShadow: 4 },
+                animationDelay: `${idx * 0.04}s`,
+                /* Book spine accent on left */
+                borderLeft: `4px solid ${bookSpineColors[file.file_type] || '#9e9e9e'}`,
               }}
             >
               {/* File type icon */}
