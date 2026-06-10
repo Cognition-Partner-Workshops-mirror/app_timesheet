@@ -63,8 +63,12 @@ export interface UpdateWorkEntryRequest {
   date?: string;
 }
 
+/**
+ * LoginRequest — used for legacy email-only login (dev fallback).
+ * SSO login sends an empty body with a Bearer token in the Authorization header.
+ */
 export interface LoginRequest {
-  email: string;
+  email?: string;
 }
 
 export interface LoginResponse {

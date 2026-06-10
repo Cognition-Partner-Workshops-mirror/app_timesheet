@@ -1,7 +1,20 @@
+// Mock jwks-rsa before importing routes (ESM compatibility)
+jest.mock('jwks-rsa', () => {
+  return jest.fn(() => ({
+    getSigningKey: jest.fn(),
+  }));
+});
+
+// Mock jsonwebtoken for Azure AD token validation
+jest.mock('jsonwebtoken', () => ({
+  verify: jest.fn(),
+}));
+
 const request = require('supertest');
 const express = require('express');
 const authRoutes = require('../../routes/auth');
 const { getDatabase } = require('../../database/init');
+const jwt = require('jsonwebtoken');
 
 jest.mock('../../database/init');
 
@@ -18,6 +31,7 @@ app.use((err, req, res, next) => {
 
 describe('Auth Routes', () => {
   let mockDb;
+  const originalEnv = process.env;
 
   beforeEach(() => {
     mockDb = {
@@ -25,13 +39,128 @@ describe('Auth Routes', () => {
       run: jest.fn()
     };
     getDatabase.mockReturnValue(mockDb);
+
+    // Enable email auth by default for legacy login tests
+    process.env = { ...originalEnv, ENABLE_EMAIL_AUTH: 'true' };
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    process.env = originalEnv;
   });
 
-  describe('POST /api/auth/login', () => {
+  describe('POST /api/auth/login — SSO (Bearer Token)', () => {
+    test('should login existing user via SSO token', async () => {
+      const existingUser = {
+        email: 'sso@example.com',
+        created_at: '2024-01-01T00:00:00.000Z'
+      };
+
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(null, { preferred_username: 'sso@example.com' });
+      });
+
+      mockDb.get.mockImplementation((query, params, callback) => {
+        callback(null, existingUser);
+      });
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .set('Authorization', 'Bearer valid-sso-token');
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Login successful');
+      expect(response.body.user.email).toBe('sso@example.com');
+    });
+
+    test('should auto-create user on first SSO login', async () => {
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(null, { preferred_username: 'newsso@example.com' });
+      });
+
+      mockDb.get.mockImplementation((query, params, callback) => {
+        callback(null, null); // User doesn't exist
+      });
+
+      mockDb.run.mockImplementation(function(query, params, callback) {
+        callback.call(this, null);
+      });
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .set('Authorization', 'Bearer new-user-token');
+
+      expect(response.status).toBe(201);
+      expect(response.body.message).toBe('User created and logged in successfully');
+      expect(response.body.user.email).toBe('newsso@example.com');
+    });
+
+    test('should return 401 for invalid SSO token', async () => {
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(new Error('Invalid token'));
+      });
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .set('Authorization', 'Bearer bad-token');
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe('Invalid or expired token');
+    });
+
+    test('should return 401 if SSO token has no email claim', async () => {
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(null, { sub: 'some-id' }); // no email
+      });
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .set('Authorization', 'Bearer no-email-token');
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe('No email claim found in token');
+    });
+
+    test('should handle database error during SSO login', async () => {
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(null, { preferred_username: 'test@example.com' });
+      });
+
+      mockDb.get.mockImplementation((query, params, callback) => {
+        callback(new Error('Database error'), null);
+      });
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .set('Authorization', 'Bearer valid-token');
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: 'Internal server error' });
+    });
+
+    test('should handle database error when creating SSO user', async () => {
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(null, { preferred_username: 'newsso@example.com' });
+      });
+
+      mockDb.get.mockImplementation((query, params, callback) => {
+        callback(null, null);
+      });
+
+      mockDb.run.mockImplementation((query, params, callback) => {
+        callback(new Error('Insert failed'));
+      });
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .set('Authorization', 'Bearer new-user-token');
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: 'Failed to create user' });
+    });
+  });
+
+  describe('POST /api/auth/login — Legacy Email', () => {
     test('should login existing user', async () => {
       const existingUser = {
         email: 'existing@example.com',
@@ -122,6 +251,17 @@ describe('Auth Routes', () => {
       expect(response.body).toEqual({ error: 'Failed to create user' });
     });
 
+    test('should return 401 when email login is disabled and no Bearer token', async () => {
+      process.env.ENABLE_EMAIL_AUTH = 'false';
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'test@example.com' });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe('Email login is disabled. Use SSO authentication.');
+    });
+
     test('should handle unexpected errors in try-catch block', async () => {
       getDatabase.mockImplementation(() => {
         throw new Error('Unexpected error');
@@ -137,7 +277,7 @@ describe('Auth Routes', () => {
   });
 
   describe('GET /api/auth/me', () => {
-    test('should return current user info', async () => {
+    test('should return current user info (email auth)', async () => {
       const user = {
         email: 'test@example.com',
         created_at: '2024-01-01T00:00:00.000Z'
@@ -156,11 +296,37 @@ describe('Auth Routes', () => {
       expect(response.body.user.createdAt).toBe('2024-01-01T00:00:00.000Z');
     });
 
-    test('should return 401 if no email header provided', async () => {
+    test('should return current user info (Bearer token)', async () => {
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(null, { preferred_username: 'sso@example.com' });
+      });
+
+      const user = {
+        email: 'sso@example.com',
+        created_at: '2024-01-01T00:00:00.000Z'
+      };
+
+      // First call: middleware ensureUserExists; Second call: route handler
+      let callCount = 0;
+      mockDb.get.mockImplementation((query, params, callback) => {
+        callCount++;
+        callback(null, user);
+      });
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', 'Bearer valid-sso-token');
+
+      expect(response.status).toBe(200);
+      expect(response.body.user.email).toBe('sso@example.com');
+    });
+
+    test('should return 401 if no email header and no Bearer token provided', async () => {
+      process.env.ENABLE_EMAIL_AUTH = 'false';
+
       const response = await request(app).get('/api/auth/me');
 
       expect(response.status).toBe(401);
-      expect(response.body).toEqual({ error: 'User email required in x-user-email header' });
     });
 
     test('should return 404 if user not found', async () => {

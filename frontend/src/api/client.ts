@@ -1,9 +1,22 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+import { msalInstance, loginRequest } from '../auth/msalConfig';
 
 // Use empty string to make requests relative to the current origin
 // Vite proxy will forward /api requests to the backend
 const API_BASE_URL = '';
 
+/** Whether legacy email-only login is enabled (dev fallback) */
+const isEmailLoginEnabled = import.meta.env.VITE_ENABLE_EMAIL_LOGIN === 'true';
+
+/**
+ * ApiClient handles all HTTP communication with the backend.
+ *
+ * Request interceptor attaches either:
+ *   - Bearer token (from MSAL) for SSO users, or
+ *   - x-user-email header for legacy email-only fallback
+ *
+ * On 401 responses, triggers MSAL logout or clears localStorage email.
+ */
 class ApiClient {
   private client: AxiosInstance;
 
@@ -16,13 +29,32 @@ class ApiClient {
       },
     });
 
-    // Request interceptor to add email header
+    // Request interceptor: attach Bearer token (SSO) or x-user-email (fallback)
     this.client.interceptors.request.use(
-      (config) => {
-        const userEmail = localStorage.getItem('userEmail');
-        if (userEmail) {
-          config.headers['x-user-email'] = userEmail;
+      async (config) => {
+        // Try MSAL token first — primary auth path
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length > 0) {
+          try {
+            const tokenResponse = await msalInstance.acquireTokenSilent({
+              scopes: loginRequest.scopes,
+              account: accounts[0],
+            });
+            config.headers['Authorization'] = `Bearer ${tokenResponse.accessToken}`;
+            return config;
+          } catch (error) {
+            console.error('Silent token acquisition failed:', error);
+          }
         }
+
+        // Fallback: legacy email-based auth header
+        if (isEmailLoginEnabled) {
+          const userEmail = localStorage.getItem('userEmail');
+          if (userEmail) {
+            config.headers['x-user-email'] = userEmail;
+          }
+        }
+
         return config;
       },
       (error) => {
@@ -30,14 +62,24 @@ class ApiClient {
       }
     );
 
-    // Response interceptor for error handling
+    // Response interceptor: handle 401 by triggering appropriate logout
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response,
-      (error) => {
+      async (error) => {
         if (error.response?.status === 401) {
-          // Clear stored email on auth error
-          localStorage.removeItem('userEmail');
-          window.location.href = '/login';
+          const accounts = msalInstance.getAllAccounts();
+          if (accounts.length > 0) {
+            // SSO user: trigger MSAL redirect logout
+            try {
+              await msalInstance.logoutRedirect();
+            } catch (logoutError) {
+              console.error('MSAL logout redirect failed:', logoutError);
+            }
+          } else {
+            // Legacy fallback: clear stored email and redirect to login
+            localStorage.removeItem('userEmail');
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }
@@ -45,8 +87,24 @@ class ApiClient {
   }
 
   // Auth endpoints
+
+  /** Legacy email-based login (dev fallback) */
   async login(email: string) {
     const response = await this.client.post('/api/auth/login', { email });
+    return response.data;
+  }
+
+  /**
+   * SSO token-based login: sends the Azure AD access token to the backend.
+   * The backend validates the JWT, extracts the user email from claims,
+   * and creates the user record in the DB if it doesn't exist.
+   */
+  async loginWithToken(accessToken: string) {
+    const response = await this.client.post(
+      '/api/auth/login',
+      {},
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
     return response.data;
   }
 

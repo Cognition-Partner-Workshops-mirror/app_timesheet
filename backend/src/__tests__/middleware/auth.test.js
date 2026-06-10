@@ -1,10 +1,24 @@
+// Mock jwks-rsa before importing auth middleware (ESM compatibility)
+jest.mock('jwks-rsa', () => {
+  return jest.fn(() => ({
+    getSigningKey: jest.fn(),
+  }));
+});
+
+// Mock jsonwebtoken for Azure AD token validation tests
+jest.mock('jsonwebtoken', () => ({
+  verify: jest.fn(),
+}));
+
 const { authenticateUser } = require('../../middleware/auth');
 const { getDatabase } = require('../../database/init');
+const jwt = require('jsonwebtoken');
 
 jest.mock('../../database/init');
 
 describe('Authentication Middleware', () => {
   let req, res, next, mockDb;
+  const originalEnv = process.env;
 
   beforeEach(() => {
     req = {
@@ -22,20 +36,121 @@ describe('Authentication Middleware', () => {
     };
     
     getDatabase.mockReturnValue(mockDb);
+
+    // Enable email auth by default for legacy tests
+    process.env = { ...originalEnv, ENABLE_EMAIL_AUTH: 'true' };
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    process.env = originalEnv;
   });
 
-  describe('Email Header Validation', () => {
-    test('should return 401 if x-user-email header is missing', () => {
+  describe('No Credentials Provided', () => {
+    test('should return 401 if no auth header and email auth is disabled', () => {
+      process.env.ENABLE_EMAIL_AUTH = 'false';
+
       authenticateUser(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith({
-        error: 'User email required in x-user-email header'
+        error: 'Authentication required. Provide a Bearer token or enable email auth.'
       });
+      expect(next).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Bearer Token Authentication (Azure AD SSO)', () => {
+    test('should authenticate user with valid Azure AD token', (done) => {
+      req.headers['authorization'] = 'Bearer valid-token';
+
+      // Mock JWT verification to succeed
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(null, { preferred_username: 'sso@example.com' });
+      });
+
+      mockDb.get.mockImplementation((query, params, callback) => {
+        callback(null, { email: 'sso@example.com' });
+      });
+
+      authenticateUser(req, res, next);
+
+      setImmediate(() => {
+        expect(req.userEmail).toBe('sso@example.com');
+        expect(next).toHaveBeenCalled();
+        done();
+      });
+    });
+
+    test('should return 401 for invalid token', (done) => {
+      req.headers['authorization'] = 'Bearer invalid-token';
+
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(new Error('Token is invalid'));
+      });
+
+      authenticateUser(req, res, next);
+
+      setImmediate(() => {
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Invalid or expired token' });
+        expect(next).not.toHaveBeenCalled();
+        done();
+      });
+    });
+
+    test('should return 401 if token has no email claim', (done) => {
+      req.headers['authorization'] = 'Bearer no-email-token';
+
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(null, { sub: 'some-id' }); // no email claims
+      });
+
+      authenticateUser(req, res, next);
+
+      setImmediate(() => {
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({ error: 'No email claim found in token' });
+        done();
+      });
+    });
+
+    test('should auto-create user on first SSO login', (done) => {
+      req.headers['authorization'] = 'Bearer new-user-token';
+
+      jwt.verify.mockImplementation((token, keyFunc, options, callback) => {
+        callback(null, { preferred_username: 'newsso@example.com' });
+      });
+
+      mockDb.get.mockImplementation((query, params, callback) => {
+        callback(null, null); // User doesn't exist
+      });
+
+      mockDb.run.mockImplementation((query, params, callback) => {
+        callback(null);
+      });
+
+      authenticateUser(req, res, next);
+
+      setImmediate(() => {
+        expect(mockDb.run).toHaveBeenCalledWith(
+          'INSERT INTO users (email) VALUES (?)',
+          ['newsso@example.com'],
+          expect.any(Function)
+        );
+        expect(req.userEmail).toBe('newsso@example.com');
+        expect(next).toHaveBeenCalled();
+        done();
+      });
+    });
+  });
+
+  describe('Legacy Email Header Authentication (Fallback)', () => {
+    test('should return 401 if x-user-email header is missing and no Bearer token', () => {
+      // Email auth enabled but no email header
+      authenticateUser(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
       expect(next).not.toHaveBeenCalled();
     });
 
@@ -64,7 +179,7 @@ describe('Authentication Middleware', () => {
     });
   });
 
-  describe('Existing User Authentication', () => {
+  describe('Existing User Authentication (Email Fallback)', () => {
     test('should authenticate existing user and call next()', (done) => {
       req.headers['x-user-email'] = 'existing@example.com';
       
@@ -102,7 +217,7 @@ describe('Authentication Middleware', () => {
     });
   });
 
-  describe('New User Creation', () => {
+  describe('New User Creation (Email Fallback)', () => {
     test('should create new user if not exists and call next()', (done) => {
       req.headers['x-user-email'] = 'newuser@example.com';
       

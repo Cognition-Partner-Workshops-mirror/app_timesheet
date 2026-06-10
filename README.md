@@ -11,10 +11,9 @@ A full-stack web application for tracking and reporting employee hourly work acr
 - For production use, modify `backend/src/database/init.js` to use file-based SQLite instead of `:memory:`
 
 ### Authentication
-- Email-only authentication with JWT tokens
-- No password required - assumes trusted internal network
-- Anyone with a valid email can create an account and log in
-- Consider integrating with company SSO for production use
+- **Primary:** Microsoft Entra ID (Azure AD) SSO via MSAL
+- **Fallback:** Email-only login (dev mode, behind `VITE_ENABLE_EMAIL_LOGIN=true` / `ENABLE_EMAIL_AUTH=true` env flags)
+- SSO users are auto-provisioned in the local DB on first login
 
 ## Features
 
@@ -269,10 +268,24 @@ See `backend/DEPLOYMENT.md` for detailed production deployment instructions.
 - [ ] Review and adjust rate limiting settings
 - [ ] Consider integrating with company SSO
 
+## Azure AD (Microsoft Entra ID) Setup
+
+To enable SSO authentication, register an App Registration in the Azure Portal:
+
+1. Go to **Microsoft Entra ID** > **App registrations** > **New registration**
+2. Set the **Redirect URI** to `http://localhost:5173` (dev) and your production URL
+3. Select **Single-page application (SPA)** as the platform
+4. Under **API permissions**, add: `User.Read`, `openid`, `profile`, `email`
+5. Copy the **Application (client) ID** and **Directory (tenant) ID**
+6. Set them in your environment files:
+   - Frontend: `VITE_AZURE_CLIENT_ID` and `VITE_AZURE_TENANT_ID` in `frontend/.env`
+   - Backend: `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` in `backend/.env`
+7. To disable the email-only fallback, remove or set `VITE_ENABLE_EMAIL_LOGIN=false` (frontend) and `ENABLE_EMAIL_AUTH=false` (backend)
+
 ## Known Limitations
 
 1. **In-memory database** - All data is lost on server restart
-2. **Email-only auth** - No password protection, assumes trusted network
+2. **Email-only auth fallback** - Available in dev mode, assumes trusted network
 3. **No user roles** - All users have equal access to all data
 4. **Single-server architecture** - Not designed for horizontal scaling
 5. **No real-time updates** - Changes require page refresh
