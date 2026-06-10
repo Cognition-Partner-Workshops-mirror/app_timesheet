@@ -17,6 +17,10 @@ module.exports = {
       statements: 60
     }
   },
+  // Allow Jest to transform ESM packages (jwks-rsa and its dependency jose use ESM)
+  transformIgnorePatterns: [
+    '/node_modules/(?!(jwks-rsa|jose)/)'
+  ],
   verbose: true,
   testTimeout: 10000
 };
