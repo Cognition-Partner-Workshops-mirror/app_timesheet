@@ -322,16 +322,21 @@ rows5 = [
     ["Portkey", "AI gateway with built-in telemetry, multi-provider routing", "Limited self-hosted model support"],
     ["LangSmith (LangChain)", "Deep tracing for LangChain apps, chain-level cost tracking", "Vendor lock-in to LangChain ecosystem"],
     ["Weights & Biases", "Strong experiment tracking, GPU utilization", "Inference cost tracking is weak"],
+    ["LiteLLM Proxy", "Unified proxy for 100+ LLMs, request logging, spend tracking", "Telemetry depth limited to proxy layer; no GPU/training metrics"],
+    ["Langfuse", "Open-source LLM observability, detailed tracing, cost tracking", "Self-hosted complexity; limited cloud-provider compute telemetry"],
+    ["Cloudflare AI Gateway", "Edge-level logging, caching, provider-agnostic proxy", "Shallow token metrics; no training/GPU cost capture"],
+    ["Datadog LLM Observability", "Enterprise APM integration, trace-level LLM metrics", "Requires Datadog stack; limited standalone AI telemetry"],
+    ["Braintrust", "Eval-centric tracing, prompt playground, cost per eval", "Focused on evals; limited production inference telemetry"],
     ["OpenTelemetry + custom", "Flexible, open standard", "Requires heavy custom engineering for AI-specific metrics"],
     ["Cloud-native (AWS/Azure/GCP)", "Good compute-level telemetry", "No token-level or model-level granularity"],
 ]
 
 col_widths5 = [Inches(2.5), Inches(5.0), Inches(4.3)]
-_build_table(slide5, Inches(0.7), Inches(1.2), Inches(11.8), col_widths5, headers5, rows5, row_height=Inches(0.55))
+_build_table(slide5, Inches(0.7), Inches(1.15), Inches(11.8), col_widths5, headers5, rows5, row_height=Inches(0.42))
 
 # Overall assessment
-_add_rect(slide5, Inches(0.7), Inches(5.8), Inches(11.8), Inches(0.7), LIGHTEST_BLUE)
-tb5n = _add_textbox(slide5, Inches(0.9), Inches(5.85), Inches(11.4), Inches(0.6))
+_add_rect(slide5, Inches(0.7), Inches(6.35), Inches(11.8), Inches(0.7), LIGHTEST_BLUE)
+tb5n = _add_textbox(slide5, Inches(0.9), Inches(6.4), Inches(11.4), Inches(0.6))
 _set_text(tb5n.text_frame,
           "Overall: Market is fragmented. No single solution captures telemetry across training, inference, and API costs holistically.",
           font_size=12, color=NAVY, bold=True)
@@ -374,16 +379,21 @@ headers7 = ["Solution", "Strengths", "Gaps"]
 rows7 = [
     ["Portkey", "API-level rate limiting, budget alerts", "No approval workflows, limited RBAC"],
     ["Helicone", "Basic rate limiting", "No quota management or access policies"],
+    ["LiteLLM Proxy", "Budget limits per key/user, model access controls, spend alerts", "No approval workflows; RBAC is key-based, not enterprise IAM"],
+    ["Langfuse", "No native enforcement", "Observability-only; no quota, rate-limit, or governance features"],
+    ["Cloudflare AI Gateway", "Rate limiting at edge, caching policies", "No budget caps, no model-level RBAC or approval workflows"],
+    ["Datadog LLM Observability", "Alerting on anomalous usage patterns", "Monitoring-only; no enforcement, no quota or access policies"],
+    ["Braintrust", "Org-level access controls", "No rate limiting, no budget enforcement, no policy engine"],
     ["Azure OpenAI", "Token-per-minute quotas, RBAC via Azure AD", "Azure-only, no multi-provider support"],
     ["AWS Bedrock", "IAM-based access, model-level permissions", "AWS-only, no budget-based enforcement"],
     ["Kong / Apigee", "Strong rate limiting, authentication", "Not AI-aware, no token-based quotas"],
     ["Custom solutions", "Many enterprises building in-house", "High maintenance, inconsistent implementation"],
 ]
 
-_build_table(slide7, Inches(0.7), Inches(1.2), Inches(11.8), col_widths5, headers7, rows7, row_height=Inches(0.55))
+_build_table(slide7, Inches(0.7), Inches(1.15), Inches(11.8), col_widths5, headers7, rows7, row_height=Inches(0.42))
 
-_add_rect(slide7, Inches(0.7), Inches(5.8), Inches(11.8), Inches(0.85), LIGHTEST_BLUE)
-tb7n = _add_textbox(slide7, Inches(0.9), Inches(5.85), Inches(11.4), Inches(0.75))
+_add_rect(slide7, Inches(0.7), Inches(6.35), Inches(11.8), Inches(0.85), LIGHTEST_BLUE)
+tb7n = _add_textbox(slide7, Inches(0.9), Inches(6.4), Inches(11.4), Inches(0.75))
 tf7n = tb7n.text_frame
 tf7n.word_wrap = True
 _set_text(tf7n, "Overall: This is the WEAKEST area in the market. No solution provides comprehensive AI-specific quota management "
@@ -430,14 +440,19 @@ rows9 = [
     ["Vantage", "Multi-cloud cost visibility, good dashboards", "No token-level cost attribution, no ROI metrics"],
     ["Apptio / IBM", "Enterprise TBM, IT financial management", "No AI workload awareness, slow to adapt"],
     ["Harness CCM", "Cloud cost management with recommendations", "Limited AI-specific metrics"],
+    ["LiteLLM Proxy", "Per-key spend tracking, model cost comparison", "No ROI attribution, no business outcome mapping"],
+    ["Langfuse", "Cost per trace/generation, model cost breakdown", "No ROI attribution, no unit economics trending"],
+    ["Cloudflare AI Gateway", "Request-level cost logging", "No cost aggregation, no ROI or unit economics"],
+    ["Datadog LLM Observability", "Cost metrics within APM dashboards", "No AI-specific ROI; requires Datadog ecosystem"],
+    ["Braintrust", "Cost per eval, model comparison scoring", "Eval-focused; no production ROI or business outcome metrics"],
     ["Helicone / Portkey", "Basic cost tracking per request", "No ROI attribution, no business outcome correlation"],
     ["Weights & Biases", "Experiment cost tracking", "No business ROI, training-focused only"],
 ]
 
-_build_table(slide9, Inches(0.7), Inches(1.2), Inches(11.8), col_widths5, headers9, rows9, row_height=Inches(0.55))
+_build_table(slide9, Inches(0.7), Inches(1.15), Inches(11.8), col_widths5, headers9, rows9, row_height=Inches(0.42))
 
-_add_rect(slide9, Inches(0.7), Inches(5.8), Inches(11.8), Inches(0.7), LIGHTEST_BLUE)
-tb9n = _add_textbox(slide9, Inches(0.9), Inches(5.85), Inches(11.4), Inches(0.6))
+_add_rect(slide9, Inches(0.7), Inches(6.35), Inches(11.8), Inches(0.7), LIGHTEST_BLUE)
+tb9n = _add_textbox(slide9, Inches(0.9), Inches(6.4), Inches(11.4), Inches(0.6))
 _set_text(tb9n.text_frame,
           "Overall: Major gap in connecting AI costs to business outcomes. No solution provides ROI attribution or unit economics at the AI workload level.",
           font_size=12, color=NAVY, bold=True)
@@ -483,13 +498,18 @@ rows11 = [
     ["Kubecost", "K8s cost reports, alerts", "No AI optimization recommendations"],
     ["Portkey", "Basic usage dashboards", "No forecasting, limited actionable insights"],
     ["Helicone", "Request-level analytics", "No executive reporting, no optimization suggestions"],
+    ["LiteLLM Proxy", "Spend dashboards, usage logs per key/model", "No forecasting, no optimization engine, no chargeback"],
+    ["Langfuse", "Trace-level dashboards, cost breakdowns", "No executive reporting, no forecasting or anomaly detection"],
+    ["Cloudflare AI Gateway", "Basic analytics dashboard, caching stats", "No optimization recommendations, no chargeback"],
+    ["Datadog LLM Observability", "Enterprise dashboards, alerting, anomaly detection", "No AI-specific optimization; generic APM recommendations"],
+    ["Braintrust", "Eval result dashboards, model comparison reports", "No cost forecasting, no chargeback, eval-scoped only"],
     ["Cast AI", "Automated K8s optimization", "Compute-only, no AI/LLM awareness"],
 ]
 
-_build_table(slide11, Inches(0.7), Inches(1.2), Inches(11.8), col_widths5, headers11, rows11, row_height=Inches(0.55))
+_build_table(slide11, Inches(0.7), Inches(1.15), Inches(11.8), col_widths5, headers11, rows11, row_height=Inches(0.42))
 
-_add_rect(slide11, Inches(0.7), Inches(5.8), Inches(11.8), Inches(0.7), LIGHTEST_BLUE)
-tb11n = _add_textbox(slide11, Inches(0.9), Inches(5.85), Inches(11.4), Inches(0.6))
+_add_rect(slide11, Inches(0.7), Inches(6.35), Inches(11.8), Inches(0.7), LIGHTEST_BLUE)
+tb11n = _add_textbox(slide11, Inches(0.9), Inches(6.4), Inches(11.4), Inches(0.6))
 tf11n = tb11n.text_frame
 tf11n.word_wrap = True
 _set_text(tf11n,
@@ -513,6 +533,11 @@ score_data = [
     ["Portkey",          "4", "2", "2", "2", "10"],
     ["LangSmith",        "3", "1", "2", "2", "8"],
     ["Weights & Biases", "3", "1", "2", "1", "7"],
+    ["LiteLLM Proxy",    "3", "3", "2", "2", "10"],
+    ["Langfuse",         "4", "1", "3", "3", "11"],
+    ["Cloudflare AI GW", "3", "2", "1", "2", "8"],
+    ["Datadog LLM Obs.", "3", "1", "2", "4", "10"],
+    ["Braintrust",       "2", "1", "2", "2", "7"],
     ["Kubecost",         "1", "1", "3", "3", "8"],
     ["Vantage",          "1", "1", "2", "4", "8"],
     ["Apptio / IBM",     "1", "1", "2", "3", "7"],
@@ -524,11 +549,11 @@ score_data = [
 
 score_col_widths = [Inches(2.3), Inches(1.8), Inches(2.0), Inches(2.0), Inches(1.8), Inches(1.1)]
 _build_table(slide12, Inches(0.7), Inches(1.15), Inches(11.0), score_col_widths,
-             score_headers, score_data, row_height=Inches(0.4))
+             score_headers, score_data, row_height=Inches(0.33))
 
 # Note at bottom
-_add_rect(slide12, Inches(0.7), Inches(6.2), Inches(11.8), Inches(0.7), LIGHTEST_BLUE)
-tb12n = _add_textbox(slide12, Inches(0.9), Inches(6.25), Inches(11.4), Inches(0.6))
+_add_rect(slide12, Inches(0.7), Inches(6.9), Inches(11.8), Inches(0.5), LIGHTEST_BLUE)
+tb12n = _add_textbox(slide12, Inches(0.9), Inches(6.92), Inches(11.4), Inches(0.45))
 tf12n = tb12n.text_frame
 tf12n.word_wrap = True
 _set_text(tf12n,
@@ -536,7 +561,7 @@ _set_text(tf12n,
           font_size=12, color=NAVY, bold=True)
 
 # Legend note
-tb12_leg = _add_textbox(slide12, Inches(0.7), Inches(6.85), Inches(6), Inches(0.3))
+tb12_leg = _add_textbox(slide12, Inches(0.7), Inches(7.15), Inches(6), Inches(0.3))
 _set_text(tb12_leg.text_frame, "Scale: 1 = No capability  |  3 = Adequate  |  5 = Best-in-class",
           font_size=10, color=DARK_GRAY)
 
