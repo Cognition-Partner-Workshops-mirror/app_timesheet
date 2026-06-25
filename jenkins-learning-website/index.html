@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jenkins Pipeline Masterclass - From Beginner to Production</title>
+    <meta name="description" content="Learn Everything Jenkins - Interactive Jenkins CI/CD Pipeline Learning Platform with Animations and Real-World Examples">
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Google Fonts for modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Animated Background Particles -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#hero" class="nav-logo">
+                <!-- Jenkins Logo SVG -->
+                <svg class="jenkins-logo-small" viewBox="0 0 40 40" width="36" height="36">
+                    <circle cx="20" cy="20" r="18" fill="#D33833" stroke="#fff" stroke-width="1"/>
+                    <text x="20" y="26" text-anchor="middle" fill="white" font-size="14" font-weight="bold">J</text>
+                </svg>
+                <span>Jenkins Masterclass</span>
+            </a>
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#hero" class="nav-link active">Home</a></li>
+                <li><a href="#architecture" class="nav-link">Architecture</a></li>
+                <li><a href="#pipeline" class="nav-link">Pipeline</a></li>
+                <li><a href="#dashboard" class="nav-link">Dashboard</a></li>
+                <li><a href="#topics" class="nav-link">Topics</a></li>
+                <li><a href="#production" class="nav-link">Production</a></li>
+            </ul>
+            <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-background">
+            <div class="gear gear-1"></div>
+            <div class="gear gear-2"></div>
+            <div class="gear gear-3"></div>
+            <div class="pipeline-line pipeline-line-1"></div>
+            <div class="pipeline-line pipeline-line-2"></div>
+            <div class="pipeline-line pipeline-line-3"></div>
+        </div>
+        <div class="hero-content">
+            <!-- Large Jenkins Logo -->
+            <div class="jenkins-logo-container">
+                <svg class="jenkins-logo-hero" viewBox="0 0 120 120" width="120" height="120">
+                    <defs>
+                        <linearGradient id="jenkins-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#D33833"/>
+                            <stop offset="100%" style="stop-color:#EF5350"/>
+                        </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <circle cx="60" cy="60" r="55" fill="url(#jenkins-grad)" filter="url(#glow)"/>
+                    <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-dasharray="5,5">
+                        <animateTransform attributeName="transform" type="rotate" values="0 60 60;360 60 60" dur="20s" repeatCount="indefinite"/>
+                    </circle>
+                    <text x="60" y="72" text-anchor="middle" fill="white" font-size="40" font-weight="bold" font-family="Inter">J</text>
+                </svg>
+                <div class="logo-rings">
+                    <div class="ring ring-1"></div>
+                    <div class="ring ring-2"></div>
+                    <div class="ring ring-3"></div>
+                </div>
+            </div>
+            <h1 class="hero-title">
+                <span class="title-line">Jenkins Pipeline</span>
+                <span class="title-line title-highlight">Masterclass</span>
+            </h1>
+            <p class="hero-subtitle">
+                <span class="typing-text" id="typing-text"></span>
+                <span class="cursor">|</span>
+            </p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number" data-target="50">0</span>+
+                    <span class="stat-label">Topics</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" data-target="20">0</span>+
+                    <span class="stat-label">Animations</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" data-target="100">0</span>+
+                    <span class="stat-label">Examples</span>
+                </div>
+            </div>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" id="btn-start-learning" onclick="scrollToSection('pipeline')">
+                    <span class="btn-text">Start Learning</span>
+                    <span class="btn-icon">&#8594;</span>
+                </button>
+                <button class="btn btn-secondary" id="btn-watch-animation" onclick="scrollToSection('pipeline')">
+                    <span class="btn-icon-play">&#9654;</span>
+                    <span class="btn-text">Watch Pipeline Animation</span>
+                </button>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <div class="mouse">
+                <div class="wheel"></div>
+            </div>
+            <span>Scroll to explore</span>
+        </div>
+    </section>
+
+    <!-- What is Jenkins Section -->
+    <section class="section" id="what-is-jenkins">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Introduction</span>
+                <h2 class="section-title">What is Jenkins?</h2>
+                <p class="section-subtitle">The most popular open-source automation server that powers CI/CD pipelines worldwide</p>
+            </div>
+            <div class="intro-grid">
+                <div class="intro-card glass-card">
+                    <div class="intro-icon">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                    </div>
+                    <h3>Continuous Integration</h3>
+                    <p>Jenkins automatically builds and tests code every time a developer pushes changes, catching bugs early in the development cycle.</p>
+                </div>
+                <div class="intro-card glass-card">
+                    <div class="intro-icon">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16v16H4z"/>
+                            <path d="M9 9l6 6M15 9l-6 6"/>
+                        </svg>
+                    </div>
+                    <h3>Continuous Delivery</h3>
+                    <p>Automates the entire software delivery pipeline from code commit to production deployment with reliability and repeatability.</p>
+                </div>
+                <div class="intro-card glass-card">
+                    <div class="intro-icon">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <h3>Plugin Ecosystem</h3>
+                    <p>Over 1800+ plugins extending Jenkins to integrate with virtually every tool in the DevOps ecosystem.</p>
+                </div>
+                <div class="intro-card glass-card">
+                    <div class="intro-icon">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                        </svg>
+                    </div>
+                    <h3>Distributed Builds</h3>
+                    <p>Distribute work across multiple machines for faster builds, testing on different platforms, and efficient resource utilization.</p>
+                </div>
+            </div>
+            <!-- Why Jenkins Exists Timeline -->
+            <div class="why-jenkins">
+                <h3 class="subsection-title">Why Jenkins Exists</h3>
+                <div class="timeline">
+                    <div class="timeline-item" data-aos="fade-right">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content glass-card">
+                            <span class="timeline-year">Before CI</span>
+                            <h4>Manual Integration Hell</h4>
+                            <p>Developers manually merged code, leading to "integration hell" - conflicts discovered days or weeks after coding.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item" data-aos="fade-left">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content glass-card">
+                            <span class="timeline-year">2004</span>
+                            <h4>Hudson Created</h4>
+                            <p>Kohsuke Kawaguchi at Sun Microsystems created Hudson to automate builds after getting tired of breaking code.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item" data-aos="fade-right">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content glass-card">
+                            <span class="timeline-year">2011</span>
+                            <h4>Jenkins Born</h4>
+                            <p>After Oracle acquired Sun, the community forked Hudson as Jenkins - an open-source automation server.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item" data-aos="fade-left">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content glass-card">
+                            <span class="timeline-year">Today</span>
+                            <h4>Industry Standard</h4>
+                            <p>Jenkins powers CI/CD for millions of projects, from startups to Fortune 500 companies, orchestrating the entire software delivery lifecycle.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Jenkins Architecture Section -->
+    <section class="section section-dark" id="architecture">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Deep Dive</span>
+                <h2 class="section-title">Jenkins Architecture</h2>
+                <p class="section-subtitle">Understand how Jenkins Controller, Agents, and Executors work together</p>
+            </div>
+            <div class="architecture-container">
+                <div class="arch-diagram" id="arch-diagram">
+                    <!-- Architecture will be rendered by JS -->
+                </div>
+                <div class="arch-details" id="arch-details">
+                    <div class="arch-info glass-card">
+                        <h3>Click a component to explore</h3>
+                        <p>The architecture diagram shows how Jenkins components communicate. Click any node to see detailed information about its role and internal workings.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Pipeline Section -->
+    <section class="section" id="pipeline">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Interactive</span>
+                <h2 class="section-title">Complete Jenkins Pipeline</h2>
+                <p class="section-subtitle">Click any stage to explore its internals. Watch the entire CI/CD pipeline execute in real-time.</p>
+            </div>
+            <!-- Pipeline Controls -->
+            <div class="pipeline-controls">
+                <button class="btn btn-sm btn-primary" id="pipeline-play">
+                    <span>&#9654;</span> Play Pipeline
+                </button>
+                <button class="btn btn-sm btn-secondary" id="pipeline-pause">
+                    <span>&#10074;&#10074;</span> Pause
+                </button>
+                <button class="btn btn-sm btn-secondary" id="pipeline-reset">
+                    <span>&#8634;</span> Reset
+                </button>
+                <button class="btn btn-sm btn-secondary" id="pipeline-step">
+                    <span>&#9654;|</span> Step
+                </button>
+                <div class="pipeline-speed">
+                    <label>Speed:</label>
+                    <input type="range" id="pipeline-speed-range" min="1" max="5" value="3">
+                    <span id="speed-label">3x</span>
+                </div>
+            </div>
+            <!-- Pipeline Visualization -->
+            <div class="pipeline-wrapper" id="pipeline-wrapper">
+                <div class="pipeline-stages" id="pipeline-stages">
+                    <!-- Stages rendered by JS -->
+                </div>
+                <!-- Connection lines drawn by JS -->
+                <svg class="pipeline-connections" id="pipeline-connections"></svg>
+            </div>
+            <!-- Console Output -->
+            <div class="console-output glass-card" id="console-output">
+                <div class="console-header">
+                    <span class="console-title">Jenkins Console Output</span>
+                    <div class="console-controls">
+                        <span class="console-dot red"></span>
+                        <span class="console-dot yellow"></span>
+                        <span class="console-dot green"></span>
+                    </div>
+                </div>
+                <div class="console-body" id="console-body">
+                    <p class="console-line"><span class="console-timestamp">[Pipeline]</span> Waiting for pipeline to start...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stage Detail Modal -->
+    <div class="modal-overlay" id="stage-modal">
+        <div class="modal glass-card" id="modal-content">
+            <button class="modal-close" id="modal-close">&times;</button>
+            <div class="modal-header">
+                <div class="modal-icon" id="modal-icon"></div>
+                <h2 class="modal-title" id="modal-title">Stage Details</h2>
+                <span class="modal-stage-status" id="modal-status">Learning Module</span>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content loaded by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Jenkins Dashboard Section -->
+    <section class="section section-dark" id="dashboard">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Simulation</span>
+                <h2 class="section-title">Jenkins Dashboard</h2>
+                <p class="section-subtitle">A realistic Jenkins Dashboard simulation with live build queue, executors, and job status</p>
+            </div>
+            <div class="dashboard-container" id="dashboard-container">
+                <!-- Dashboard Header -->
+                <div class="dash-header glass-card">
+                    <div class="dash-logo">
+                        <svg viewBox="0 0 30 30" width="24" height="24">
+                            <circle cx="15" cy="15" r="13" fill="#D33833"/>
+                            <text x="15" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">J</text>
+                        </svg>
+                        <span>Jenkins Dashboard</span>
+                    </div>
+                    <div class="dash-nav">
+                        <span class="dash-nav-item active">All</span>
+                        <span class="dash-nav-item">Build Queue</span>
+                        <span class="dash-nav-item">Build Executor</span>
+                        <span class="dash-nav-item">Manage Jenkins</span>
+                    </div>
+                </div>
+                <!-- Dashboard Grid -->
+                <div class="dash-grid">
+                    <!-- Build Queue -->
+                    <div class="dash-panel glass-card">
+                        <h4 class="dash-panel-title">Build Queue</h4>
+                        <div class="build-queue" id="build-queue">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <!-- Executor Status -->
+                    <div class="dash-panel glass-card">
+                        <h4 class="dash-panel-title">Build Executor Status</h4>
+                        <div class="executor-status" id="executor-status">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <!-- Job List -->
+                    <div class="dash-panel dash-panel-wide glass-card">
+                        <h4 class="dash-panel-title">Jobs</h4>
+                        <div class="job-list" id="job-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <!-- Build History -->
+                    <div class="dash-panel glass-card">
+                        <h4 class="dash-panel-title">Build History</h4>
+                        <div class="build-history" id="build-history">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <!-- Nodes -->
+                    <div class="dash-panel glass-card">
+                        <h4 class="dash-panel-title">Nodes</h4>
+                        <div class="node-list" id="node-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Jenkins Topics Section -->
+    <section class="section" id="topics">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Complete Guide</span>
+                <h2 class="section-title">Jenkins Topics</h2>
+                <p class="section-subtitle">Comprehensive coverage from installation to production best practices</p>
+            </div>
+            <div class="topics-grid" id="topics-grid">
+                <!-- Topics rendered by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Production Example Section -->
+    <section class="section section-dark" id="production">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Real World</span>
+                <h2 class="section-title">Production Jenkins Pipeline</h2>
+                <p class="section-subtitle">A real Java Spring Boot Banking Application pipeline with Jenkins</p>
+            </div>
+            <div class="production-container">
+                <!-- Project Overview -->
+                <div class="prod-overview glass-card">
+                    <h3>Banking Application - Payment Service</h3>
+                    <p>A production-grade Spring Boot microservice handling UPI transactions, Customer APIs, and payment processing.</p>
+                    <div class="tech-stack">
+                        <span class="tech-badge">Java 17</span>
+                        <span class="tech-badge">Spring Boot 3</span>
+                        <span class="tech-badge">PostgreSQL</span>
+                        <span class="tech-badge">Kafka</span>
+                        <span class="tech-badge">Redis</span>
+                        <span class="tech-badge">Docker</span>
+                        <span class="tech-badge">Kubernetes</span>
+                    </div>
+                </div>
+                <!-- Jenkinsfile Example -->
+                <div class="prod-jenkinsfile glass-card">
+                    <div class="code-header">
+                        <span class="code-file">Jenkinsfile</span>
+                        <span class="code-lang">Declarative Pipeline</span>
+                    </div>
+                    <pre class="code-block" id="prod-jenkinsfile"><code>// Production Jenkinsfile - Banking Payment Service
+pipeline {
+    agent {
+        kubernetes {
+            yaml '''
+            apiVersion: v1
+            kind: Pod
+            spec:
+              containers:
+              - name: maven
+                image: maven:3.9-eclipse-temurin-17
+                command: ['sleep', 'infinity']
+              - name: docker
+                image: docker:24-dind
+                securityContext:
+                  privileged: true
+            '''
+        }
+    }
+
+    environment {
+        REGISTRY = 'registry.bank.internal'
+        APP_NAME = 'payment-service'
+        SONAR_HOST = 'https://sonar.bank.internal'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    env.GIT_COMMIT_SHORT = sh(
+                        script: 'git rev-parse --short HEAD',
+                        returnStdout: true
+                    ).trim()
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                container('maven') {
+                    sh 'mvn clean compile -DskipTests'
+                }
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                container('maven') {
+                    sh 'mvn test'
+                }
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                    jacoco execPattern: '**/target/jacoco.exec'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                container('maven') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh '''mvn sonar:sonar \
+                            -Dsonar.projectKey=${APP_NAME} \
+                            -Dsonar.host.url=${SONAR_HOST}'''
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                container('maven') {
+                    sh 'mvn package -DskipTests'
+                    archiveArtifacts artifacts: 'target/*.jar'
+                    fingerprint 'target/*.jar'
+                }
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                container('docker') {
+                    script {
+                        def image = docker.build(
+                            "${REGISTRY}/${APP_NAME}:${GIT_COMMIT_SHORT}"
+                        )
+                        docker.withRegistry("https://${REGISTRY}",
+                            'registry-credentials') {
+                            image.push()
+                            image.push('latest')
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Staging') {
+            steps {
+                kubernetesDeploy(
+                    configs: 'k8s/staging/',
+                    kubeconfigId: 'k8s-staging-config'
+                )
+                sh '''kubectl rollout status \
+                    deployment/${APP_NAME} \
+                    -n payments-staging \
+                    --timeout=300s'''
+            }
+        }
+
+        stage('Integration Tests') {
+            steps {
+                sh '''./gradlew integrationTest \
+                    -Dbase.url=http://${APP_NAME}.payments-staging.svc'''
+            }
+        }
+
+        stage('Deploy to Production') {
+            when {
+                branch 'main'
+            }
+            input {
+                message 'Deploy to production?'
+                ok 'Deploy'
+            }
+            steps {
+                kubernetesDeploy(
+                    configs: 'k8s/production/',
+                    kubeconfigId: 'k8s-prod-config'
+                )
+                sh '''kubectl rollout status \
+                    deployment/${APP_NAME} \
+                    -n payments-prod \
+                    --timeout=300s'''
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                script {
+                    def response = httpRequest(
+                        url: "http://${APP_NAME}.payments-prod.svc/actuator/health",
+                        validResponseCodes: '200'
+                    )
+                    echo "Health: ${response.content}"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            slackSend(
+                channel: '#deployments',
+                color: 'good',
+                message: "SUCCESS: ${APP_NAME} v${GIT_COMMIT_SHORT} deployed to production"
+            )
+        }
+        failure {
+            slackSend(
+                channel: '#deployments',
+                color: 'danger',
+                message: "FAILED: ${APP_NAME} pipeline failed at ${currentBuild.currentResult}"
+            )
+        }
+        always {
+            cleanWs()
+        }
+    }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <svg viewBox="0 0 40 40" width="32" height="32">
+                        <circle cx="20" cy="20" r="18" fill="#D33833"/>
+                        <text x="20" y="26" text-anchor="middle" fill="white" font-size="14" font-weight="bold">J</text>
+                    </svg>
+                    <span>Jenkins Pipeline Masterclass</span>
+                </div>
+                <p class="footer-text">An interactive Jenkins learning platform. Learn CI/CD from beginner to expert with beautiful animations and real-world examples.</p>
+                <div class="footer-links">
+                    <a href="#hero">Home</a>
+                    <a href="#architecture">Architecture</a>
+                    <a href="#pipeline">Pipeline</a>
+                    <a href="#dashboard">Dashboard</a>
+                    <a href="#topics">Topics</a>
+                    <a href="#production">Production</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Files -->
+    <script src="js/main.js"></script>
+    <script src="js/pipeline.js"></script>
+    <script src="js/architecture.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/stages.js"></script>
+</body>
+</html>
