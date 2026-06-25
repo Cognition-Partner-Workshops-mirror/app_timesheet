@@ -365,8 +365,22 @@ class PipelineVisualization {
         if (this.isPlaying && !this.isPaused) return;
         
         if (this.isPaused) {
-            // Resume from pause
+            // Resume from pause: mark current stage as success and advance to next
             this.isPaused = false;
+            this.isPlaying = true;
+            // Mark the current (paused) stage as success before moving on
+            if (this.currentStage >= 0) {
+                const stageEl = this.stagesContainer.querySelector(`[data-index="${this.currentStage}"]`);
+                if (stageEl) stageEl.className = 'pipeline-stage success';
+                // Activate the connector for the completed stage
+                if (this.currentStage > 0) {
+                    const connector = this.stagesContainer.querySelector(`[data-connector-index="${this.currentStage - 1}"]`);
+                    if (connector) {
+                        connector.classList.add('active');
+                        connector.innerHTML = '';
+                    }
+                }
+            }
             this.advanceStage();
             return;
         }
@@ -403,6 +417,14 @@ class PipelineVisualization {
         if (this.currentStage >= PIPELINE_STAGES.length - 1) {
             this.reset();
             return;
+        }
+        // Clear any running timers to prevent duplicate console output
+        if (this.animationTimer) clearTimeout(this.animationTimer);
+        if (this.lineTimer) clearTimeout(this.lineTimer);
+        // Mark previous stage as success if it was running
+        if (this.currentStage >= 0) {
+            const prevStageEl = this.stagesContainer.querySelector(`[data-index="${this.currentStage}"]`);
+            if (prevStageEl) prevStageEl.className = 'pipeline-stage success';
         }
         this.isPlaying = false;
         this.isPaused = false;
